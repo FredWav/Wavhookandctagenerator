@@ -7,7 +7,7 @@
 <title>Suite d'Outils pour Créateurs – PRO</title>
 <style>
   :root {
-    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(120,119,198,0.3),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent-hooks: #9333EA; --accent-cta: #22c55e; --radius: 16px; --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(120,119,198,0.3),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent-hooks: #9333EA; --accent-cta: #22c55e; --accent-analyzer: #d946ef; --radius: 16px; --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
   }
   [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; }
   * { box-sizing: border-box; } 
@@ -16,7 +16,7 @@
   header { text-align: center; margin-bottom: 3rem; }
   h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
   .subtitle { font-size: 1.1rem; color: var(--muted); max-width: 500px; margin: auto; }
-  .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
   .tool-card { display: block; text-decoration: none; color: var(--ink); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; transition: transform 0.2s, box-shadow 0.2s; backdrop-filter: blur(20px); }
   .tool-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
   .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
@@ -25,6 +25,7 @@
   .icon { width: 24px; height: 24px; }
   .icon.hooks { color: var(--accent-hooks); }
   .icon.cta { color: var(--accent-cta); }
+  .icon.analyzer { color: var(--accent-analyzer); }
   .history-link-container { text-align: center; margin-top: 3rem; }
   .history-link { display: inline-block; color: var(--muted); text-decoration: none; border: 1px solid var(--card-border); padding: 10px 20px; border-radius: 999px; background: rgba(255,255,255,0.05); transition: background 0.2s, color 0.2s; }
   [data-theme="light"] .history-link { background: var(--card-bg); }
@@ -54,6 +55,14 @@
           <h2>Générateur d'Appels à l'Action</h2>
         </div>
         <p>Concevez des appels à l'action clairs et efficaces pour convertir votre audience.</p>
+      </a>
+
+      <a href="analyzer.html" class="tool-card">
+        <div class="card-header">
+          <svg class="icon analyzer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          <h2>Analyseur de Vidéo</h2>
+        </div>
+        <p>Analysez le potentiel viral d'une vidéo TikTok à partir de son URL.</p>
       </a>
     </div>
 
