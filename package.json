@@ -1,0 +1,6 @@
+{
+  "name": "hook-generator-pro",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" }
+}
