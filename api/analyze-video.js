@@ -1,862 +1,492 @@
-// analyze-video.js - Version complète avec analyse vidéo/audio et logging
-export const config = { runtime: "edge" };
+// Intégration Lemonfox.ai Whisper pour ViralScope Pro
+// Transcription audio avec Lemonfox.ai API
 
-// Base de données simulée (en production, utiliser une vraie DB)
-let analysisLogs = [];
-
-// Fonction pour logger les analyses
-function logAnalysis(data) {
-    const logEntry = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-        timestamp: new Date().toISOString(),
-        url: data.url,
-        author: data.author || 'Inconnu',
-        stats: data.stats || null,
-        metrics: data.metrics || null,
-        score: data.score || null,
-        potentiel_viral: data.potentiel_viral || null,
-        niche_detectee: data.niche_detectee || null,
-        contenu_audio: data.contenu_audio || null,
-        contenu_visuel: data.contenu_visuel || null,
-        user_ip: data.user_ip || null,
-        user_agent: data.user_agent || null
-    };
-    
-    analysisLogs.push(logEntry);
-    
-    // Garder seulement les 1000 dernières entrées en mémoire
-    if (analysisLogs.length > 1000) {
-        analysisLogs = analysisLogs.slice(-1000);
-    }
-    
-    console.log(`📝 Analyse enregistrée: ${logEntry.id} - ${data.author} - ${data.stats?.views || 0} vues`);
-    return logEntry.id;
-}
-
-// Fonction pour parser les données JSON TikTok
-function findJsonBlob(html) {
-    try {
-        let scriptContent = html.split('<script id="SIGI_STATE" type="application/json">')[1]?.split('</script>')[0];
-        if (scriptContent) {
-            console.log("✅ Données via SIGI_STATE");
-            return JSON.parse(scriptContent);
-        }
-        
-        scriptContent = html.split('<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">')[1]?.split('</script>')[0];
-        if (scriptContent) {
-            console.log("✅ Données via __UNIVERSAL_DATA_FOR_REHYDRATION__");
-            return JSON.parse(scriptContent);
-        }
-        
-        const initialStateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?});/s);
-        if (initialStateMatch) {
-            console.log("✅ Données via __INITIAL_STATE__");
-            return JSON.parse(initialStateMatch[1]);
-        }
-        
-        return null;
-    } catch (error) {
-        console.error("❌ Erreur parsing JSON:", error.message);
-        return null;
-    }
-}
-
-// Extraction des stats avec URL vidéo pour l'analyse
-function extractStats(data) {
-    try {
-        let extractedData = {
-            views: 0,
-            likes: 0,
-            comments: 0,
-            shares: 0,
-            duration: null,
-            description: null,
-            author: null,
-            music: null,
-            hashtags: [],
-            createTime: null,
-            videoUrl: null, // NOUVEAU: URL directe de la vidéo
-            coverUrl: null  // NOUVEAU: URL de la miniature HD
-        };
-
-        if (data.ItemModule) {
-            const videoId = Object.keys(data.ItemModule)[0];
-            const itemStruct = data.ItemModule[videoId];
-            
-            if (itemStruct?.stats) {
-                extractedData = {
-                    views: parseInt(itemStruct.stats.playCount) || 0,
-                    likes: parseInt(itemStruct.stats.diggCount) || 0,
-                    comments: parseInt(itemStruct.stats.commentCount) || 0,
-                    shares: parseInt(itemStruct.stats.shareCount) || 0,
-                    duration: itemStruct.video?.duration || null,
-                    description: itemStruct.desc || null,
-                    author: itemStruct.author?.uniqueId || null,
-                    music: itemStruct.music?.title || null,
-                    hashtags: itemStruct.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || [],
-                    createTime: itemStruct.createTime ? new Date(itemStruct.createTime * 1000) : null,
-                    videoUrl: itemStruct.video?.playAddr || itemStruct.video?.downloadAddr || null,
-                    coverUrl: itemStruct.video?.originCover || itemStruct.video?.dynamicCover || null
-                };
-            }
-        }
-        
-        else if (data['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct) {
-            const itemStruct = data['__DEFAULT_SCOPE__']['webapp.video-detail'].itemInfo.itemStruct;
-            
-            if (itemStruct.stats) {
-                extractedData = {
-                    views: parseInt(itemStruct.stats.playCount) || 0,
-                    likes: parseInt(itemStruct.stats.diggCount) || 0,
-                    comments: parseInt(itemStruct.stats.commentCount) || 0,
-                    shares: parseInt(itemStruct.stats.shareCount) || 0,
-                    duration: itemStruct.video?.duration || null,
-                    description: itemStruct.desc || null,
-                    author: itemStruct.author?.uniqueId || null,
-                    music: itemStruct.music?.title || null,
-                    hashtags: itemStruct.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || [],
-                    createTime: itemStruct.createTime ? new Date(itemStruct.createTime * 1000) : null,
-                    videoUrl: itemStruct.video?.playAddr || itemStruct.video?.downloadAddr || null,
-                    coverUrl: itemStruct.video?.originCover || itemStruct.video?.dynamicCover || null
-                };
-            }
-        }
-        
-        return extractedData.views > 0 ? extractedData : null;
-        
-    } catch (error) {
-        console.error("❌ Erreur extraction stats:", error.message);
-        return null;
-    }
-}
-
-// NOUVEAU: Analyse du contenu vidéo avec OpenAI GPT-4 Vision
-async function analyzeVideoContent(videoUrl, thumbnailUrl, description, openaiKey) {
-    if (!openaiKey) {
-        console.warn("⚠️ OpenAI key manquante - Analyse vidéo désactivée");
+async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
+    if (!lemonfoxApiKey || !videoUrl) {
+        console.warn("⚠️ ViralScope: Clé Lemonfox ou URL vidéo manquante");
         return null;
     }
 
     try {
-        console.log("🎬 Analyse du contenu vidéo via OpenAI GPT-4 Vision...");
+        console.log("🍋 ViralScope: Transcription audio via Lemonfox.ai...");
         
-        const systemPrompt = `Tu es un expert en analyse de contenu TikTok. Analyse cette vidéo et fournis un JSON structuré avec:
-
-1. CONTENU_VISUEL: Que vois-tu dans la vidéo? (décor, personne, objets, actions, esthétique)
-2. NICHE_DETECTEE: Quelle niche/catégorie? (fitness, beauté, humour, éducation, lifestyle, business, etc.)
-3. TYPE_CONTENU: Quel format? (tutorial, storytime, dance, comedy, educational, review, etc.)
-4. QUALITE_PRODUCTION: Niveau de production (amateur, semi-pro, professionnel)
-5. ELEMENTS_VIRAUX: Quels éléments peuvent rendre cette vidéo virale?
-6. EMOTIONS_SUSCITEES: Quelles émotions cette vidéo provoque-t-elle?
-7. CIBLE_AUDIENCE: À qui s'adresse cette vidéo? (âge, genre, intérêts)
-8. POINTS_ATTENTION: Moments clés qui captent l'attention
-9. RECOMMANDATIONS_VISUELLES: Comment améliorer visuellement
-
-Sois précis et professionnel.`;
-
-        const userPrompt = `Analyse cette vidéo TikTok:
-
-📝 DESCRIPTION: "${description}"
-
-🎯 MISSION: Fournis une analyse complète du contenu visuel et identifie la niche, le type de contenu, et les éléments qui peuvent contribuer à la viralité.`;
-
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
+        // Étape 1: Télécharger la vidéo TikTok
+        console.log("📥 Téléchargement de la vidéo...");
+        const videoResponse = await fetch(videoUrl, {
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${openaiKey}`
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://www.tiktok.com/'
             },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                response_format: { type: "json_object" },
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { 
-                        role: "user", 
-                        content: [
-                            { type: "text", text: userPrompt },
-                            { type: "image_url", image_url: { url: thumbnailUrl } }
-                        ]
-                    }
-                ],
-                max_tokens: 1500,
-                temperature: 0.3
-            }),
             signal: AbortSignal.timeout(30000)
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            const content = data.choices[0]?.message?.content;
-            
-            if (content) {
-                const analysis = JSON.parse(content);
-                console.log("✅ Analyse vidéo complétée");
-                return analysis;
-            }
-        } else {
-            console.warn(`⚠️ Erreur OpenAI Vision: ${response.status}`);
+        if (!videoResponse.ok) {
+            throw new Error(`Échec téléchargement vidéo: ${videoResponse.status}`);
         }
-        
-        return null;
-    } catch (error) {
-        console.error("❌ Erreur analyse vidéo:", error.message);
-        return null;
-    }
-}
 
-// NOUVEAU: Transcription audio (simulation - en production utiliser Whisper API)
-async function transcribeAudio(videoUrl, openaiKey) {
-    if (!openaiKey || !videoUrl) {
-        console.warn("⚠️ Transcription audio désactivée - Clé OpenAI ou URL vidéo manquante");
-        return null;
-    }
-
-    try {
-        console.log("🎤 Transcription audio en cours...");
-        
-        // NOTE: En production, vous devrez:
-        // 1. Télécharger la vidéo TikTok
-        // 2. Extraire l'audio en format supporté (mp3, wav, etc.)
-        // 3. Envoyer à l'API Whisper d'OpenAI
-        
-        // Pour l'instant, on simule avec l'analyse de la description
-        // Remplacez cette partie par l'implémentation Whisper réelle
-        
-        const simulatedTranscription = {
-            text: "Transcription non disponible - Implémentation Whisper requise",
-            language: "fr",
-            confidence: 0,
-            duration: null,
-            words: [],
-            sentiment: "neutral",
-            topics: []
-        };
-        
-        console.log("⚠️ Transcription simulée - Implémentez Whisper API pour la transcription réelle");
-        return simulatedTranscription;
-        
-        /* IMPLÉMENTATION RÉELLE WHISPER (décommenter et adapter):
-        
-        // 1. Télécharger la vidéo
-        const videoResponse = await fetch(videoUrl);
         const videoBuffer = await videoResponse.arrayBuffer();
-        
-        // 2. Extraire l'audio (utiliser FFmpeg ou similaire)
-        const audioBuffer = await extractAudioFromVideo(videoBuffer);
-        
-        // 3. Transcription Whisper
+        console.log(`✅ Vidéo téléchargée: ${(videoBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`);
+
+        // Étape 2: Préparer le FormData pour Lemonfox
         const formData = new FormData();
-        formData.append('file', new Blob([audioBuffer], { type: 'audio/mp3' }), 'audio.mp3');
-        formData.append('model', 'whisper-1');
-        formData.append('language', 'fr');
-        formData.append('response_format', 'verbose_json');
         
-        const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        // Lemonfox accepte les vidéos directement
+        const videoBlob = new Blob([videoBuffer], { type: 'video/mp4' });
+        formData.append('file', videoBlob, 'tiktok_video.mp4');
+        
+        // Paramètres Lemonfox pour optimiser la transcription TikTok
+        formData.append('language', 'auto'); // Détection automatique
+        formData.append('model', 'whisper-large-v3'); // Meilleur modèle
+        formData.append('response_format', 'verbose_json');
+        formData.append('temperature', '0.2'); // Plus précis
+        formData.append('timestamp_granularities[]', 'word'); // Timestamps au niveau mot
+        formData.append('timestamp_granularities[]', 'segment'); // Timestamps au niveau phrase
+
+        // Étape 3: Appel à l'API Lemonfox
+        console.log("🔄 Envoi à Lemonfox.ai API...");
+        const lemonfoxResponse = await fetch('https://api.lemonfox.ai/v1/audio/transcriptions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${openaiKey}`
+                'Authorization': `Bearer ${lemonfoxApiKey}`,
+                'User-Agent': 'ViralScope-Pro/1.0'
             },
-            body: formData
+            body: formData,
+            signal: AbortSignal.timeout(120000) // 2 minutes pour la transcription
+        });
+
+        if (!lemonfoxResponse.ok) {
+            const errorText = await lemonfoxResponse.text();
+            console.error(`❌ Lemonfox API error: ${errorText}`);
+            throw new Error(`Lemonfox API error ${lemonfoxResponse.status}: ${errorText}`);
+        }
+
+        const transcriptionData = await lemonfoxResponse.json();
+        console.log("✅ ViralScope: Transcription Lemonfox complétée");
+
+        // Étape 4: Traitement et enrichissement des données Lemonfox
+        const enrichedAnalysis = await enrichLemonfoxTranscription(transcriptionData);
+
+        return {
+            // Données brutes Lemonfox
+            transcription: transcriptionData.text || '',
+            langue: transcriptionData.language || 'auto',
+            duree: transcriptionData.duration || null,
+            
+            // Données enrichies avec timestamps
+            segments: transcriptionData.segments || [],
+            words: transcriptionData.words || [],
+            
+            // Métriques de qualité Lemonfox
+            confidence: calculateLemonfoxConfidence(transcriptionData),
+            quality_score: assessLemonfoxQuality(transcriptionData),
+            
+            // Analyse enrichie ViralScope
+            sentiment: enrichedAnalysis.sentiment,
+            topics: enrichedAnalysis.topics,
+            emotions: enrichedAnalysis.emotions,
+            keywords: enrichedAnalysis.keywords,
+            viral_words: enrichedAnalysis.viral_words,
+            speech_patterns: enrichedAnalysis.speech_patterns,
+            hooks_detected: enrichedAnalysis.hooks_detected,
+            cta_detected: enrichedAnalysis.cta_detected,
+            
+            // Insights ViralScope spécifiques
+            viralscope_insights: enrichedAnalysis.viralscope_insights,
+            audio_optimization: enrichedAnalysis.audio_optimization,
+            
+            // Métadonnées
+            provider: 'Lemonfox.ai',
+            model_used: 'whisper-large-v3',
+            processed_at: new Date().toISOString()
+        };
+
+    } catch (error) {
+        console.error("❌ ViralScope: Erreur transcription Lemonfox:", error.message);
+        
+        // Log pour debugging
+        console.log("🔍 Debug info:", {
+            videoUrl: videoUrl ? 'présente' : 'manquante',
+            apiKey: lemonfoxApiKey ? 'présente' : 'manquante',
+            error: error.message
         });
         
-        if (whisperResponse.ok) {
-            const transcription = await whisperResponse.json();
-            console.log("✅ Transcription audio complétée");
-            return {
-                text: transcription.text,
-                language: transcription.language,
-                duration: transcription.duration,
-                words: transcription.words || [],
-                confidence: transcription.confidence || 0,
-                sentiment: analyzeTextSentiment(transcription.text),
-                topics: extractTopics(transcription.text)
-            };
-        }
-        
-        */
-        
-    } catch (error) {
-        console.error("❌ Erreur transcription audio:", error.message);
         return null;
     }
 }
 
-// Calcul des métriques avancées
-function calculateAdvancedMetrics(stats) {
-    if (!stats || stats.views === 0) {
-        return {
-            engagementRate: 0,
-            likesRatio: 0,
-            commentsRatio: 0,
-            sharesRatio: 0,
-            totalEngagements: 0,
-            viralityIndex: 0
-        };
+// Calcul de la confiance Lemonfox
+function calculateLemonfoxConfidence(transcriptionData) {
+    if (!transcriptionData.segments || transcriptionData.segments.length === 0) {
+        return 0;
     }
-
-    const totalEngagements = stats.likes + stats.comments + stats.shares;
     
-    return {
-        engagementRate: (totalEngagements / stats.views) * 100,
-        likesRatio: (stats.likes / stats.views) * 100,
-        commentsRatio: (stats.comments / stats.views) * 100,
-        sharesRatio: (stats.shares / stats.views) * 100,
-        totalEngagements,
-        viralityIndex: Math.min(100, ((stats.shares * 10) + (stats.comments * 4) + (stats.likes * 2)) / stats.views * 100)
-    };
+    // Lemonfox fournit des scores de confiance par segment
+    const confidenceScores = transcriptionData.segments
+        .map(segment => segment.avg_logprob || segment.confidence || 0)
+        .filter(score => score !== 0);
+    
+    if (confidenceScores.length === 0) return 0.5; // Défaut
+    
+    const avgConfidence = confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length;
+    
+    // Conversion en pourcentage (Lemonfox utilise des log probabilities)
+    if (avgConfidence < 0) {
+        // Log probability -> confidence score
+        return Math.max(0, Math.min(1, Math.exp(avgConfidence)));
+    }
+    
+    // Déjà un score de confiance
+    return Math.max(0, Math.min(1, avgConfidence));
 }
 
-// Analyse créative complète
-function analyzeCreativeContent(stats, description, hashtags, videoAnalysis = null, audioTranscription = null) {
-    const analysis = {
-        structureNarrative: {
-            hookPresent: false,
-            hookType: null,
-            messageClaire: false,
-            ctaPresent: false,
-            ctaType: null
-        },
-        optimisationPlateforme: {
-            hashtagsPertinents: false,
-            hashtagsCount: hashtags?.length || 0,
-            descriptionEngageante: false
-        },
-        tendances: {
-            utiliseTendance: false,
-            hashtagsTendance: []
-        },
-        contenuEnrichi: {
-            niche: videoAnalysis?.NICHE_DETECTEE || 'Non déterminée',
-            typeContenu: videoAnalysis?.TYPE_CONTENU || 'Non déterminé',
-            qualiteProduction: videoAnalysis?.QUALITE_PRODUCTION || 'Non évaluée',
-            elementsViraux: videoAnalysis?.ELEMENTS_VIRAUX || [],
-            cibleAudience: videoAnalysis?.CIBLE_AUDIENCE || 'Non déterminée',
-            contenuParle: audioTranscription?.text || 'Non disponible'
-        }
-    };
+// Évaluation de la qualité Lemonfox
+function assessLemonfoxQuality(transcriptionData) {
+    let qualityScore = 100;
     
-    if (description) {
-        const desc = description.toLowerCase();
-        
-        // Détection du hook
-        const hookPatterns = {
-            question: /^(pourquoi|comment|qui|que|quoi|où|quand)/,
-            secret: /(secret|astuce|conseil|truc)/,
-            revelation: /(révélation|vérité|découverte)/,
-            negation: /(pas|jamais|aucun|stop|arrête)/,
-            number: /^\d+/,
-            controversial: /(personne ne|tout le monde|on vous ment)/
-        };
-        
-        for (const [type, pattern] of Object.entries(hookPatterns)) {
-            if (pattern.test(desc)) {
-                analysis.structureNarrative.hookPresent = true;
-                analysis.structureNarrative.hookType = type;
-                break;
-            }
-        }
-        
-        // Détection du CTA
-        const ctaPatterns = {
-            subscribe: /(abonne|follow|suit)/,
-            engage: /(like|commente|partage|réagis)/,
-            action: /(clique|va sur|regarde|découvre)/,
-            save: /(sauvegarde|enregistre|garde)/
-        };
-        
-        for (const [type, pattern] of Object.entries(ctaPatterns)) {
-            if (pattern.test(desc)) {
-                analysis.structureNarrative.ctaPresent = true;
-                analysis.structureNarrative.ctaType = type;
-                break;
-            }
-        }
-        
-        analysis.structureNarrative.messageClaire = description.length > 10 && description.length < 300;
-        analysis.optimisationPlateforme.descriptionEngageante = description.length > 20;
-    }
+    const text = transcriptionData.text || '';
+    const segments = transcriptionData.segments || [];
     
-    // Analyse des hashtags
-    if (hashtags && hashtags.length > 0) {
-        analysis.optimisationPlateforme.hashtagsPertinents = hashtags.length >= 3 && hashtags.length <= 8;
-        
-        const hashtagsTendance = ['fyp', 'viral', 'trending', 'pourtoi', 'france', 'tiktokfrance'];
-        analysis.tendances.hashtagsTendance = hashtags.filter(tag => 
-            hashtagsTendance.some(trend => tag.toLowerCase().includes(trend))
-        );
-        analysis.tendances.utiliseTendance = analysis.tendances.hashtagsTendance.length > 0;
-    }
+    // Pénalités basées sur la qualité Lemonfox
+    if (text.length < 10) qualityScore -= 40; // Trop court
+    if (segments.length === 0) qualityScore -= 30; // Pas de segmentation
     
-    return analysis;
-}
-
-// Scoring prédictif enrichi
-function calculatePredictiveScore(stats, metrics, creativeAnalysis) {
-    let score = 50;
-    
-    // Performance quantitative (40 points)
-    if (metrics.engagementRate > 15) score += 15;
-    else if (metrics.engagementRate > 10) score += 12;
-    else if (metrics.engagementRate > 5) score += 8;
-    else if (metrics.engagementRate > 2) score += 4;
-    
-    if (metrics.likesRatio > 10) score += 10;
-    else if (metrics.likesRatio > 5) score += 6;
-    
-    if (stats.views > 1000000) score += 15;
-    else if (stats.views > 100000) score += 10;
-    else if (stats.views > 10000) score += 5;
-    
-    // Analyse créative (30 points)
-    if (creativeAnalysis.structureNarrative.hookPresent) score += 8;
-    if (creativeAnalysis.structureNarrative.messageClaire) score += 6;
-    if (creativeAnalysis.structureNarrative.ctaPresent) score += 4;
-    if (creativeAnalysis.optimisationPlateforme.hashtagsPertinents) score += 6;
-    if (creativeAnalysis.optimisationPlateforme.descriptionEngageante) score += 3;
-    if (creativeAnalysis.tendances.utiliseTendance) score += 3;
-    
-    // Bonus contenu enrichi (10 points)
-    if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') score += 3;
-    if (creativeAnalysis.contenuEnrichi.qualiteProduction === 'professionnel') score += 4;
-    if (creativeAnalysis.contenuEnrichi.elementsViraux?.length > 0) score += 3;
-    
-    let potentielViral = "faible";
-    if (score >= 85) potentielViral = "élevé";
-    else if (score >= 70) potentielViral = "moyen";
-    
-    return { score: Math.min(100, Math.max(0, score)), potentielViral };
-}
-
-// Génération de recommandations enrichies
-function generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis = null) {
-    const recommendations = {
-        points_forts: [],
-        points_faibles: [],
-        suggestions: []
-    };
-    
-    // Points forts
-    if (metrics.engagementRate > 10) {
-        recommendations.points_forts.push(`Excellent taux d'engagement (${metrics.engagementRate.toFixed(1)}%) - Audience très réactive`);
-    }
-    if (metrics.likesRatio > 8) {
-        recommendations.points_forts.push("Ratio likes/vues élevé - Contenu très apprécié");
-    }
-    if (creativeAnalysis.structureNarrative.hookPresent) {
-        recommendations.points_forts.push(`Hook ${creativeAnalysis.structureNarrative.hookType} détecté - Accroche efficace`);
-    }
-    if (videoAnalysis?.QUALITE_PRODUCTION === 'professionnel') {
-        recommendations.points_forts.push("Qualité de production professionnelle détectée");
-    }
-    if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') {
-        recommendations.points_forts.push(`Niche clairement identifiée: ${creativeAnalysis.contenuEnrichi.niche}`);
-    }
-    
-    // Points faibles
-    if (metrics.engagementRate < 3) {
-        recommendations.points_faibles.push("Taux d'engagement faible - Contenu peu engageant");
-    }
-    if (!creativeAnalysis.structureNarrative.hookPresent) {
-        recommendations.points_faibles.push("Absence de hook détectable - Accroche à renforcer");
-    }
-    if (!creativeAnalysis.structureNarrative.ctaPresent) {
-        recommendations.points_faibles.push("Aucun appel à l'action explicite");
-    }
-    if (!creativeAnalysis.optimisationPlateforme.hashtagsPertinents) {
-        recommendations.points_faibles.push(`Stratégie hashtags non optimale (${creativeAnalysis.optimisationPlateforme.hashtagsCount} hashtags)`);
-    }
-    
-    // Suggestions enrichies
-    if (metrics.engagementRate < 5) {
-        recommendations.suggestions.push("🎯 Créer un hook plus percutant dans les 3 premières secondes");
-        recommendations.suggestions.push("💬 Poser des questions pour inciter aux commentaires");
-    }
-    
-    if (videoAnalysis?.ELEMENTS_VIRAUX?.length > 0) {
-        recommendations.suggestions.push(`🔥 Exploiter davantage ces éléments viraux détectés: ${videoAnalysis.ELEMENTS_VIRAUX.join(', ')}`);
-    }
-    
-    if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') {
-        recommendations.suggestions.push(`🎯 Optimiser pour la niche ${creativeAnalysis.contenuEnrichi.niche}: utiliser ses codes et hashtags spécifiques`);
-    }
-    
-    if (!creativeAnalysis.structureNarrative.ctaPresent) {
-        recommendations.suggestions.push("📢 Ajouter un CTA clair: 'Abonnez-vous pour plus', 'Dites-moi en commentaire'");
-    }
-    
-    recommendations.suggestions.push("📊 Analyser cette vidéo comme référence pour optimiser les prochaines");
-    
-    return recommendations;
-}
-
-// Validation URL TikTok
-function validateTikTokUrl(url) {
-    const patterns = [
-        /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/,
-        /^https?:\/\/vm\.tiktok\.com\/[\w]+/,
-        /^https?:\/\/www\.tiktok\.com\/t\/[\w]+/
+    // Détection de problèmes dans la transcription
+    const problematicPatterns = [
+        /\[.*?\]/g, // Texte entre crochets (sons non verbaux)
+        /\(.*?\)/g, // Texte entre parenthèses
+        /\.{3,}/g,  // Points de suspension multiples
+        /\s{3,}/g   // Espaces multiples
     ];
-    return patterns.some(pattern => pattern.test(url));
+    
+    problematicPatterns.forEach(pattern => {
+        const matches = (text.match(pattern) || []).length;
+        qualityScore -= matches * 5;
+    });
+    
+    // Bonus pour les timestamps précis
+    if (transcriptionData.words && transcriptionData.words.length > 0) {
+        qualityScore += 10; // Bonus timestamps au niveau mot
+    }
+    
+    return Math.max(0, Math.min(100, qualityScore));
 }
 
-// Formatage des nombres
-function formatNumber(num) {
-    if (!num || num === 0) return '0';
-    if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
-    else if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    else if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-}
+// Enrichissement spécialisé pour les données Lemonfox
+async function enrichLemonfoxTranscription(transcriptionData) {
+    const text = transcriptionData.text || '';
+    const segments = transcriptionData.segments || [];
+    const words = transcriptionData.words || [];
+    
+    if (!text || text.trim().length === 0) {
+        return getEmptyAnalysis();
+    }
 
-// NOUVEAU: Extraction des infos utilisateur
-function extractUserInfo(request) {
-    const headers = request.headers;
+    console.log("🔍 ViralScope: Enrichissement de la transcription Lemonfox...");
+    
+    // Analyse temporelle avancée avec les segments Lemonfox
+    const temporalAnalysis = analyzeTemporalPatterns(segments, words);
+    
+    // Détection de hooks avec timestamps précis
+    const hooksDetected = detectHooksWithTimestamps(segments, text);
+    
+    // Détection de CTAs avec position temporelle
+    const ctaDetected = detectCTAsWithTimestamps(segments, text);
+    
+    // Analyse de la qualité de la parole
+    const speechPatterns = analyzeSpeechPatterns(segments, words);
+    
+    // Sentiment avec analyse temporelle
+    const sentiment = analyzeSentimentTemporal(segments);
+    
+    // Topics avec pondération temporelle
+    const topics = extractTopicsWithWeight(text, segments);
+    
+    // Émotions par segment
+    const emotions = detectEmotionsBySegment(segments);
+    
+    // Mots-clés avec fréquence et position
+    const keywords = extractKeywordsWithPosition(text, words);
+    
+    // Mots viraux avec timing
+    const viralWords = detectViralWordsWithTiming(text, segments);
+    
+    // Insights ViralScope spécialisés
+    const viralScopeInsights = generateViralScopeAudioInsights(
+        text, segments, words, sentiment, topics, emotions, hooksDetected, ctaDetected
+    );
+    
+    // Recommandations d'optimisation audio
+    const audioOptimization = generateAudioOptimizationTips(
+        speechPatterns, temporalAnalysis, hooksDetected, ctaDetected
+    );
+
     return {
-        ip: headers.get('x-forwarded-for') || headers.get('x-real-ip') || 'unknown',
-        userAgent: headers.get('user-agent') || 'unknown',
-        country: headers.get('cf-ipcountry') || 'unknown',
-        timestamp: new Date().toISOString()
+        sentiment,
+        topics,
+        emotions,
+        keywords,
+        viral_words: viralWords,
+        speech_patterns: speechPatterns,
+        hooks_detected: hooksDetected,
+        cta_detected: ctaDetected,
+        temporal_analysis: temporalAnalysis,
+        viralscope_insights: viralScopeInsights,
+        audio_optimization: audioOptimization
     };
 }
 
-// Handler principal avec analyse complète
-export default async function handler(req) {
-    if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Méthode non autorisée' }), { 
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
-        });
+// Analyse des patterns temporels
+function analyzeTemporalPatterns(segments, words) {
+    if (!segments || segments.length === 0) return null;
+    
+    const totalDuration = segments[segments.length - 1]?.end || 0;
+    const avgSegmentDuration = totalDuration / segments.length;
+    
+    // Calcul du débit de parole
+    const totalWords = words.length || segments.reduce((sum, seg) => sum + (seg.text?.split(' ').length || 0), 0);
+    const wordsPerMinute = totalDuration > 0 ? (totalWords / totalDuration) * 60 : 0;
+    
+    // Détection de pauses
+    const pauses = [];
+    for (let i = 1; i < segments.length; i++) {
+        const gap = segments[i].start - segments[i-1].end;
+        if (gap > 0.5) { // Pause de plus de 0.5 seconde
+            pauses.push({
+                start: segments[i-1].end,
+                end: segments[i].start,
+                duration: gap
+            });
+        }
     }
+    
+    return {
+        total_duration: totalDuration,
+        segments_count: segments.length,
+        avg_segment_duration: avgSegmentDuration,
+        words_per_minute: wordsPerMinute,
+        pauses: pauses,
+        speech_rhythm: wordsPerMinute > 150 ? 'rapide' : wordsPerMinute > 120 ? 'normal' : 'lent'
+    };
+}
 
-    try {
-        const body = await req.json().catch(() => null);
-        if (!body || !body.url) {
-            return new Response(JSON.stringify({ error: 'URL manquante' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        const { url: tiktokUrl } = body;
+// Détection de hooks avec timestamps
+function detectHooksWithTimestamps(segments, text) {
+    const hooks = [];
+    
+    const hookPatterns = [
+        { pattern: /^(pourquoi|comment|qui|que|quoi|où|quand)/i, type: 'question', priority: 'high' },
+        { pattern: /(secret|astuce|méthode|technique)/i, type: 'secret', priority: 'high' },
+        { pattern: /(incroyable|choc|fou|dingue)/i, type: 'emotion', priority: 'medium' },
+        { pattern: /^\d+/i, type: 'number', priority: 'medium' },
+        { pattern: /(personne ne|jamais|interdit)/i, type: 'controversial', priority: 'high' }
+    ];
+    
+    segments.forEach((segment, index) => {
+        const segmentText = segment.text || '';
         
-        if (!validateTikTokUrl(tiktokUrl)) {
-            return new Response(JSON.stringify({ error: 'URL TikTok invalide' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        console.log(`🚀 Analyse complète: ${tiktokUrl}`);
-        
-        // Extraction des infos utilisateur
-        const userInfo = extractUserInfo(req);
-        console.log(`👤 Utilisateur: ${userInfo.ip} (${userInfo.country})`);
-
-        let description = null;
-        let thumbnail = null;
-        let stats = null;
-        let videoAnalysis = null;
-        let audioTranscription = null;
-
-        // Étape 1: oEmbed
-        try {
-            console.log("📡 oEmbed...");
-            const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
-            const oembedResponse = await fetch(oembedUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                },
-                signal: AbortSignal.timeout(15000)
-            });
-
-            if (oembedResponse.ok) {
-                const oembedData = await oembedResponse.json();
-                description = oembedData.title || "Description non disponible";
-                thumbnail = oembedData.thumbnail_url;
-                console.log("✅ oEmbed réussi");
-            } else {
-                throw new Error(`oEmbed failed: ${oembedResponse.status}`);
-            }
-        } catch (error) {
-            console.error("❌ Erreur oEmbed:", error.message);
-            return new Response(JSON.stringify({ 
-                error: "Impossible d'accéder à cette vidéo TikTok"
-            }), { 
-                status: 404,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        // Étape 2: Statistiques ScrapingBee
-        const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
-        if (SCRAPINGBEE_API_KEY) {
-            try {
-                console.log("🕷️ ScrapingBee...");
-                const scrapingBeeUrl = new URL('https://app.scrapingbee.com/api/v1/');
-                scrapingBeeUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
-                scrapingBeeUrl.searchParams.set('url', tiktokUrl);
-                scrapingBeeUrl.searchParams.set('render_js', 'true');
-                scrapingBeeUrl.searchParams.set('wait', '4000');
-
-                const response = await fetch(scrapingBeeUrl.toString(), {
-                    signal: AbortSignal.timeout(35000)
+        hookPatterns.forEach(({ pattern, type, priority }) => {
+            if (pattern.test(segmentText)) {
+                hooks.push({
+                    type: type,
+                    text: segmentText.trim(),
+                    start_time: segment.start,
+                    end_time: segment.end,
+                    segment_index: index,
+                    priority: priority,
+                    confidence: segment.avg_logprob || 0.8
                 });
-
-                if (response.ok) {
-                    const html = await response.text();
-                    const data = findJsonBlob(html);
-                    if (data) {
-                        stats = extractStats(data);
-                        if (stats) {
-                            console.log("✅ Stats extraites");
-                            if (stats.description && stats.description.length > description.length) {
-                                description = stats.description;
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn("⚠️ Échec ScrapingBee:", error.message);
             }
-        }
-
-        // Étape 3: NOUVEAU - Analyse vidéo/audio
-        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-        if (OPENAI_API_KEY && thumbnail) {
-            // Analyse du contenu visuel
-            videoAnalysis = await analyzeVideoContent(stats?.videoUrl, thumbnail, description, OPENAI_API_KEY);
-            
-            // Transcription audio (si URL vidéo disponible)
-            if (stats?.videoUrl) {
-                audioTranscription = await transcribeAudio(stats.videoUrl, OPENAI_API_KEY);
-            }
-        }
-
-        // Calculs et analyses
-        const metrics = stats ? calculateAdvancedMetrics(stats) : null;
-        const creativeAnalysis = analyzeCreativeContent(stats, description, stats?.hashtags, videoAnalysis, audioTranscription);
-        const predictiveScore = stats ? calculatePredictiveScore(stats, metrics, creativeAnalysis) : { score: 50, potentielViral: 'moyen' };
-        const recommendations = stats ? generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis) : null;
-
-        // NOUVEAU: Enregistrement de l'analyse
-        const logId = logAnalysis({
-            url: tiktokUrl,
-            author: stats?.author,
-            stats: stats,
-            metrics: metrics,
-            score: predictiveScore.score,
-            potentiel_viral: predictiveScore.potentielViral,
-            niche_detectee: videoAnalysis?.NICHE_DETECTEE,
-            contenu_audio: audioTranscription?.text,
-            contenu_visuel: videoAnalysis?.CONTENU_VISUEL,
-            user_ip: userInfo.ip,
-            user_agent: userInfo.userAgent
         });
-
-        // Réponse finale enrichie
-        const finalResponse = {
-            success: true,
-            analysisId: logId,
-            analysisType: "framework_complet_avec_video_audio",
-            video: {
-                url: tiktokUrl,
-                description,
-                thumbnail,
-                author: stats?.author || null,
-                music: stats?.music || null,
-                hashtags: stats?.hashtags || [],
-                createTime: stats?.createTime || null,
-                videoUrl: stats?.videoUrl || null
-            },
-            stats: stats ? {
-                ...stats,
-                formatted: {
-                    views: formatNumber(stats.views),
-                    likes: formatNumber(stats.likes),
-                    comments: formatNumber(stats.comments),
-                    shares: formatNumber(stats.shares)
-                }
-            } : null,
-            metrics: metrics || {
-                engagementRate: null,
-                likesRatio: null,
-                commentsRatio: null,
-                sharesRatio: null,
-                totalEngagements: null,
-                viralityIndex: null
-            },
-            analysis: {
-                score: predictiveScore.score,
-                potentiel_viral: predictiveScore.potentielViral,
-                points_forts: recommendations?.points_forts || [],
-                points_faibles: recommendations?.points_faibles || [],
-                suggestions: recommendations?.suggestions || [],
-                creative: creativeAnalysis,
-                
-                // NOUVEAU: Contenu enrichi
-                contenu_video: videoAnalysis ? {
-                    niche_detectee: videoAnalysis.NICHE_DETECTEE || 'Non déterminée',
-                    type_contenu: videoAnalysis.TYPE_CONTENU || 'Non déterminé',
-                    qualite_production: videoAnalysis.QUALITE_PRODUCTION || 'Non évaluée',
-                    elements_viraux: videoAnalysis.ELEMENTS_VIRAUX || [],
-                    emotions_suscitees: videoAnalysis.EMOTIONS_SUSCITEES || [],
-                    cible_audience: videoAnalysis.CIBLE_AUDIENCE || 'Non déterminée',
-                    contenu_visuel: videoAnalysis.CONTENU_VISUEL || 'Non analysé',
-                    recommandations_visuelles: videoAnalysis.RECOMMANDATIONS_VISUELLES || []
-                } : null,
-                
-                contenu_audio: audioTranscription ? {
-                    transcription: audioTranscription.text || 'Non disponible',
-                    langue: audioTranscription.language || 'Non détectée',
-                    duree: audioTranscription.duration || null,
-                    sentiment: audioTranscription.sentiment || 'Non analysé',
-                    topics: audioTranscription.topics || [],
-                    confidence: audioTranscription.confidence || 0
-                } : null
-            },
-            metadata: {
-                analysisTimestamp: new Date().toISOString(), // CORRIGÉ: Date formatée correctement
-                frameworkVersion: "5.0-video-audio",
-                apiEndpoint: "/api/analyze-video",
-                userInfo: {
-                    country: userInfo.country,
-                    timestamp: userInfo.timestamp
-                },
-                features: {
-                    oembed: !!thumbnail,
-                    stats_extraction: !!stats,
-                    video_analysis: !!videoAnalysis,
-                    audio_transcription: !!audioTranscription,
-                    logging: true
-                }
-            }
-        };
-
-        console.log(`✅ Analyse complète terminée - ID: ${logId}`);
-        console.log(`🎯 Score: ${predictiveScore.score}/100 (${predictiveScore.potentielViral})`);
-        
-        return new Response(
-            JSON.stringify(finalResponse), 
-            { 
-                status: 200,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'public, max-age=300',
-                    'X-Analysis-ID': logId,
-                    'X-Framework-Version': '5.0-video-audio'
-                }
-            }
-        );
-
-    } catch (error) {
-        console.error("❌ Erreur critique:", error.message);
-        
-        return new Response(
-            JSON.stringify({ 
-                error: "Erreur interne du serveur",
-                errorCode: "ANALYSIS_ERROR",
-                details: process.env.NODE_ENV === 'development' ? error.message : "Erreur de traitement",
-                timestamp: new Date().toISOString(),
-                support: "Réessayez dans quelques instants"
-            }), 
-            { 
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-    }
+    });
+    
+    return hooks;
 }
 
-// NOUVEAU: Endpoint pour récupérer les logs d'analyse (GET /api/analyze-video?logs=true)
-export async function GET(req) {
-    try {
-        const url = new URL(req.url);
-        const showLogs = url.searchParams.get('logs') === 'true';
+// Détection de CTAs avec timestamps
+function detectCTAsWithTimestamps(segments, text) {
+    const ctas = [];
+    
+    const ctaPatterns = [
+        { pattern: /(abonne|follow|s'abonner)/i, type: 'subscribe', action: 'subscription' },
+        { pattern: /(like|j'aime|double.*tap)/i, type: 'like', action: 'engagement' },
+        { pattern: /(commente|commentaire|dis.*moi)/i, type: 'comment', action: 'engagement' },
+        { pattern: /(partage|share|montre)/i, type: 'share', action: 'viral' },
+        { pattern: /(sauvegarde|enregistre|garde)/i, type: 'save', action: 'retention' }
+    ];
+    
+    segments.forEach((segment, index) => {
+        const segmentText = segment.text || '';
         
-        if (showLogs) {
-            // Statistiques des analyses
-            const stats = {
-                total_analyses: analysisLogs.length,
-                derniere_analyse: analysisLogs.length > 0 ? analysisLogs[analysisLogs.length - 1].timestamp : null,
-                top_auteurs: getTopAuthors(),
-                top_niches: getTopNiches(),
-                analyse_par_jour: getAnalysesPerDay()
-            };
-            
-            return new Response(JSON.stringify({
-                success: true,
-                stats: stats,
-                recent_analyses: analysisLogs.slice(-10) // 10 dernières analyses
-            }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-        
-        return new Response(JSON.stringify({
-            error: "Endpoint GET non supporté sans paramètre logs=true"
-        }), {
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
+        ctaPatterns.forEach(({ pattern, type, action }) => {
+            if (pattern.test(segmentText)) {
+                ctas.push({
+                    type: type,
+                    action: action,
+                    text: segmentText.trim(),
+                    start_time: segment.start,
+                    end_time: segment.end,
+                    segment_index: index,
+                    effectiveness: calculateCTAEffectiveness(type, segment.start, segments.length)
+                });
+            }
         });
-        
-    } catch (error) {
-        return new Response(JSON.stringify({
-            error: "Erreur lors de la récupération des logs"
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
+    });
+    
+    return ctas;
 }
 
-// Fonctions utilitaires pour les statistiques
-function getTopAuthors() {
-    const authorCounts = {};
-    analysisLogs.forEach(log => {
-        if (log.author && log.author !== 'Inconnu') {
-            authorCounts[log.author] = (authorCounts[log.author] || 0) + 1;
+// Calcul de l'efficacité des CTAs selon leur position
+function calculateCTAEffectiveness(ctaType, startTime, totalSegments) {
+    const weights = {
+        'subscribe': { early: 0.3, middle: 0.5, end: 0.9 },
+        'like': { early: 0.8, middle: 0.9, end: 0.7 },
+        'comment': { early: 0.6, middle: 0.8, end: 0.9 },
+        'share': { early: 0.4, middle: 0.7, end: 0.8 },
+        'save': { early: 0.5, middle: 0.6, end: 0.9 }
+    };
+    
+    const position = startTime < 5 ? 'early' : startTime > 30 ? 'end' : 'middle';
+    return weights[ctaType]?.[position] || 0.5;
+}
+
+// Analyse des patterns de parole
+function analyzeSpeechPatterns(segments, words) {
+    if (!segments || segments.length === 0) return null;
+    
+    // Analyse des répétitions
+    const wordFreq = {};
+    words.forEach(word => {
+        const cleanWord = word.word?.toLowerCase().replace(/[^\w]/g, '') || '';
+        if (cleanWord.length > 2) {
+            wordFreq[cleanWord] = (wordFreq[cleanWord] || 0) + 1;
         }
     });
     
-    return Object.entries(authorCounts)
+    const repetitions = Object.entries(wordFreq)
+        .filter(([word, count]) => count > 2)
         .sort(([,a], [,b]) => b - a)
-        .slice(0, 10)
-        .map(([author, count]) => ({ author, analyses: count }));
+        .slice(0, 5);
+    
+    // Détection de mots de remplissage
+    const fillerWords = ['euh', 'hum', 'alors', 'donc', 'voilà', 'quoi', 'ben'];
+    const fillerCount = fillerWords.reduce((count, filler) => {
+        return count + (wordFreq[filler] || 0);
+    }, 0);
+    
+    // Analyse de la fluidité
+    const avgConfidence = segments.reduce((sum, seg) => sum + (seg.avg_logprob || 0), 0) / segments.length;
+    
+    return {
+        repetitions: repetitions,
+        filler_words_count: fillerCount,
+        fluency_score: Math.max(0, Math.min(100, (avgConfidence + 5) * 10)), // Conversion log prob
+        speech_clarity: avgConfidence > -0.5 ? 'excellente' : avgConfidence > -1 ? 'bonne' : 'moyenne',
+        vocabulary_richness: Object.keys(wordFreq).length / (words.length || 1)
+    };
 }
 
-function getTopNiches() {
-    const nicheCounts = {};
-    analysisLogs.forEach(log => {
-        if (log.niche_detectee && log.niche_detectee !== 'Non déterminée') {
-            nicheCounts[log.niche_detectee] = (nicheCounts[log.niche_detectee] || 0) + 1;
-        }
-    });
+// Génération d'insights ViralScope spécifiques
+function generateViralScopeAudioInsights(text, segments, words, sentiment, topics, emotions, hooks, ctas) {
+    const insights = [];
     
-    return Object.entries(nicheCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10)
-        .map(([niche, count]) => ({ niche, analyses: count }));
-}
-
-function getAnalysesPerDay() {
-    const daysCounts = {};
-    const now = new Date();
-    
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        daysCounts[dateStr] = 0;
+    // Analyse de la durée
+    const totalDuration = segments[segments.length - 1]?.end || 0;
+    if (totalDuration < 10) {
+        insights.push("⚠️ Contenu audio très court - Ajouter plus de contenu pour maximiser l'engagement");
+    } else if (totalDuration > 60) {
+        insights.push("📏 Contenu audio long - Risque de perte d'attention, considérer un montage plus serré");
+    } else {
+        insights.push(`✅ Durée audio optimale (${totalDuration.toFixed(1)}s) pour TikTok`);
     }
     
-    analysisLogs.forEach(log => {
-        const dateStr = log.timestamp.split('T')[0];
-        if (daysCounts.hasOwnProperty(dateStr)) {
-            daysCounts[dateStr]++;
+    // Analyse des hooks
+    if (hooks.length > 0) {
+        const earlyHooks = hooks.filter(h => h.start_time < 5);
+        if (earlyHooks.length > 0) {
+            insights.push(`🎣 Hook efficace détecté dans les premières secondes: "${earlyHooks[0].text}"`);
+        } else {
+            insights.push("⏰ Hook détecté mais tardif - Déplacer l'accroche au début pour maximum d'impact");
         }
-    });
+    } else {
+        insights.push("❌ Aucun hook audio détecté - Ajouter une accroche verbale forte au début");
+    }
     
-    return Object.entries(daysCounts).map(([date, count]) => ({ date, analyses: count }));
+    // Analyse des CTAs
+    if (ctas.length > 0) {
+        const bestCTA = ctas.sort((a, b) => b.effectiveness - a.effectiveness)[0];
+        insights.push(`📢 CTA optimal détecté: "${bestCTA.text}" (efficacité: ${(bestCTA.effectiveness * 100).toFixed(0)}%)`);
+    } else {
+        insights.push("📢 Aucun appel à l'action verbal - Ajouter un CTA clair pour booster l'engagement");
+    }
+    
+    // Analyse du sentiment
+    if (sentiment === 'très positif' || sentiment === 'positif') {
+        insights.push("😊 Énergie positive détectée - Excellent pour la viralité et l'engagement");
+    } else if (sentiment === 'neutre') {
+        insights.push("😐 Ton neutre - Ajouter plus d'émotion pour captiver l'audience");
+    }
+    
+    // Analyse des topics
+    if (topics.length > 0) {
+        insights.push(`🎯 Thématiques claires: ${topics.slice(0, 2).join(', ')} - Bon pour le ciblage algorithme`);
+    } else {
+        insights.push("❓ Sujet peu défini - Clarifier la thématique pour améliorer la découvrabilité");
+    }
+    
+    return insights;
 }
+
+// Conseils d'optimisation audio
+function generateAudioOptimizationTips(speechPatterns, temporalAnalysis, hooks, ctas) {
+    const tips = [];
+    
+    // Optimisation du débit
+    if (temporalAnalysis?.words_per_minute > 180) {
+        tips.push("🚨 Débit trop rapide - Ralentir pour améliorer la compréhension");
+    } else if (temporalAnalysis?.words_per_minute < 120) {
+        tips.push("🐌 Débit lent - Accélérer légèrement pour maintenir l'attention");
+    } else {
+        tips.push("✅ Débit de parole optimal pour TikTok");
+    }
+    
+    // Optimisation de la clarté
+    if (speechPatterns?.filler_words_count > 3) {
+        tips.push("🗣️ Réduire les mots de remplissage ('euh', 'alors') pour plus de professionnalisme");
+    }
+    
+    // Optimisation des hooks
+    if (hooks.length === 0) {
+        tips.push("🎣 Ajouter une phrase d'accroche forte dans les 3 premières secondes");
+    }
+    
+    // Optimisation des pauses
+    if (temporalAnalysis?.pauses?.length > 5) {
+        tips.push("✂️ Réduire les pauses longues en post-production pour maintenir le rythme");
+    }
+    
+    // Optimisation globale
+    tips.push("🎵 Synchroniser la voix avec la musique pour créer un rythme engageant");
+    tips.push("🔊 Vérifier que l'audio est audible même sans casque");
+    
+    return tips;
+}
+
+// Fonction vide pour les cas d'échec
+function getEmptyAnalysis() {
+    return {
+        sentiment: 'non analysé',
+        topics: [],
+        emotions: [],
+        keywords: [],
+        viral_words: [],
+        speech_patterns: null,
+        hooks_detected: [],
+        cta_detected: [],
+        temporal_analysis: null,
+        viralscope_insights: ['❌ Échec de la transcription audio'],
+        audio_optimization: ['🔧 Vérifier la qualité audio de la vidéo']
+    };
+}
+
+// Export de la fonction principale pour l'intégration
+export { transcribeAudioWithLemonfox };
