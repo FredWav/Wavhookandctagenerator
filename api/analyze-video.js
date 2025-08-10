@@ -65,7 +65,7 @@ async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
         };
     } catch (error) {
         console.error("❌ ViralScope: Erreur transcription Lemonfox:", error.message);
-        return null;
+        return null; // On ne bloque pas tout si la transcription échoue
     }
 }
 
@@ -137,7 +137,7 @@ function detectCTAsWithTimestamps(segments, text) {
 }
 
 function analyzeSpeechPatterns(segments, words) {
-    if (!segments || !segments.length === 0) return { filler_words_count: 0 };
+    if (!segments || segments.length === 0) return { filler_words_count: 0 };
     const wordFreq = {};
     words.forEach(w => {
         const clean = w.word?.toLowerCase().replace(/[^\w]/g, '') || '';
@@ -149,7 +149,7 @@ function analyzeSpeechPatterns(segments, words) {
 
 function generateViralScopeAudioInsights(segments, hooks, ctas) {
     const insights = [];
-    const duration = segments[segments.length - 1]?.end || 0;
+    const duration = segments.length > 0 ? segments[segments.length - 1]?.end || 0 : 0;
     if (duration > 60) insights.push("📏 Contenu audio long - Risque de perte d'attention.");
     else insights.push(`✅ Durée audio optimale (${duration.toFixed(1)}s).`);
     if (hooks.some(h => h.start_time < 3)) insights.push("🎣 Hook efficace détecté dans les 3 premières secondes.");
