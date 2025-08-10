@@ -17,7 +17,6 @@
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);}
   .inner{padding:18px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  input[type="text"]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--ink)}
   .pill{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px}
   .pill.hook{border-color:var(--blue); color:var(--blue);}
   .pill.cta{border-color:var(--green); color:var(--green);}
@@ -35,7 +34,6 @@
         <a href="analyzer.html" class="nav-link">Analyseur</a>
     </nav>
   </header>
-
   <section class="wrap">
     <div class="card"><div class="inner">
       <div class="row">
@@ -45,9 +43,51 @@
     </div></div>
     <div class="card"><div class="inner" id="list"></div></div>
   </section>
-
 <script>
-  // Script complet pour la page d'historique (inchangé par rapport aux versions précédentes)
+  const $ = id => document.getElementById(id);
+  const HOOKS_KEY = 'hgpp_history_v1';
+  const CTAS_KEY = 'hgpp_cta_history_v1';
+  function render(type) {
+    const root = $('list');
+    const key = type === 'hooks' ? HOOKS_KEY : CTAS_KEY;
+    const data = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!data.length) {
+      root.innerHTML = `<div class="muted">Aucun enregistrement.</div>`;
+      return;
+    }
+    root.innerHTML = data.map(e => {
+      if (type === 'hooks') {
+        return `<div style="margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+            <div class="row" style="justify-content:space-between">
+              <div><span class="pill hook">Hook</span><span class="pill">${e.platform||''}</span><span class="pill">${e.tone||''}</span></div>
+              <div class="muted">${new Date(e.ts).toLocaleString()}</div>
+            </div>
+            <div><b>${e.theme}</b> — <span class="muted">${e.niche}</span></div>
+            <div class="muted" style="font-size:14px;">${(e.hooks||[]).length} hooks générés</div>
+          </div>`;
+      } else {
+        return `<div style="margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+            <div class="row" style="justify-content:space-between">
+              <div><span class="pill cta">CTA</span><span class="pill">${e.cta_goal||''}</span><span class="pill">${e.tone||''}</span></div>
+              <div class="muted">${new Date(e.ts).toLocaleString()}</div>
+            </div>
+            <div><b>${e.niche}</b> — <span class="muted">${e.benefit || 'Sans bénéfice'}</span></div>
+            <div class="muted" style="font-size:14px;">${(e.ctas||[]).length} CTAs générés</div>
+          </div>`;
+      }
+    }).join('');
+  }
+  function switchView(type) {
+    $('showHooks').classList.toggle('active', type === 'hooks');
+    $('showCTAs').classList.toggle('active', type === 'ctas');
+    $('showCTAs').style.borderColor = type === 'ctas' ? 'var(--green)' : 'var(--border)';
+    $('showCTAs').style.color = type === 'ctas' ? '#fff' : 'var(--ink)';
+    $('showCTAs').style.backgroundColor = type === 'ctas' ? 'var(--green)' : 'transparent';
+    render(type);
+  }
+  $('showHooks').onclick = () => switchView('hooks');
+  $('showCTAs').onclick = () => switchView('ctas');
+  switchView('hooks');
 </script>
 </body>
 </html>
