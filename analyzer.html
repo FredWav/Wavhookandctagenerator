@@ -420,7 +420,7 @@
 
   <script>
     // Configuration - Remplacez par l'URL de votre API
-    const API_ENDPOINT = '/api/analyze-video'; // ou 'https://votre-domaine.com/api/analyze-tiktok'
+    const API_ENDPOINT = '/api/analyze-tiktok'; // ou 'https://votre-domaine.com/api/analyze-tiktok'
 
     // Fonction pour basculer entre thème sombre et clair
     function toggleTheme() {
@@ -710,87 +710,4 @@
         const data = await response.json();
         console.log('✅ Données reçues de l\'API:', data);
         
-        if (!data.success) {
-          throw new Error(data.error || 'Échec de l\'analyse');
-        }
-        
-        showResults(data);
-        
-      } catch (error) {
-        console.error('❌ Erreur complète:', error);
-        
-        // Messages d'erreur plus spécifiques
-        let errorMessage = error.message;
-        if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion internet.';
-        } else if (error.message.includes('404')) {
-          errorMessage = 'Vidéo TikTok introuvable. Elle est peut-être privée, supprimée ou l\'URL est incorrecte.';
-        } else if (error.message.includes('403')) {
-          errorMessage = 'Accès interdit à cette vidéo TikTok. Elle est peut-être géo-restreinte.';
-        } else if (error.message.includes('500')) {
-          errorMessage = 'Erreur du serveur. Réessayez dans quelques instants.';
-        }
-        
-        showError(errorMessage);
-      } finally {
-        btn.disabled = false;
-        btnText.textContent = 'Analyser';
-      }
-    }
-
-    // Initialisation au chargement de la page
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ Analyseur TikTok PRO initialisé !');
-      
-      // Restaurer le thème sauvegardé
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-      }
-      
-      // Auto-focus sur le champ URL
-      document.getElementById('videoUrl').focus();
-      
-      // Gestion du collage automatique
-      document.getElementById('videoUrl').addEventListener('paste', function(e) {
-        setTimeout(() => {
-          const url = e.target.value;
-          if (url && url.includes('tiktok.com')) {
-            console.log('📋 URL TikTok collée automatiquement');
-          }
-        }, 100);
-      });
-      
-      // Raccourci clavier : Enter pour analyser
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && e.ctrlKey) {
-          const form = document.querySelector('form');
-          if (form) {
-            form.dispatchEvent(new Event('submit'));
-          }
-        }
-      });
-    });
-
-    // Fonction utilitaire pour copier l'URL
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        console.log('📋 URL copiée dans le presse-papier');
-      });
-    }
-
-    // Gestion des erreurs globales
-    window.addEventListener('error', function(e) {
-      console.error('❌ Erreur JavaScript:', e.error);
-    });
-
-    // Service Worker pour le cache (optionnel)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        // Vous pouvez ajouter un service worker ici pour le cache
-      });
-    }
-  </script>
-</body>
-</html>
-
+        if
