@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="color-scheme" content="dark light"/>
-<title>Analyseur TikTok – PRO Framework</title>
+<title>ViralScope PRO – Analyseur TikTok</title>
 <style>
   :root {
     --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #d946ef; --accent-strong: #c026d3; --radius: 16px; --font-sans: 'Inter', system-ui, sans-serif;
@@ -25,41 +25,32 @@
   .card-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
   .icon { width: 24px; height: 24px; color: var(--muted); }
   label { font-weight: 500; display: block; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
-  input[type="url"] { width: 100%; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 10px; background: rgba(0,0,0,0.2); color: var(--ink); font-size: 15px; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-  [data-theme="light"] input[type="url"] { background: #F9FAFB; }
-  input[type="url"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2); }
-  .btn { border: 0; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; min-width: 120px; }
+  input[type="url"] { width: 100%; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 10px; background: rgba(0,0,0,0.2); color: var(--ink); font-size: 15px; }
+  .btn { border: 0; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .btn.primary { background: var(--accent); color: #fff; }
-  .btn.primary:hover:not(:disabled) { background: var(--accent-strong); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3); }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   #results { min-height: 200px; }
   .loader { text-align: center; padding: 2rem; }
   .spinner { width: 32px; height: 32px; border: 4px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 1rem; }
-  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease-out; }
-  .framework-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
-  .pillar-card { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem; transition: all 0.3s ease; }
-  .pillar-card:hover { transform: translateY(-4px); border-color: var(--accent); }
-  .pillar-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-  .pillar-content { font-size: 0.9rem; line-height: 1.6; }
-  .metric-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .metric-item:last-child { border-bottom: none; }
-  .metric-value { font-weight: 600; color: var(--ink); }
-  .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; position: relative; background: conic-gradient(var(--accent) 0deg, var(--accent) calc(var(--score) * 3.6deg), rgba(255,255,255,0.1) calc(var(--score) * 3.6deg)); }
-  .score-inner { width: 90px; height: 90px; background: var(--card-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-  .score-number { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
-  .score-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .hashtag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .hashtag-item { background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
-  .author-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
   .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 1rem; border-radius: 12px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--card-border); margin-bottom: 1.5rem; }
+  .tab-btn { background: none; border: none; color: var(--muted); padding: 10px 16px; cursor: pointer; font-size: 15px; font-weight: 500; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+  .info-card { background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; }
+  h3 { font-size: 1.1rem; margin-top: 0; }
+  .transcription-segment { margin-bottom: 1rem; padding: 0.5rem; border-left: 3px solid var(--card-border); }
+  .transcription-segment:hover { background-color: rgba(255,255,255,0.05); }
+  .timestamp { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
 </style>
 </head>
 <body>
   <div class="main-layout">
     <header>
-      <h1>🎵 Analyseur TikTok – PRO</h1>
+      <h1>🔬 ViralScope PRO</h1>
       <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
         <a href="./hooks.html" class="nav-link">Hooks</a>
         <a href="./cta.html" class="nav-link">CTAs</a>
@@ -73,144 +64,115 @@
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
         <h2>Analyser une vidéo TikTok</h2>
       </div>
-      
       <form onsubmit="analyzeVideo(event)">
         <label for="videoUrl">URL de la vidéo TikTok</label>
         <input type="url" id="videoUrl" placeholder="https://www.tiktok.com/@username/video/..." required />
         <br><br>
-        <button type="submit" class="btn primary" id="analyzeBtn">
-          <span id="btnText">Analyser</span>
-        </button>
+        <button type="submit" class="btn primary" id="analyzeBtn"><span id="btnText">Analyser</span></button>
       </form>
     </div>
     
     <div class="card">
       <div class="card-header">
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        <h2>Analyse Framework Intégré</h2>
+        <h2>Résultats de l'analyse</h2>
       </div>
-      
       <div id="results">
         <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          🎯 Entrez une URL TikTok pour lancer l'analyse complète
+          🎯 Entrez une URL pour lancer l'analyse audio et statistique.
         </p>
       </div>
     </div>
   </div>
 
 <script>
-    // --- UTILS ---
     const $ = id => document.getElementById(id);
 
-    // --- FONCTIONS D'AFFICHAGE (UI) ---
     function showLoader() {
-        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p style="margin-top: 1rem; color: var(--muted);">Analyse en cours...</p><div class="progress-bar"><div class="progress-fill"></div></div></div>`;
+        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p>Analyse en cours...</p></div>`;
     }
 
     function showError(message) {
         $('results').innerHTML = `<div class="error-message"><strong>❌ Erreur :</strong> ${message}</div>`;
     }
-
-    // --- FONCTIONS DE RENDU (Composants) ---
-    function renderVideoHeader(video, stats) {
-        if (!video) return '';
-        return `
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
-                <img src="${video.thumbnail}" alt="Miniature" style="margin: 0; max-width: 150px; border-radius: 8px;">
-                <div>
-                    <div class="author-info"><span>👤</span><strong>@${video.author}</strong></div>
-                    <p style="color: var(--muted); font-style: italic; margin: 0; line-height: 1.5;">"${video.description}"</p>
-                    ${video.hashtags?.length ? `<div class="hashtag-list" style="margin-top: 1rem;">${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}</div>` : ''}
-                </div>
-            </div>
-        `;
-    }
     
-    function renderPillars(stats, metrics, analysis) {
-        if (!stats || !metrics || !analysis) return '<p class="muted">Analyse des piliers non disponible.</p>';
-        return `
-            <h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">🏛️ Framework d'Analyse à 4 Piliers</h3>
-            <div class="framework-grid">
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>📊</span>Quantitatif</div>
-                    <div class="pillar-content">
-                        <div class="metric-item"><span>Vues</span><span class="metric-value">${stats.views.toLocaleString('fr-FR')}</span></div>
-                        <div class="metric-item"><span>Taux d'engagement</span><span class="metric-value">${metrics.engagementRate.toFixed(1)}%</span></div>
-                        <div class="metric-item"><span>Ratio Likes/Vues</span><span class="metric-value">${metrics.likesRatio.toFixed(1)}%</span></div>
-                    </div>
-                </div>
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>🎨</span>Qualitatif</div>
-                    <div class="pillar-content">
-                        <div class="metric-item"><span>Hook puissant</span><span class="metric-value">${analysis.qualitatif.hookPuissant ? '✅' : '❌'}</span></div>
-                        <div class="metric-item"><span>Message clair</span><span class="metric-value">${analysis.qualitatif.messageClair ? '✅' : '❌'}</span></div>
-                        <div class="metric-item"><span>CTA présent</span><span class="metric-value">${analysis.qualitatif.ctaPresent ? '✅' : '❌'}</span></div>
-                    </div>
-                </div>
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>⚙️</span>Algorithmique</div>
-                    <div class="pillar-content">
-                        <div class="metric-item"><span>Hashtags pertinents</span><span class="metric-value">${analysis.algorithmique.hashtagsPertinents ? '✅' : '❌'}</span></div>
-                        <div class="metric-item"><span>Durée optimale</span><span class="metric-value">${analysis.algorithmique.dureeOptimale ? '✅' : '❌'}</span></div>
-                        <div class="metric-item"><span>Tendance utilisée</span><span class="metric-value">${analysis.algorithmique.tendanceUtilisee ? '✅' : '❌'}</span></div>
-                    </div>
-                </div>
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>📈</span>Comparatif</div>
-                    <div class="pillar-content">
-                        <div class="metric-item"><span>Potentiel Viral</span><span class="metric-value">${analysis.comparatif.potentielViral}</span></div>
-                        <div class="metric-item"><span>Benchmark ER</span><span class="metric-value">${analysis.comparatif.benchmarkER}</span></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    function renderRecommendations(analysis) {
-        if (!analysis) return '';
-        return `
-            <div class="analysis-list" style="margin-top: 2rem;">
-                <h3 style="color: #10b981;">✅ Points forts identifiés</h3>
-                <ul>${analysis.points_forts.map(p => `<li>${p}</li>`).join('')}</ul>
-                <h3 style="color: #f59e0b;">⚠️ Axes d'amélioration</h3>
-                <ul>${analysis.points_faibles.map(p => `<li>${p}</li>`).join('')}</ul>
-                <h3 style="color: var(--accent);">💡 Optimisations recommandées</h3>
-                <ul>${analysis.suggestions.map(p => `<li>${p}</li>`).join('')}</ul>
-            </div>
-        `;
+    function activateTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        $(`tab-btn-${tabName}`).classList.add('active');
+        $(`tab-content-${tabName}`).classList.add('active');
     }
 
     function showResults(data) {
-        if (window.loaderInterval) clearInterval(window.loaderInterval);
+        const { stats, audioAnalysis } = data;
         
-        const { video, stats, metrics, analysis } = data;
-
-        // Si l'analyse IA échoue, on affiche un message clair
-        if (!analysis) {
-            showError("L'analyse IA a échoué (filtre de contenu ?), mais les statistiques ont été récupérées.");
-            return;
-        }
-
-        // Si le scraping des stats échoue mais qu'on a les infos de base
-        if (!stats) {
-            $('results').innerHTML = renderVideoHeader(video, null) + `<p class="error-message">⚠️ Analyse limitée : Impossible de récupérer les statistiques détaillées.</p>`;
-            return;
-        }
+        // --- ONGLET 1: SYNTHÈSE ---
+        const A_insights = audioAnalysis.viralscope_insights.map(i => `<li>${i}</li>`).join('');
+        const B_optimizations = audioAnalysis.audio_optimization.map(o => `<li>${o}</li>`).join('');
+        const tab1_synthesis = `
+            <div class="grid-2">
+                <div class="info-card">
+                    <h3>✅ Insights Clés</h3>
+                    <ul>${A_insights}</ul>
+                </div>
+                <div class="info-card">
+                    <h3>💡 Optimisations Audio</h3>
+                    <ul>${B_optimizations}</ul>
+                </div>
+            </div>
+        `;
+        
+        // --- ONGLET 2: TRANSCRIPTION ---
+        const C_segments = audioAnalysis.segments.map(seg => `
+            <div class="transcription-segment">
+                <p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p>
+                <p>${seg.text}</p>
+            </div>
+        `).join('');
+        const tab2_transcription = `<div>${C_segments}</div>`;
+        
+        // --- ONGLET 3: ANALYSE DÉTAILLÉE ---
+        const D_hooks = audioAnalysis.hooks_detected.map(h => `<li>"${h.text}" <i>(à ${h.start_time.toFixed(1)}s)</i></li>`).join('');
+        const E_ctas = audioAnalysis.cta_detected.map(c => `<li>"${c.text}" <i>(à ${c.start_time.toFixed(1)}s)</i></li>`).join('');
+        const F_wpm = audioAnalysis.temporal_analysis.words_per_minute.toFixed(0);
+        const G_fillers = audioAnalysis.speech_patterns.filler_words_count;
+        const tab3_details = `
+            <div class="grid-2">
+                <div class="info-card">
+                    <h3>🎣 Hooks Détectés</h3>
+                    ${D_hooks ? `<ul>${D_hooks}</ul>` : '<p class="muted">Aucun hook détecté.</p>'}
+                </div>
+                <div class="info-card">
+                    <h3>📢 CTAs Détectés</h3>
+                    ${E_ctas ? `<ul>${E_ctas}</ul>` : '<p class="muted">Aucun CTA détecté.</p>'}
+                </div>
+                <div class="info-card">
+                    <h3>🗣️ Rythme de parole</h3>
+                    <p>${F_wpm} mots/minute</p>
+                </div>
+                <div class="info-card">
+                    <h3>💬 Mots de remplissage</h3>
+                    <p>${G_fillers} ("euh", "alors", etc.)</p>
+                </div>
+            </div>
+        `;
 
         $('results').innerHTML = `
-            ${renderVideoHeader(video, stats)}
-            ${renderPillars(stats, metrics, analysis)}
-            ${renderRecommendations(analysis)}
+            <div class="tabs">
+                <button class="tab-btn active" id="tab-btn-synthesis" onclick="activateTab('synthesis')">Synthèse</button>
+                <button class="tab-btn" id="tab-btn-transcription" onclick="activateTab('transcription')">Transcription</button>
+                <button class="tab-btn" id="tab-btn-details" onclick="activateTab('details')">Analyse Détaillée</button>
+            </div>
+            <div id="tab-content-synthesis" class="tab-content active">${tab1_synthesis}</div>
+            <div id="tab-content-transcription" class="tab-content">${tab2_transcription}</div>
+            <div id="tab-content-details" class="tab-content">${tab3_details}</div>
         `;
     }
 
-    // --- FONCTION PRINCIPALE D'ANALYSE ---
     async function analyzeVideo(event) {
         event.preventDefault();
-        
         const url = $('videoUrl').value.trim();
         const btn = $('analyzeBtn');
-        const btnText = $('btnText');
         
         if (!url.includes('tiktok.com')) {
             showError('Veuillez entrer une URL TikTok valide.');
@@ -218,7 +180,6 @@
         }
         
         btn.disabled = true;
-        btnText.textContent = 'Analyse...';
         showLoader();
         
         try {
@@ -237,19 +198,12 @@
             showResults(data);
             
         } catch (error) {
-            console.error('❌ Erreur Framework:', error);
+            console.error('❌ Erreur:', error);
             showError(error.message);
         } finally {
             btn.disabled = false;
-            btnText.textContent = 'Analyser';
         }
     }
-
-    // --- Initialisation de la page ---
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ Analyseur TikTok Framework PRO initialisé');
-        $('videoUrl').focus();
-    });
 </script>
 </body>
 </html>
