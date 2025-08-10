@@ -34,6 +34,7 @@
   .spinner { width: 32px; height: 32px; border: 4px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 1rem; border-radius: 12px; }
+  .warning-message { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; }
   .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--card-border); margin-bottom: 1.5rem; }
   .tab-btn { background: none; border: none; color: var(--muted); padding: 10px 16px; cursor: pointer; font-size: 15px; font-weight: 500; border-bottom: 2px solid transparent; }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -109,6 +110,13 @@
     function showResults(data) {
         const { video, stats, metrics, analysis, audioAnalysis } = data;
         
+        // **CORRECTIF ANTI-CRASH**
+        // On vérifie que l'analyse de l'IA existe avant d'essayer de l'utiliser.
+        if (!analysis) {
+            showError("L'analyse IA a échoué (contenu bloqué par un filtre de sécurité ?), mais les données de la vidéo ont été récupérées.");
+            return;
+        }
+
         const tab1_synthesis = `
             <div class="grid-2">
                 <div class="info-card"><h3>✅ Points Forts</h3><ul>${analysis.points_forts.map(i => `<li>${i}</li>`).join('')}</ul></div>
@@ -119,7 +127,9 @@
         const segments = audioAnalysis?.segments?.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('') || '<p class="muted">Transcription non disponible.</p>';
         const tab2_transcription = `<div>${segments}</div>`;
         
-        const tab3_framework = `
+        // **CORRECTIF ANTI-CRASH**
+        // On affiche le framework uniquement si on a les stats (`metrics` existe).
+        const frameworkHtml = !metrics ? '<div class="warning-message">Les statistiques détaillées n\'ont pas pu être récupérées. L\'analyse du framework est partielle.</div>' : `
             <div class="framework-grid">
                 <div class="pillar-card">
                     <div class="pillar-title"><span>📊</span>Quantitatif</div>
@@ -159,7 +169,7 @@
                 <button class="tab-btn" id="tab-btn-transcription" onclick="activateTab('transcription')">Transcription Audio</button>
             </div>
             <div id="tab-content-synthesis" class="tab-content active">${tab1_synthesis}</div>
-            <div id="tab-content-framework" class="tab-content">${tab3_framework}</div>
+            <div id="tab-content-framework" class="tab-content">${frameworkHtml}</div>
             <div id="tab-content-transcription" class="tab-content">${tab2_transcription}</div>
         `;
     }
