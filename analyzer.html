@@ -345,6 +345,7 @@
   </div>
 
   <script>
+    // Fonction pour basculer entre thème sombre et clair
     function toggleTheme() {
       const html = document.documentElement;
       const currentTheme = html.getAttribute('data-theme');
@@ -352,6 +353,7 @@
       html.setAttribute('data-theme', newTheme);
     }
 
+    // Fonction pour afficher le loader
     function showLoader() {
       document.getElementById('results').innerHTML = `
         <div class="loader">
@@ -361,6 +363,7 @@
       `;
     }
 
+    // Fonction pour afficher les erreurs
     function showError(message) {
       document.getElementById('results').innerHTML = `
         <div class="error-message">
@@ -369,6 +372,153 @@
       `;
     }
 
+    // Fonction pour scraper les données TikTok directement
+    async function scrapeTikTokData(url) {
+      try {
+        console.log('🕷️ Scraping direct des données TikTok...');
+        
+        // Utilisation d'un proxy CORS pour contourner les restrictions
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        
+        const response = await fetch(proxyUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        
+        if (!response.ok) throw new Error(`Impossible d'accéder à la vidéo: ${response.status}`);
+        
+        const html = await response.text();
+        console.log('📄 HTML récupéré, extraction des données...');
+        
+        // Extraction du JSON depuis le HTML
+        let jsonData = null;
+        
+        // Méthode 1: SIGI_STATE
+        let match = html.match(/<script id="SIGI_STATE" type="application\/json">(.*?)<\/script>/s);
+        if (match) {
+          try {
+            jsonData = JSON.parse(match[1]);
+            console.log('✅ Données trouvées via SIGI_STATE');
+          } catch (e) {
+            console.warn('❌ Erreur parsing SIGI_STATE');
+          }
+        }
+        
+        // Méthode 2: __UNIVERSAL_DATA_FOR_REHYDRATION__
+        if (!jsonData) {
+          match = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json">(.*?)<\/script>/s);
+          if (match) {
+            try {
+              jsonData = JSON.parse(match[1]);
+              console.log('✅ Données trouvées via __UNIVERSAL_DATA_FOR_REHYDRATION__');
+            } catch (e) {
+              console.warn('❌ Erreur parsing __UNIVERSAL_DATA_FOR_REHYDRATION__');
+            }
+          }
+        }
+        
+        // Méthode 3: Extraction depuis les meta tags
+        if (!jsonData) {
+          console.log('🔍 Tentative d\'extraction depuis les meta tags...');
+          
+          const getMetaContent = (property) => {
+            const regex = new RegExp(`<meta[^>]*(?:property|name)="${property}"[^>]*content="([^"]*)"`, 'i');
+            const match = html.match(regex);
+            return match ? match[1] : null;
+          };
+          
+          const title = getMetaContent('og:title') || getMetaContent('twitter:title');
+          const description = getMetaContent('og:description') || getMetaContent('twitter:description');
+          const thumbnail = getMetaContent('og:image') || getMetaContent('twitter:image');
+          
+          if (title || description) {
+            return {
+              video: {
+                url,
+                description: description || title || 'Vidéo TikTok',
+                thumbnail
+              },
+              stats: null,
+              metrics: { engagementRate: null },
+              analysis: null,
+              success: true,
+              source: 'meta-tags'
+            };
+          }
+        }
+        
+        if (!jsonData) {
+          throw new Error('Impossible d\'extraire les données de cette vidéo');
+        }
+        
+        // Extraction des données selon la structure trouvée
+        let videoData = null;
+        let stats = null;
+        
+        // Structure SIGI_STATE
+        if (jsonData.ItemModule) {
+          const videoId = Object.keys(jsonData.ItemModule)[0];
+          videoData = jsonData.ItemModule[videoId];
+        }
+        // Structure __UNIVERSAL_DATA_FOR_REHYDRATION__
+        else if (jsonData['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct) {
+          videoData = jsonData['__DEFAULT_SCOPE__']['webapp.video-detail'].itemInfo.itemStruct;
+        }
+        
+        if (videoData) {
+          stats = {
+            views: parseInt(videoData.stats?.playCount) || 0,
+            likes: parseInt(videoData.stats?.diggCount) || 0,
+            comments: parseInt(videoData.stats?.commentCount) || 0,
+            shares: parseInt(videoData.stats?.shareCount) || 0,
+            duration: videoData.video?.duration || null
+          };
+          
+          // Formatage des nombres
+          const formatNumber = (num) => {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+          };
+          
+          stats.formatted = {
+            views: formatNumber(stats.views),
+            likes: formatNumber(stats.likes),
+            comments: formatNumber(stats.comments),
+            shares: formatNumber(stats.shares)
+          };
+          
+          const engagementRate = stats.views > 0 ? 
+            ((stats.likes + stats.comments + stats.shares) / stats.views) * 100 : 0;
+          
+          return {
+            success: true,
+            video: {
+              url,
+              description: videoData.desc || 'Vidéo TikTok',
+              thumbnail: videoData.video?.cover || videoData.video?.dynamicCover
+            },
+            stats,
+            metrics: {
+              engagementRate: parseFloat(engagementRate.toFixed(2)),
+              likesRatio: stats.views > 0 ? parseFloat(((stats.likes / stats.views) * 100).toFixed(2)) : 0
+            },
+            analysis: null, // On peut ajouter une analyse basique
+            timestamp: new Date().toISOString(),
+            source: 'scraped'
+          };
+        }
+        
+        throw new Error('Structure de données non reconnue');
+        
+      } catch (error) {
+        console.error('❌ Erreur scraping:', error);
+        throw error;
+      }
+    }
+
+    // Fonction pour afficher les résultats
     function showResults(data) {
       if (!data || !data.success) {
         showError('Données invalides reçues de l\'API');
@@ -502,6 +652,7 @@
       `;
     }
 
+    // Fonction principale d'analyse
     async function analyzeVideo(event) {
       event.preventDefault();
       
@@ -518,93 +669,12 @@
       showLoader();
       
       try {
-        console.log('📡 Envoi de la requête à l\'API...');
+        console.log('🚀 Démarrage de l\'analyse...');
         
-        // 🚨 MODE DEBUG: Décommentez cette section pour tester avec des données mockées
-        /*
-        console.log('⚠️ Mode debug activé - utilisation de données mockées');
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulation délai
-        const mockData = {
-          success: true,
-          video: {
-            url: url,
-            description: "Vidéo TikTok de test analysée avec succès",
-            thumbnail: "https://via.placeholder.com/300x300"
-          },
-          stats: {
-            views: 2500000,
-            likes: 156200,
-            comments: 8900,
-            shares: 12300,
-            duration: 58,
-            formatted: {
-              views: "2.5M",
-              likes: "156.2K", 
-              comments: "8.9K",
-              shares: "12.3K"
-            }
-          },
-          metrics: {
-            engagementRate: 12.4,
-            likesRatio: 6.2
-          },
-          analysis: {
-            score: 85,
-            potentiel_viral: "élevé",
-            points_forts: ["Excellent taux d'engagement", "Contenu viral", "Timing parfait"],
-            points_faibles: ["Pourrait améliorer les hashtags"],
-            suggestions: ["Poster à 19h-21h", "Utiliser plus de trending sounds", "Ajouter des call-to-action"]
-          },
-          timestamp: new Date().toISOString()
-        };
-        showResults(mockData);
-        return;
-        */
-        // 🚨 FIN MODE DEBUG
+        // Scraping direct des données TikTok
+        const data = await scrapeTikTokData(url);
+        console.log('✅ Données récupérées:', data);
         
-        // Appel à votre API réelle
-        const response = await fetch('/api/analyze-tiktok', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ url })
-        });
-        
-        console.log('📥 Réponse reçue:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-        
-        // Vérifier le Content-Type de la réponse
-        const contentType = response.headers.get('content-type');
-        console.log('📋 Content-Type:', contentType);
-        
-        // Lire la réponse en tant que texte d'abord
-        const responseText = await response.text();
-        console.log('📝 Réponse brute (premiers 200 caractères):', responseText.substring(0, 200));
-        
-        // Si ce n'est pas du JSON, afficher l'erreur
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error(`L'API a retourné du ${contentType || 'HTML'} au lieu du JSON. Vérifiez que l'endpoint existe.`);
-        }
-        
-        // Tenter de parser le JSON
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('❌ Erreur de parsing JSON:', parseError);
-          throw new Error(`Réponse API invalide. Contenu reçu: "${responseText.substring(0, 100)}..."`);
-        }
-        
-        // Vérifier si l'API a retourné une erreur
-        if (!response.ok) {
-          throw new Error(data.error || `Erreur API: ${response.status} ${response.statusText}`);
-        }
-        
-        console.log('✅ Données parsées avec succès:', data);
         showResults(data);
         
       } catch (error) {
@@ -617,7 +687,7 @@
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('Analyseur TikTok initialisé');
+      console.log('✅ Analyseur TikTok initialisé et prêt !');
     });
   </script>
 </body>
