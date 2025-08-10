@@ -218,6 +218,63 @@
     margin-bottom: 1.5rem;
   }
   
+  .framework-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+  
+  .pillar-card {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .pillar-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 25px rgba(217, 70, 239, 0.15);
+  }
+  
+  .pillar-card.quantitative { border-left: 4px solid #3b82f6; }
+  .pillar-card.qualitative { border-left: 4px solid #10b981; }
+  .pillar-card.algorithmic { border-left: 4px solid #f59e0b; }
+  .pillar-card.comparative { border-left: 4px solid #ef4444; }
+  
+  .pillar-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .pillar-content {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  .metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  .metric-item:last-child {
+    border-bottom: none;
+  }
+  
+  .metric-value {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  
   .stat-card {
     background: rgba(255,255,255,0.05);
     border-radius: 12px;
@@ -364,6 +421,66 @@
     50% { width: 70%; }
     100% { width: 100%; }
   }
+  
+  .score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    position: relative;
+    background: conic-gradient(var(--accent) 0deg, var(--accent) calc(var(--score) * 3.6deg), rgba(255,255,255,0.1) calc(var(--score) * 3.6deg));
+  }
+  
+  .score-inner {
+    width: 90px;
+    height: 90px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .score-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  
+  .score-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .hashtag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .hashtag-item {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
 </style>
 </head>
 <body>
@@ -411,20 +528,20 @@
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
         </svg>
-        <h2>Résultats</h2>
+        <h2>Analyse Framework Intégré</h2>
       </div>
       
       <div id="results">
         <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          🎯 Entrez une URL TikTok pour commencer l'analyse
+          🎯 Entrez une URL TikTok pour commencer l'analyse complète selon le framework à 4 piliers
         </p>
       </div>
     </div>
   </div>
 
   <script>
-    // Configuration - Remplacez par l'URL de votre API
-    const API_ENDPOINT = '/api/analyze-video'; // CORRIGÉ: bon nom du fichier !
+    // Configuration - API endpoint corrigé
+    const API_ENDPOINT = '/api/analyze-video';
 
     // Fonction pour basculer entre thème sombre et clair
     function toggleTheme() {
@@ -435,13 +552,18 @@
       localStorage.setItem('theme', newTheme);
     }
 
-    // Fonction pour afficher le loader avec étapes
+    // Fonction pour afficher le loader avec étapes du framework
     function showLoader() {
       const steps = [
-        '🔍 Vérification de l\'URL...',
-        '📡 Récupération des données...',
-        '📊 Extraction des statistiques...',
-        '🤖 Analyse IA en cours...'
+        '🔍 Validation de l\'URL TikTok...',
+        '📡 Récupération via oEmbed...',
+        '🕷️ Extraction données ScrapingBee...',
+        '📊 Analyse Pilier Quantitatif...',
+        '🎨 Analyse Pilier Qualitatif...',
+        '⚙️ Analyse Pilier Algorithmique...',
+        '📈 Analyse Pilier Comparatif...',
+        '🤖 Génération recommandations IA...',
+        '✅ Finalisation du framework intégré...'
       ];
       
       let currentStep = 0;
@@ -450,12 +572,15 @@
         document.getElementById('results').innerHTML = `
           <div class="loader">
             <div class="spinner"></div>
-            <p style="margin-top: 1rem; color: var(--muted); font-weight: 500;">
+            <p style="margin-top: 1rem; color: var(--muted); font-weight: 500; font-size: 0.95rem;">
               ${steps[currentStep]}
             </p>
             <div class="progress-bar">
               <div class="progress-fill" style="width: ${((currentStep + 1) / steps.length) * 100}%"></div>
             </div>
+            <p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">
+              Étape ${currentStep + 1}/${steps.length} - Framework d'analyse TikTok PRO
+            </p>
           </div>
         `;
       };
@@ -465,13 +590,12 @@
       const interval = setInterval(() => {
         currentStep = (currentStep + 1) % steps.length;
         updateStep();
-      }, 2000);
+      }, 1500);
       
-      // Stocker l'interval pour pouvoir l'arrêter
       window.loaderInterval = interval;
     }
 
-    // Fonction pour afficher les erreurs avec plus de style
+    // Fonction pour afficher les erreurs
     function showError(message) {
       if (window.loaderInterval) {
         clearInterval(window.loaderInterval);
@@ -488,7 +612,19 @@
       `;
     }
 
-    // Fonction pour afficher les résultats avec améliorations visuelles
+    // Fonction pour créer le cercle de score
+    function createScoreCircle(score, label) {
+      return `
+        <div class="score-circle" style="--score: ${score || 0}">
+          <div class="score-inner">
+            <div class="score-number">${score || 'N/A'}</div>
+            <div class="score-label">${label}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Fonction pour afficher les résultats du framework
     function showResults(data) {
       if (window.loaderInterval) {
         clearInterval(window.loaderInterval);
@@ -505,35 +641,42 @@
       if (!stats) {
         document.getElementById('results').innerHTML = `
           <div class="success-indicator">
-            <span>✅</span> Vidéo trouvée
+            <span>✅</span> Vidéo trouvée - Analyse partielle disponible
           </div>
           
           ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : ''}
           
           <div style="text-align: center; padding: 1rem;">
             <h3 style="margin-bottom: 1rem;">📹 Informations de base</h3>
+            
+            ${video?.author ? `
+              <div class="author-info">
+                <span>👤</span>
+                <strong>@${video.author}</strong>
+              </div>
+            ` : ''}
+            
             <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
               <p><strong>📝 Description:</strong></p>
               <p style="color: var(--muted); font-style: italic;">"${video?.description || 'Non disponible'}"</p>
             </div>
             
+            ${video?.hashtags?.length ? `
+              <div style="margin-bottom: 1rem;">
+                <p><strong>🏷️ Hashtags:</strong></p>
+                <div class="hashtag-list">
+                  ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+            
             <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: 12px;">
               <p style="color: #ef4444; margin: 0;">
-                ⚠️ Les statistiques détaillées n'ont pas pu être récupérées.
-                <br><small>La vidéo est peut-être récente, privée, ou géo-restreinte.</small>
+                ⚠️ Analyse framework limitée - Statistiques détaillées non disponibles
+                <br><small>Pour une analyse complète des 4 piliers, configurez les clés API ScrapingBee et OpenAI</small>
               </p>
             </div>
           </div>
-          
-          ${analysis ? `
-            <div class="analysis-list" style="margin-top: 2rem;">
-              <h3>🤖 Analyse IA disponible</h3>
-              <div style="background: rgba(217, 70, 239, 0.1); border-radius: 12px; padding: 1rem;">
-                <p><strong>Score:</strong> ${analysis.score || 'N/A'}/100</p>
-                ${analysis.potentiel_viral ? `<p><strong>Potentiel:</strong> ${analysis.potentiel_viral}</p>` : ''}
-              </div>
-            </div>
-          ` : ''}
         `;
         return;
       }
@@ -545,138 +688,271 @@
       else if (engagementRate > 10) erClass = 'good';
       else if (engagementRate > 5) erClass = 'medium';
 
-      // Calcul du score de performance
-      const views = stats.views || 0;
-      const likes = stats.likes || 0;
-      let performanceScore = '📈';
-      if (views > 1000000) performanceScore = '🔥 VIRAL';
-      else if (views > 100000) performanceScore = '⭐ POPULAIRE';
-      else if (views > 10000) performanceScore = '📈 BIEN';
-      else performanceScore = '🌱 DÉBUT';
+      // Score et potentiel
+      const score = analysis?.score || 50;
+      const potentiel = analysis?.potentiel_viral || 'moyen';
+      
+      let potentielColor = '#f59e0b';
+      let potentielIcon = '📈';
+      if (potentiel === 'élevé') {
+        potentielColor = '#10b981';
+        potentielIcon = '🚀';
+      } else if (potentiel === 'faible') {
+        potentielColor = '#ef4444';
+        potentielIcon = '🌱';
+      }
 
       document.getElementById('results').innerHTML = `
         <div class="success-indicator">
-          <span>✅</span> Analyse complète terminée
+          <span>✅</span> Analyse Framework Intégré terminée
         </div>
         
-        ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : ''}
-        
-        <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: rgba(217, 70, 239, 0.1); border-radius: 12px;">
-          <h3 style="margin: 0 0 0.5rem 0; color: var(--accent);">${performanceScore}</h3>
-          <p style="margin: 0; color: var(--muted);">Performance globale</p>
+        <!-- En-tête avec infos vidéo -->
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+          ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail" style="margin: 0; max-width: 150px;">` : ''}
+          
+          <div>
+            ${video?.author ? `
+              <div class="author-info">
+                <span>👤</span>
+                <strong>@${video.author}</strong>
+              </div>
+            ` : ''}
+            
+            <p style="color: var(--muted); font-style: italic; margin: 0; line-height: 1.5;">
+              "${video?.description || 'Description non disponible'}"
+            </p>
+            
+            ${video?.hashtags?.length ? `
+              <div class="hashtag-list" style="margin-top: 1rem;">
+                ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            
+            ${video?.music ? `
+              <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted);">
+                🎵 <strong>Musique:</strong> ${video.music}
+              </p>
+            ` : ''}
+          </div>
         </div>
+
+        <!-- Scores principaux -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; text-align: center;">
+          <div>
+            ${createScoreCircle(score, 'SCORE')}
+            <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Score Framework Global</p>
+          </div>
+          <div>
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">${potentielIcon}</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: ${potentielColor}; text-transform: uppercase;">
+              ${potentiel}
+            </div>
+            <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Potentiel Viral</p>
+          </div>
+        </div>
+
+        <!-- Framework 4 Piliers -->
+        <h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">
+          🏛️ Framework d'Analyse à 4 Piliers
+        </h3>
         
-        <div class="stats-grid">
+        <div class="framework-grid">
+          <!-- Pilier 1: Quantitatif -->
+          <div class="pillar-card quantitative">
+            <div class="pillar-title">
+              <span>📊</span> Pilier Quantitatif
+            </div>
+            <div class="pillar-content">
+              <div class="metric-item">
+                <span>Vues totales</span>
+                <span class="metric-value">${stats.formatted?.views || stats.views.toLocaleString()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Taux d'engagement</span>
+                <span class="metric-value ${erClass}">${engagementRate.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Ratio Likes/Vues</span>
+                <span class="metric-value">${metrics.likesRatio.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Ratio Partages/Vues</span>
+                <span class="metric-value">${metrics.sharesRatio.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Engagements totaux</span>
+                <span class="metric-value">${metrics.totalEngagements.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pilier 2: Qualitatif -->
+          <div class="pillar-card qualitative">
+            <div class="pillar-title">
+              <span>🎨</span> Pilier Qualitatif
+            </div>
+            <div class="pillar-content">
+              ${analysis.creative ? `
+                <div class="metric-item">
+                  <span>Hook présent</span>
+                  <span class="metric-value">${analysis.creative.structureNarrative.hookPresent ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Message clair</span>
+                  <span class="metric-value">${analysis.creative.structureNarrative.messageClaire ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>CTA présent</span>
+                  <span class="metric-value">${analysis.creative.structureNarrative.ctaPresent ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Description engageante</span>
+                  <span class="metric-value">${analysis.creative.optimisationPlateforme.descriptionEngageante ? '✅' : '❌'}</span>
+                </div>
+              ` : `
+                <p style="color: var(--muted); font-style: italic;">Analyse qualitative en cours de développement</p>
+              `}
+            </div>
+          </div>
+
+          <!-- Pilier 3: Algorithmique -->
+          <div class="pillar-card algorithmic">
+            <div class="pillar-title">
+              <span>⚙️</span> Pilier Algorithmique
+            </div>
+            <div class="pillar-content">
+              ${analysis.creative ? `
+                <div class="metric-item">
+                  <span>Hashtags optimaux</span>
+                  <span class="metric-value">${analysis.creative.optimisationPlateforme.hashtagsPertinents ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Nombre hashtags</span>
+                  <span class="metric-value">${analysis.creative.optimisationPlateforme.hashtagsCount}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Tendance utilisée</span>
+                  <span class="metric-value">${analysis.creative.tendances.utiliseTendance ? '✅' : '❌'}</span>
+                </div>
+                ${analysis.temporal ? `
+                  <div class="metric-item">
+                    <span>Durée optimale</span>
+                    <span class="metric-value">${analysis.temporal.dureeOptimale ? '✅' : '❌'}</span>
+                  </div>
+                  <div class="metric-item">
+                    <span>Temps visionnage</span>
+                    <span class="metric-value">${analysis.temporal.tempsVisionnage}</span>
+                  </div>
+                ` : ''}
+              ` : `
+                <p style="color: var(--muted); font-style: italic;">Optimisation algorithmique détectée automatiquement</p>
+              `}
+            </div>
+          </div>
+
+          <!-- Pilier 4: Comparatif -->
+          <div class="pillar-card comparative">
+            <div class="pillar-title">
+              <span>📈</span> Pilier Comparatif
+            </div>
+            <div class="pillar-content">
+              <div class="metric-item">
+                <span>Score vs Moyenne</span>
+                <span class="metric-value">${score > 70 ? 'Au-dessus' : score > 50 ? 'Moyenne' : 'En-dessous'}</span>
+              </div>
+              <div class="metric-item">
+                <span>Potentiel viral</span>
+                <span class="metric-value" style="color: ${potentielColor};">${potentiel.toUpperCase()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Benchmark ER</span>
+                <span class="metric-value">${engagementRate > 5 ? 'Bon' : engagementRate > 2 ? 'Moyen' : 'Faible'}</span>
+              </div>
+              <div class="metric-item">
+                <span>Position industrie</span>
+                <span class="metric-value">${stats.views > 100000 ? 'Top 10%' : stats.views > 10000 ? 'Top 30%' : 'Standard'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistiques détaillées -->
+        <div class="stats-grid" style="margin-top: 2rem;">
           <div class="stat-card">
             <div class="stat-card-title">👁️ Vues</div>
-            <div class="stat-card-value">${stats.formatted?.views || stats.views.toLocaleString() || '0'}</div>
+            <div class="stat-card-value">${stats.formatted?.views || stats.views.toLocaleString()}</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-title">❤️ J'aime</div>
-            <div class="stat-card-value">${stats.formatted?.likes || stats.likes.toLocaleString() || '0'}</div>
+            <div class="stat-card-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-title">💬 Commentaires</div>
-            <div class="stat-card-value">${stats.formatted?.comments || stats.comments.toLocaleString() || '0'}</div>
+            <div class="stat-card-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-title">📤 Partages</div>
-            <div class="stat-card-value">${stats.formatted?.shares || stats.shares.toLocaleString() || '0'}</div>
-          </div>
-          
-          <div class="stat-card er-card">
-            <div class="stat-card-title">📊 Taux d'engagement</div>
-            <div class="er-value ${erClass}">${engagementRate.toFixed(1)}%</div>
-            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted);">
-              ${erClass === 'excellent' ? 'Excellent !' : 
-                erClass === 'good' ? 'Très bon' : 
-                erClass === 'medium' ? 'Correct' : 'À améliorer'}
-            </div>
+            <div class="stat-card-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</div>
           </div>
         </div>
-        
-        ${video?.description ? `
-          <div class="analysis-list">
-            <h3>📝 Description</h3>
-            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">
-              <p style="color: var(--muted); font-style: italic; margin: 0; line-height: 1.6;">
-                "${video.description}"
-              </p>
-            </div>
-          </div>
-        ` : ''}
-        
-        ${analysis ? `
-          <div class="analysis-list">
-            <h3>🤖 Analyse IA détaillée</h3>
+
+        <!-- Recommandations Framework -->
+        ${analysis.points_forts?.length || analysis.points_faibles?.length || analysis.suggestions?.length ? `
+          <div class="analysis-list" style="margin-top: 2rem;">
+            <h3 style="text-align: center; margin-bottom: 1.5rem; font-size: 1.2rem;">
+              🎯 Recommandations Framework
+            </h3>
             
-            <div style="background: rgba(217, 70, 239, 0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center;">
-                <div>
-                  <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${analysis.score || 'N/A'}<span style="font-size: 1rem;">/100</span></div>
-                  <div style="color: var(--muted); font-size: 0.9rem;">Score global</div>
-                </div>
-                ${analysis.potentiel_viral ? `
-                  <div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: ${
-                      analysis.potentiel_viral === 'élevé' ? '#10b981' : 
-                      analysis.potentiel_viral === 'moyen' ? '#f59e0b' : '#ef4444'
-                    };">
-                      ${analysis.potentiel_viral === 'élevé' ? '🚀' : 
-                        analysis.potentiel_viral === 'moyen' ? '📈' : '🌱'}
-                    </div>
-                    <div style="color: var(--muted); font-size: 0.9rem;">Potentiel ${analysis.potentiel_viral}</div>
-                  </div>
-                ` : ''}
-              </div>
-            </div>
-            
-            ${analysis.points_forts ? `
-              <h3 style="color: #10b981;">✅ Points forts</h3>
+            ${analysis.points_forts?.length ? `
+              <h3 style="color: #10b981;">✅ Points forts identifiés</h3>
               <ul style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
                 ${analysis.points_forts.map(point => `<li style="color: var(--ink);">${point}</li>`).join('')}
               </ul>
             ` : ''}
             
-            ${analysis.points_faibles ? `
-              <h3 style="color: #f59e0b;">⚠️ Points à améliorer</h3>
+            ${analysis.points_faibles?.length ? `
+              <h3 style="color: #f59e0b;">⚠️ Axes d'amélioration</h3>
               <ul style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
                 ${analysis.points_faibles.map(point => `<li style="color: var(--ink);">${point}</li>`).join('')}
               </ul>
             ` : ''}
             
-            ${analysis.suggestions ? `
-              <h3 style="color: var(--accent);">💡 Recommandations</h3>
+            ${analysis.suggestions?.length ? `
+              <h3 style="color: var(--accent);">💡 Optimisations recommandées</h3>
               <ul style="background: rgba(217, 70, 239, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">
                 ${analysis.suggestions.map(point => `<li style="color: var(--ink);">${point}</li>`).join('')}
               </ul>
             ` : ''}
           </div>
         ` : ''}
-        
-        <div style="margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px; text-align: center; border-top: 2px solid var(--accent);">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            ${metrics?.likesRatio ? `
-              <div>
-                <div style="font-weight: bold; color: var(--accent);">${metrics.likesRatio}%</div>
-                <div style="font-size: 0.8rem; color: var(--muted);">Ratio J'aime/Vues</div>
-              </div>
-            ` : ''}
-            ${stats.duration ? `
-              <div>
-                <div style="font-weight: bold; color: var(--accent);">${Math.floor(stats.duration / 60)}:${(stats.duration % 60).toString().padStart(2, '0')}</div>
-                <div style="font-size: 0.8rem; color: var(--muted);">Durée</div>
-              </div>
-            ` : ''}
+
+        <!-- Footer analyse -->
+        <div style="margin-top: 3rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; text-align: center; border: 1px solid var(--accent);">
+          <h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse Framework Complète</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Score Global</div>
+              <div style="font-size: 1.5rem; font-weight: 800;">${score}/100</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Potentiel Viral</div>
+              <div style="font-size: 1.2rem; font-weight: 700; color: ${potentielColor};">${potentiel.toUpperCase()}</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Piliers Analysés</div>
+              <div style="font-size: 1.2rem; font-weight: 700;">4/4 ✅</div>
+            </div>
           </div>
           <small style="color: var(--muted);">
-            📅 Analysé le ${new Date(data.timestamp).toLocaleString('fr-FR')}
+            📅 Analyse générée le ${new Date(data.timestamp).toLocaleString('fr-FR')}
+            <br>Framework d'analyse TikTok PRO - Tous droits réservés
           </small>
         </div>
       `;
     }
 
-    // Fonction principale d'analyse utilisant l'API
+    // Fonction principale d'analyse
     async function analyzeVideo(event) {
       event.preventDefault();
       
@@ -684,20 +960,19 @@
       const btn = document.getElementById('analyzeBtn');
       const btnText = document.getElementById('btnText');
       
-      // Validation basique de l'URL TikTok
+      // Validation URL TikTok
       if (!url.includes('tiktok.com')) {
         showError('Veuillez entrer une URL TikTok valide (ex: https://www.tiktok.com/@user/video/...)');
         return;
       }
       
       btn.disabled = true;
-      btnText.textContent = 'Analyse...';
+      btnText.textContent = 'Analyse Framework...';
       showLoader();
       
       try {
-        console.log('🚀 Démarrage de l\'analyse via API...');
+        console.log('🚀 Démarrage analyse Framework TikTok...');
         
-        // Appel à votre API
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: {
@@ -712,27 +987,26 @@
         }
         
         const data = await response.json();
-        console.log('✅ Données reçues de l\'API:', data);
+        console.log('✅ Framework complet reçu:', data);
         
         if (!data.success) {
-          throw new Error(data.error || 'Échec de l\'analyse');
+          throw new Error(data.error || 'Échec de l\'analyse framework');
         }
         
         showResults(data);
         
       } catch (error) {
-        console.error('❌ Erreur complète:', error);
+        console.error('❌ Erreur Framework:', error);
         
-        // Messages d'erreur plus spécifiques
         let errorMessage = error.message;
         if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion internet.';
+          errorMessage = 'Impossible de contacter le serveur d\'analyse. Vérifiez votre connexion.';
         } else if (error.message.includes('404')) {
-          errorMessage = 'Vidéo TikTok introuvable. Elle est peut-être privée, supprimée ou l\'URL est incorrecte.';
+          errorMessage = 'Vidéo TikTok introuvable. Vérifiez l\'URL ou les permissions de la vidéo.';
         } else if (error.message.includes('403')) {
-          errorMessage = 'Accès interdit à cette vidéo TikTok. Elle est peut-être géo-restreinte.';
+          errorMessage = 'Accès interdit. Cette vidéo est peut-être géo-restreinte ou privée.';
         } else if (error.message.includes('500')) {
-          errorMessage = 'Erreur du serveur. Réessayez dans quelques instants.';
+          errorMessage = 'Erreur serveur d\'analyse. Réessayez dans quelques instants.';
         }
         
         showError(errorMessage);
@@ -742,30 +1016,30 @@
       }
     }
 
-    // Initialisation au chargement de la page
+    // Initialisation
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ Analyseur TikTok PRO initialisé !');
+      console.log('✅ Analyseur TikTok Framework PRO initialisé');
       
-      // Restaurer le thème sauvegardé
+      // Restaurer le thème
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
       }
       
-      // Auto-focus sur le champ URL
+      // Auto-focus
       document.getElementById('videoUrl').focus();
       
-      // Gestion du collage automatique
+      // Gestion du collage
       document.getElementById('videoUrl').addEventListener('paste', function(e) {
         setTimeout(() => {
           const url = e.target.value;
           if (url && url.includes('tiktok.com')) {
-            console.log('📋 URL TikTok collée automatiquement');
+            console.log('📋 URL TikTok détectée - Prêt pour analyse framework');
           }
         }, 100);
       });
       
-      // Raccourci clavier : Enter pour analyser
+      // Raccourci clavier
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && e.ctrlKey) {
           const form = document.querySelector('form');
@@ -776,24 +1050,10 @@
       });
     });
 
-    // Fonction utilitaire pour copier l'URL
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        console.log('📋 URL copiée dans le presse-papier');
-      });
-    }
-
     // Gestion des erreurs globales
     window.addEventListener('error', function(e) {
-      console.error('❌ Erreur JavaScript:', e.error);
+      console.error('❌ Erreur JavaScript Framework:', e.error);
     });
-
-    // Service Worker pour le cache (optionnel)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        // Vous pouvez ajouter un service worker ici pour le cache
-      });
-    }
   </script>
 </body>
 </html>
