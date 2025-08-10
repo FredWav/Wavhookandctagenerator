@@ -47,6 +47,7 @@
 </style>
 </head>
 <body>
+
   <div class="main-layout">
     <header>
       <h1>Analyseur de Vidéo 🔬</h1>
@@ -57,6 +58,7 @@
         <a href="history.html" class="nav-link">Historique</a>
       </nav>
     </header>
+
     <div class="card" id="settings-card">
       <div class="card-header">
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
@@ -70,6 +72,7 @@
         <button id="analyzeBtn" class="btn primary">Analyser la vidéo</button>
       </div>
     </div>
+
     <div class="card" id="results-card">
        <div class="card-header">
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -80,13 +83,14 @@
       </div>
     </div>
   </div>
+
 <script>
   const $ = id => document.getElementById(id);
   function displayLoading() {
     $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p class="muted">Analyse en cours... (ça peut prendre du temps)</p></div>`;
   }
   function displayError(message) {
-    $('results').innerHTML = `<p style="color: #f87171;">${message}</p>`;
+    $('results').innerHTML = `<p style="color: #f87171;"><b>Erreur :</b> ${message}</p>`;
   }
   function getErClass(er) {
     if(!er) return '';
@@ -98,18 +102,37 @@
   function formatNumber(num) {
       return new Intl.NumberFormat('fr-FR').format(num);
   }
+
+  // --- FONCTION MODIFIÉE ---
   function displayResults(data) {
     const { stats, engagementRate, analysis } = data;
+    
+    // Sécurité : on vérifie si l'analyse de l'IA est bien présente
+    if (!analysis) {
+        displayError("L'analyse IA a échoué. Le contenu a peut-être été bloqué par un filtre de sécurité. Les stats ont bien été récupérées ci-dessous.");
+        // On affiche au moins les stats si on les a
+        if(stats) {
+            const statsHtml = `
+              <div class="stats-grid">
+                <div class="stat-card er-card"><div class="stat-card-title">Taux d'engagement</div><div class="stat-card-value er-value ${getErClass(engagementRate)}">${engagementRate}%</div></div>
+                <div class="stat-card"><div class="stat-card-title">Vues</div><div class="stat-card-value">${formatNumber(stats.views)}</div></div>
+                <div class="stat-card"><div class="stat-card-title">J'aime</div><div class="stat-card-value">${formatNumber(stats.likes)}</div></div>
+                <div class="stat-card"><div class="stat-card-title">Commentaires</div><div class="stat-card-value">${formatNumber(stats.comments)}</div></div>
+                <div class="stat-card"><div class="stat-card-title">Partages</div><div class="stat-card-value">${formatNumber(stats.shares)}</div></div>
+              </div>
+            `;
+            $('results').innerHTML += statsHtml;
+        }
+        return;
+    }
+    
     const { score, points_forts, points_faibles, suggestions } = analysis;
     
-    let statsHtml = '<p class="muted">Les statistiques de performance n\'ont pas pu être récupérées, l\'analyse se base uniquement sur le contenu.</p>';
+    let statsHtml = '<p class="muted">Les statistiques de performance n\'ont pas pu être récupérées.</p>';
     if (stats && engagementRate) {
       statsHtml = `
         <div class="stats-grid">
-          <div class="stat-card er-card">
-            <div class="stat-card-title">Taux d'engagement</div>
-            <div class="stat-card-value er-value ${getErClass(engagementRate)}">${engagementRate}%</div>
-          </div>
+          <div class="stat-card er-card"><div class="stat-card-title">Taux d'engagement</div><div class="stat-card-value er-value ${getErClass(engagementRate)}">${engagementRate}%</div></div>
           <div class="stat-card"><div class="stat-card-title">Vues</div><div class="stat-card-value">${formatNumber(stats.views)}</div></div>
           <div class="stat-card"><div class="stat-card-title">J'aime</div><div class="stat-card-value">${formatNumber(stats.likes)}</div></div>
           <div class="stat-card"><div class="stat-card-title">Commentaires</div><div class="stat-card-value">${formatNumber(stats.comments)}</div></div>
@@ -129,6 +152,7 @@
       </div>
     `;
   }
+
   $('analyzeBtn').onclick = async () => {
     const url = $('tiktok_url').value.trim();
     if (!url.includes('tiktok.com')) {
@@ -150,7 +174,7 @@
       const fullAnalysis = await res.json();
       displayResults(fullAnalysis);
     } catch (err) {
-      displayError(`Erreur: ${err.message}`);
+      displayError(err.message);
     } finally {
       $('analyzeBtn').disabled = false;
     }
