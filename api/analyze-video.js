@@ -1,53 +1,31 @@
 export const config = { runtime: "edge" };
 
-async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      if (response.ok) return response;
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  throw new Error('Failed to fetch after multiple retries');
-}
-
 export default async function handler(req) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Use POST' }), { status: 405 });
+    return new Response(JSON.stringify({ error: 'Use POST' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
   }
 
   const { url } = await req.json();
-  if (!url) {
-    return new Response(JSON.stringify({ error: 'URL is required' }), { status: 400 });
+  if (!url || !url.includes('tiktok.com')) {
+    return new Response(JSON.stringify({ error: 'URL is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
   try {
-    // --- Étape 1: Scraping de la page TikTok ---
-    const tiktokResponse = await fetchWithRetry(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
+    // --- Étape 1: Utilisation de l'endpoint oEmbed de TikTok ---
+    const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+    const oembedResponse = await fetch(oembedUrl);
 
-    const html = await tiktokResponse.text();
-    
-    // On cherche le JSON de la page, c'est plus fiable que de parser le HTML
-    const scriptTagContent = html.split('<script id="__NEXT_DATA__" type="application/json">')[1]?.split('</script>')[0];
-
-    if (!scriptTagContent) {
-        throw new Error("Impossible de trouver les données de la vidéo. La structure de la page a peut-être changé.");
+    if (!oembedResponse.ok) {
+      throw new Error("Impossible de récupérer les informations de la vidéo via l'endpoint oEmbed. L'URL est peut-être invalide ou la vidéo est privée.");
     }
     
-    const data = JSON.parse(scriptTagContent);
-    const videoData = data.props.pageProps.itemInfo.itemStruct;
+    const videoData = await oembedResponse.json();
     
-    const description = videoData.desc;
-    const thumbnail = videoData.video.cover;
+    const description = videoData.title || "Aucune description trouvée.";
+    const thumbnail = videoData.thumbnail_url;
 
-    if (!description || !thumbnail) {
-        throw new Error("Description ou miniature non trouvée dans les données.");
+    if (!thumbnail) {
+        throw new Error("Miniature non trouvée dans les données oEmbed.");
     }
 
     // --- Étape 2: Analyse par l'IA d'OpenAI ---
@@ -97,10 +75,10 @@ export default async function handler(req) {
     const aiResponse = await r.json();
     const analysis = JSON.parse(aiResponse.choices[0].message.content);
 
-    return new Response(JSON.stringify(analysis), { status: 200 });
+    return new Response(JSON.stringify(analysis), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
