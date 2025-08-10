@@ -1,4 +1,4 @@
-// analyze-video.js - Version complète avec analyse vidéo/audio et logging
+// analyze-video.js - Version corrigée et sécurisée
 export const config = { runtime: "edge" };
 
 // Base de données simulée (en production, utiliser une vraie DB)
@@ -6,48 +6,56 @@ let analysisLogs = [];
 
 // Fonction pour logger les analyses
 function logAnalysis(data) {
-    const logEntry = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-        timestamp: new Date().toISOString(),
-        url: data.url,
-        author: data.author || 'Inconnu',
-        stats: data.stats || null,
-        metrics: data.metrics || null,
-        score: data.score || null,
-        potentiel_viral: data.potentiel_viral || null,
-        niche_detectee: data.niche_detectee || null,
-        contenu_audio: data.contenu_audio || null,
-        contenu_visuel: data.contenu_visuel || null,
-        user_ip: data.user_ip || null,
-        user_agent: data.user_agent || null
-    };
-    
-    analysisLogs.push(logEntry);
-    
-    // Garder seulement les 1000 dernières entrées en mémoire
-    if (analysisLogs.length > 1000) {
-        analysisLogs = analysisLogs.slice(-1000);
+    try {
+        const logEntry = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+            timestamp: new Date().toISOString(),
+            url: data.url || null,
+            author: data.author || 'Inconnu',
+            stats: data.stats || null,
+            metrics: data.metrics || null,
+            score: data.score || null,
+            potentiel_viral: data.potentiel_viral || null,
+            niche_detectee: data.niche_detectee || null,
+            contenu_audio: data.contenu_audio || null,
+            contenu_visuel: data.contenu_visuel || null,
+            user_ip: data.user_ip || null,
+            user_agent: data.user_agent || null
+        };
+        
+        analysisLogs.push(logEntry);
+        
+        // Garder seulement les 1000 dernières entrées en mémoire
+        if (analysisLogs.length > 1000) {
+            analysisLogs = analysisLogs.slice(-1000);
+        }
+        
+        console.log(`📝 Analyse enregistrée: ${logEntry.id} - ${data.author} - ${data.stats?.views || 0} vues`);
+        return logEntry.id;
+    } catch (error) {
+        console.error("❌ Erreur lors du logging:", error);
+        return null;
     }
-    
-    console.log(`📝 Analyse enregistrée: ${logEntry.id} - ${data.author} - ${data.stats?.views || 0} vues`);
-    return logEntry.id;
 }
 
 // Fonction pour parser les données JSON TikTok
 function findJsonBlob(html) {
     try {
+        // Essayer SIGI_STATE en premier
         let scriptContent = html.split('<script id="SIGI_STATE" type="application/json">')[1]?.split('</script>')[0];
         if (scriptContent) {
             console.log("✅ Données via SIGI_STATE");
             return JSON.parse(scriptContent);
         }
         
+        // Essayer __UNIVERSAL_DATA_FOR_REHYDRATION__
         scriptContent = html.split('<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">')[1]?.split('</script>')[0];
         if (scriptContent) {
             console.log("✅ Données via __UNIVERSAL_DATA_FOR_REHYDRATION__");
             return JSON.parse(scriptContent);
         }
         
+        // Essayer __INITIAL_STATE__
         const initialStateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?});/s);
         if (initialStateMatch) {
             console.log("✅ Données via __INITIAL_STATE__");
@@ -75,10 +83,11 @@ function extractStats(data) {
             music: null,
             hashtags: [],
             createTime: null,
-            videoUrl: null, // NOUVEAU: URL directe de la vidéo
-            coverUrl: null  // NOUVEAU: URL de la miniature HD
+            videoUrl: null,
+            coverUrl: null
         };
 
+        // Essayer ItemModule en premier
         if (data.ItemModule) {
             const videoId = Object.keys(data.ItemModule)[0];
             const itemStruct = data.ItemModule[videoId];
@@ -100,7 +109,7 @@ function extractStats(data) {
                 };
             }
         }
-        
+        // Essayer __DEFAULT_SCOPE__
         else if (data['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct) {
             const itemStruct = data['__DEFAULT_SCOPE__']['webapp.video-detail'].itemInfo.itemStruct;
             
@@ -130,7 +139,7 @@ function extractStats(data) {
     }
 }
 
-// NOUVEAU: Analyse du contenu vidéo avec OpenAI GPT-4 Vision
+// Analyse du contenu vidéo avec OpenAI GPT-4 Vision
 async function analyzeVideoContent(videoUrl, thumbnailUrl, description, openaiKey) {
     if (!openaiKey) {
         console.warn("⚠️ OpenAI key manquante - Analyse vidéo désactivée");
@@ -156,7 +165,7 @@ Sois précis et professionnel.`;
 
         const userPrompt = `Analyse cette vidéo TikTok:
 
-📝 DESCRIPTION: "${description}"
+📝 DESCRIPTION: "${description || 'Aucune description'}"
 
 🎯 MISSION: Fournis une analyse complète du contenu visuel et identifie la niche, le type de contenu, et les éléments qui peuvent contribuer à la viralité.`;
 
@@ -175,7 +184,7 @@ Sois précis et professionnel.`;
                         role: "user", 
                         content: [
                             { type: "text", text: userPrompt },
-                            { type: "image_url", image_url: { url: thumbnailUrl } }
+                            ...(thumbnailUrl ? [{ type: "image_url", image_url: { url: thumbnailUrl } }] : [])
                         ]
                     }
                 ],
@@ -205,7 +214,7 @@ Sois précis et professionnel.`;
     }
 }
 
-// NOUVEAU: Transcription audio (simulation - en production utiliser Whisper API)
+// Transcription audio (simulation - en production utiliser Whisper API)
 async function transcribeAudio(videoUrl, openaiKey) {
     if (!openaiKey || !videoUrl) {
         console.warn("⚠️ Transcription audio désactivée - Clé OpenAI ou URL vidéo manquante");
@@ -213,15 +222,10 @@ async function transcribeAudio(videoUrl, openaiKey) {
     }
 
     try {
-        console.log("🎤 Transcription audio en cours...");
+        console.log("🎤 Transcription audio simulée...");
         
-        // NOTE: En production, vous devrez:
-        // 1. Télécharger la vidéo TikTok
-        // 2. Extraire l'audio en format supporté (mp3, wav, etc.)
-        // 3. Envoyer à l'API Whisper d'OpenAI
-        
-        // Pour l'instant, on simule avec l'analyse de la description
-        // Remplacez cette partie par l'implémentation Whisper réelle
+        // NOTE: Simulation pour éviter les erreurs
+        // En production, implémentez Whisper API ici
         
         const simulatedTranscription = {
             text: "Transcription non disponible - Implémentation Whisper requise",
@@ -236,46 +240,6 @@ async function transcribeAudio(videoUrl, openaiKey) {
         console.log("⚠️ Transcription simulée - Implémentez Whisper API pour la transcription réelle");
         return simulatedTranscription;
         
-        /* IMPLÉMENTATION RÉELLE WHISPER (décommenter et adapter):
-        
-        // 1. Télécharger la vidéo
-        const videoResponse = await fetch(videoUrl);
-        const videoBuffer = await videoResponse.arrayBuffer();
-        
-        // 2. Extraire l'audio (utiliser FFmpeg ou similaire)
-        const audioBuffer = await extractAudioFromVideo(videoBuffer);
-        
-        // 3. Transcription Whisper
-        const formData = new FormData();
-        formData.append('file', new Blob([audioBuffer], { type: 'audio/mp3' }), 'audio.mp3');
-        formData.append('model', 'whisper-1');
-        formData.append('language', 'fr');
-        formData.append('response_format', 'verbose_json');
-        
-        const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${openaiKey}`
-            },
-            body: formData
-        });
-        
-        if (whisperResponse.ok) {
-            const transcription = await whisperResponse.json();
-            console.log("✅ Transcription audio complétée");
-            return {
-                text: transcription.text,
-                language: transcription.language,
-                duration: transcription.duration,
-                words: transcription.words || [],
-                confidence: transcription.confidence || 0,
-                sentiment: analyzeTextSentiment(transcription.text),
-                topics: extractTopics(transcription.text)
-            };
-        }
-        
-        */
-        
     } catch (error) {
         console.error("❌ Erreur transcription audio:", error.message);
         return null;
@@ -284,7 +248,7 @@ async function transcribeAudio(videoUrl, openaiKey) {
 
 // Calcul des métriques avancées
 function calculateAdvancedMetrics(stats) {
-    if (!stats || stats.views === 0) {
+    if (!stats || !stats.views || stats.views === 0) {
         return {
             engagementRate: 0,
             likesRatio: 0,
@@ -295,15 +259,15 @@ function calculateAdvancedMetrics(stats) {
         };
     }
 
-    const totalEngagements = stats.likes + stats.comments + stats.shares;
+    const totalEngagements = (stats.likes || 0) + (stats.comments || 0) + (stats.shares || 0);
     
     return {
         engagementRate: (totalEngagements / stats.views) * 100,
-        likesRatio: (stats.likes / stats.views) * 100,
-        commentsRatio: (stats.comments / stats.views) * 100,
-        sharesRatio: (stats.shares / stats.views) * 100,
+        likesRatio: ((stats.likes || 0) / stats.views) * 100,
+        commentsRatio: ((stats.comments || 0) / stats.views) * 100,
+        sharesRatio: ((stats.shares || 0) / stats.views) * 100,
         totalEngagements,
-        viralityIndex: Math.min(100, ((stats.shares * 10) + (stats.comments * 4) + (stats.likes * 2)) / stats.views * 100)
+        viralityIndex: Math.min(100, (((stats.shares || 0) * 10) + ((stats.comments || 0) * 4) + ((stats.likes || 0) * 2)) / stats.views * 100)
     };
 }
 
@@ -474,7 +438,7 @@ function generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis
     }
     
     if (videoAnalysis?.ELEMENTS_VIRAUX?.length > 0) {
-        recommendations.suggestions.push(`🔥 Exploiter davantage ces éléments viraux détectés: ${videoAnalysis.ELEMENTS_VIRAUX.join(', ')}`);
+        recommendations.suggestions.push(`🔥 Exploiter davantage ces éléments viraux détectés: ${Array.isArray(videoAnalysis.ELEMENTS_VIRAUX) ? videoAnalysis.ELEMENTS_VIRAUX.join(', ') : videoAnalysis.ELEMENTS_VIRAUX}`);
     }
     
     if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') {
@@ -492,6 +456,10 @@ function generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis
 
 // Validation URL TikTok
 function validateTikTokUrl(url) {
+    if (!url || typeof url !== 'string') {
+        return false;
+    }
+    
     const patterns = [
         /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/,
         /^https?:\/\/vm\.tiktok\.com\/[\w]+/,
@@ -509,266 +477,283 @@ function formatNumber(num) {
     return num.toString();
 }
 
-// NOUVEAU: Extraction des infos utilisateur
+// Extraction des infos utilisateur
 function extractUserInfo(request) {
-    const headers = request.headers;
-    return {
-        ip: headers.get('x-forwarded-for') || headers.get('x-real-ip') || 'unknown',
-        userAgent: headers.get('user-agent') || 'unknown',
-        country: headers.get('cf-ipcountry') || 'unknown',
-        timestamp: new Date().toISOString()
-    };
+    try {
+        const headers = request.headers;
+        return {
+            ip: headers.get('x-forwarded-for') || headers.get('x-real-ip') || 'unknown',
+            userAgent: headers.get('user-agent') || 'unknown',
+            country: headers.get('cf-ipcountry') || 'unknown',
+            timestamp: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error("❌ Erreur extraction infos utilisateur:", error);
+        return {
+            ip: 'unknown',
+            userAgent: 'unknown',
+            country: 'unknown',
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+// Fonction de réponse JSON sécurisée
+function jsonResponse(data, status = 200, headers = {}) {
+    return new Response(JSON.stringify(data), {
+        status,
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': status === 200 ? 'public, max-age=300' : 'no-cache',
+            ...headers
+        }
+    });
 }
 
 // Handler principal avec analyse complète
 export default async function handler(req) {
     if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Méthode non autorisée' }), { 
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return jsonResponse({
+            error: 'Méthode non autorisée',
+            errorCode: 'METHOD_NOT_ALLOWED',
+            supportedMethods: ['POST']
+        }, 405);
     }
 
+    let body;
     try {
-        const body = await req.json().catch(() => null);
-        if (!body || !body.url) {
-            return new Response(JSON.stringify({ error: 'URL manquante' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
+        body = await req.json();
+    } catch (error) {
+        return jsonResponse({
+            error: 'Corps de requête JSON invalide',
+            errorCode: 'INVALID_JSON',
+            details: 'Vérifiez le format JSON de votre requête'
+        }, 400);
+    }
+
+    if (!body || !body.url) {
+        return jsonResponse({
+            error: 'URL manquante',
+            errorCode: 'MISSING_URL',
+            details: 'Le paramètre "url" est requis'
+        }, 400);
+    }
+
+    const { url: tiktokUrl } = body;
+    
+    if (!validateTikTokUrl(tiktokUrl)) {
+        return jsonResponse({
+            error: 'URL TikTok invalide',
+            errorCode: 'INVALID_TIKTOK_URL',
+            details: 'Utilisez le format: https://www.tiktok.com/@username/video/123456789',
+            examples: [
+                'https://www.tiktok.com/@username/video/123456789',
+                'https://vm.tiktok.com/ABC123/',
+                'https://www.tiktok.com/t/ABC123/'
+            ]
+        }, 400);
+    }
+
+    console.log(`🚀 Analyse complète: ${tiktokUrl}`);
+    
+    // Extraction des infos utilisateur
+    const userInfo = extractUserInfo(req);
+    console.log(`👤 Utilisateur: ${userInfo.ip} (${userInfo.country})`);
+
+    let description = null;
+    let thumbnail = null;
+    let stats = null;
+    let videoAnalysis = null;
+    let audioTranscription = null;
+
+    // Étape 1: oEmbed
+    try {
+        console.log("📡 oEmbed...");
+        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
+        const oembedResponse = await fetch(oembedUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            signal: AbortSignal.timeout(15000)
+        });
+
+        if (oembedResponse.ok) {
+            const oembedData = await oembedResponse.json();
+            description = oembedData.title || "Description non disponible";
+            thumbnail = oembedData.thumbnail_url;
+            console.log("✅ oEmbed réussi");
+        } else {
+            throw new Error(`oEmbed failed: ${oembedResponse.status}`);
         }
+    } catch (error) {
+        console.error("❌ Erreur oEmbed:", error.message);
+        return jsonResponse({
+            error: "Impossible d'accéder à cette vidéo TikTok",
+            errorCode: 'OEMBED_FAILED',
+            details: 'La vidéo est peut-être privée, supprimée ou géo-restreinte',
+            troubleshoot: [
+                'Vérifiez que la vidéo existe et est publique',
+                'Assurez-vous que l\'URL est correcte',
+                'Réessayez dans quelques instants'
+            ]
+        }, 404);
+    }
 
-        const { url: tiktokUrl } = body;
-        
-        if (!validateTikTokUrl(tiktokUrl)) {
-            return new Response(JSON.stringify({ error: 'URL TikTok invalide' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        console.log(`🚀 Analyse complète: ${tiktokUrl}`);
-        
-        // Extraction des infos utilisateur
-        const userInfo = extractUserInfo(req);
-        console.log(`👤 Utilisateur: ${userInfo.ip} (${userInfo.country})`);
-
-        let description = null;
-        let thumbnail = null;
-        let stats = null;
-        let videoAnalysis = null;
-        let audioTranscription = null;
-
-        // Étape 1: oEmbed
+    // Étape 2: Statistiques ScrapingBee
+    const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
+    if (SCRAPINGBEE_API_KEY) {
         try {
-            console.log("📡 oEmbed...");
-            const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
-            const oembedResponse = await fetch(oembedUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                },
-                signal: AbortSignal.timeout(15000)
+            console.log("🕷️ ScrapingBee...");
+            const scrapingBeeUrl = new URL('https://app.scrapingbee.com/api/v1/');
+            scrapingBeeUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
+            scrapingBeeUrl.searchParams.set('url', tiktokUrl);
+            scrapingBeeUrl.searchParams.set('render_js', 'true');
+            scrapingBeeUrl.searchParams.set('wait', '4000');
+
+            const response = await fetch(scrapingBeeUrl.toString(), {
+                signal: AbortSignal.timeout(35000)
             });
 
-            if (oembedResponse.ok) {
-                const oembedData = await oembedResponse.json();
-                description = oembedData.title || "Description non disponible";
-                thumbnail = oembedData.thumbnail_url;
-                console.log("✅ oEmbed réussi");
-            } else {
-                throw new Error(`oEmbed failed: ${oembedResponse.status}`);
-            }
-        } catch (error) {
-            console.error("❌ Erreur oEmbed:", error.message);
-            return new Response(JSON.stringify({ 
-                error: "Impossible d'accéder à cette vidéo TikTok"
-            }), { 
-                status: 404,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        // Étape 2: Statistiques ScrapingBee
-        const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
-        if (SCRAPINGBEE_API_KEY) {
-            try {
-                console.log("🕷️ ScrapingBee...");
-                const scrapingBeeUrl = new URL('https://app.scrapingbee.com/api/v1/');
-                scrapingBeeUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
-                scrapingBeeUrl.searchParams.set('url', tiktokUrl);
-                scrapingBeeUrl.searchParams.set('render_js', 'true');
-                scrapingBeeUrl.searchParams.set('wait', '4000');
-
-                const response = await fetch(scrapingBeeUrl.toString(), {
-                    signal: AbortSignal.timeout(35000)
-                });
-
-                if (response.ok) {
-                    const html = await response.text();
-                    const data = findJsonBlob(html);
-                    if (data) {
-                        stats = extractStats(data);
-                        if (stats) {
-                            console.log("✅ Stats extraites");
-                            if (stats.description && stats.description.length > description.length) {
-                                description = stats.description;
-                            }
+            if (response.ok) {
+                const html = await response.text();
+                const data = findJsonBlob(html);
+                if (data) {
+                    stats = extractStats(data);
+                    if (stats) {
+                        console.log("✅ Stats extraites");
+                        if (stats.description && stats.description.length > description.length) {
+                            description = stats.description;
                         }
                     }
                 }
-            } catch (error) {
-                console.warn("⚠️ Échec ScrapingBee:", error.message);
             }
+        } catch (error) {
+            console.warn("⚠️ Échec ScrapingBee:", error.message);
         }
+    }
 
-        // Étape 3: NOUVEAU - Analyse vidéo/audio
-        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-        if (OPENAI_API_KEY && thumbnail) {
-            // Analyse du contenu visuel
-            videoAnalysis = await analyzeVideoContent(stats?.videoUrl, thumbnail, description, OPENAI_API_KEY);
-            
-            // Transcription audio (si URL vidéo disponible)
-            if (stats?.videoUrl) {
-                audioTranscription = await transcribeAudio(stats.videoUrl, OPENAI_API_KEY);
-            }
+    // Étape 3: Analyse vidéo/audio
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (OPENAI_API_KEY && thumbnail) {
+        // Analyse du contenu visuel
+        videoAnalysis = await analyzeVideoContent(stats?.videoUrl, thumbnail, description, OPENAI_API_KEY);
+        
+        // Transcription audio (si URL vidéo disponible)
+        if (stats?.videoUrl) {
+            audioTranscription = await transcribeAudio(stats.videoUrl, OPENAI_API_KEY);
         }
+    }
 
-        // Calculs et analyses
-        const metrics = stats ? calculateAdvancedMetrics(stats) : null;
-        const creativeAnalysis = analyzeCreativeContent(stats, description, stats?.hashtags, videoAnalysis, audioTranscription);
-        const predictiveScore = stats ? calculatePredictiveScore(stats, metrics, creativeAnalysis) : { score: 50, potentielViral: 'moyen' };
-        const recommendations = stats ? generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis) : null;
+    // Calculs et analyses
+    const metrics = stats ? calculateAdvancedMetrics(stats) : null;
+    const creativeAnalysis = analyzeCreativeContent(stats, description, stats?.hashtags, videoAnalysis, audioTranscription);
+    const predictiveScore = stats ? calculatePredictiveScore(stats, metrics, creativeAnalysis) : { score: 50, potentielViral: 'moyen' };
+    const recommendations = stats ? generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis) : null;
 
-        // NOUVEAU: Enregistrement de l'analyse
-        const logId = logAnalysis({
+    // Enregistrement de l'analyse
+    const logId = logAnalysis({
+        url: tiktokUrl,
+        author: stats?.author,
+        stats: stats,
+        metrics: metrics,
+        score: predictiveScore.score,
+        potentiel_viral: predictiveScore.potentielViral,
+        niche_detectee: videoAnalysis?.NICHE_DETECTEE,
+        contenu_audio: audioTranscription?.text,
+        contenu_visuel: videoAnalysis?.CONTENU_VISUEL,
+        user_ip: userInfo.ip,
+        user_agent: userInfo.userAgent
+    });
+
+    // Réponse finale enrichie
+    const finalResponse = {
+        success: true,
+        analysisId: logId,
+        analysisType: "framework_complet_avec_video_audio",
+        video: {
             url: tiktokUrl,
-            author: stats?.author,
-            stats: stats,
-            metrics: metrics,
+            description,
+            thumbnail,
+            author: stats?.author || null,
+            music: stats?.music || null,
+            hashtags: stats?.hashtags || [],
+            createTime: stats?.createTime || null,
+            videoUrl: stats?.videoUrl || null
+        },
+        stats: stats ? {
+            ...stats,
+            formatted: {
+                views: formatNumber(stats.views),
+                likes: formatNumber(stats.likes),
+                comments: formatNumber(stats.comments),
+                shares: formatNumber(stats.shares)
+            }
+        } : null,
+        metrics: metrics || {
+            engagementRate: null,
+            likesRatio: null,
+            commentsRatio: null,
+            sharesRatio: null,
+            totalEngagements: null,
+            viralityIndex: null
+        },
+        analysis: {
             score: predictiveScore.score,
             potentiel_viral: predictiveScore.potentielViral,
-            niche_detectee: videoAnalysis?.NICHE_DETECTEE,
-            contenu_audio: audioTranscription?.text,
-            contenu_visuel: videoAnalysis?.CONTENU_VISUEL,
-            user_ip: userInfo.ip,
-            user_agent: userInfo.userAgent
-        });
-
-        // Réponse finale enrichie
-        const finalResponse = {
-            success: true,
-            analysisId: logId,
-            analysisType: "framework_complet_avec_video_audio",
-            video: {
-                url: tiktokUrl,
-                description,
-                thumbnail,
-                author: stats?.author || null,
-                music: stats?.music || null,
-                hashtags: stats?.hashtags || [],
-                createTime: stats?.createTime || null,
-                videoUrl: stats?.videoUrl || null
-            },
-            stats: stats ? {
-                ...stats,
-                formatted: {
-                    views: formatNumber(stats.views),
-                    likes: formatNumber(stats.likes),
-                    comments: formatNumber(stats.comments),
-                    shares: formatNumber(stats.shares)
-                }
+            points_forts: recommendations?.points_forts || [],
+            points_faibles: recommendations?.points_faibles || [],
+            suggestions: recommendations?.suggestions || [],
+            creative: creativeAnalysis,
+            
+            // Contenu enrichi
+            contenu_video: videoAnalysis ? {
+                niche_detectee: videoAnalysis.NICHE_DETECTEE || 'Non déterminée',
+                type_contenu: videoAnalysis.TYPE_CONTENU || 'Non déterminé',
+                qualite_production: videoAnalysis.QUALITE_PRODUCTION || 'Non évaluée',
+                elements_viraux: videoAnalysis.ELEMENTS_VIRAUX || [],
+                emotions_suscitees: videoAnalysis.EMOTIONS_SUSCITEES || [],
+                cible_audience: videoAnalysis.CIBLE_AUDIENCE || 'Non déterminée',
+                contenu_visuel: videoAnalysis.CONTENU_VISUEL || 'Non analysé',
+                recommandations_visuelles: videoAnalysis.RECOMMANDATIONS_VISUELLES || []
             } : null,
-            metrics: metrics || {
-                engagementRate: null,
-                likesRatio: null,
-                commentsRatio: null,
-                sharesRatio: null,
-                totalEngagements: null,
-                viralityIndex: null
+            
+            contenu_audio: audioTranscription ? {
+                transcription: audioTranscription.text || 'Non disponible',
+                langue: audioTranscription.language || 'Non détectée',
+                duree: audioTranscription.duration || null,
+                sentiment: audioTranscription.sentiment || 'Non analysé',
+                topics: audioTranscription.topics || [],
+                confidence: audioTranscription.confidence || 0
+            } : null
+        },
+        metadata: {
+            analysisTimestamp: new Date().toISOString(),
+            frameworkVersion: "5.0-video-audio-fixed",
+            apiEndpoint: "/api/analyze-video",
+            userInfo: {
+                country: userInfo.country,
+                timestamp: userInfo.timestamp
             },
-            analysis: {
-                score: predictiveScore.score,
-                potentiel_viral: predictiveScore.potentielViral,
-                points_forts: recommendations?.points_forts || [],
-                points_faibles: recommendations?.points_faibles || [],
-                suggestions: recommendations?.suggestions || [],
-                creative: creativeAnalysis,
-                
-                // NOUVEAU: Contenu enrichi
-                contenu_video: videoAnalysis ? {
-                    niche_detectee: videoAnalysis.NICHE_DETECTEE || 'Non déterminée',
-                    type_contenu: videoAnalysis.TYPE_CONTENU || 'Non déterminé',
-                    qualite_production: videoAnalysis.QUALITE_PRODUCTION || 'Non évaluée',
-                    elements_viraux: videoAnalysis.ELEMENTS_VIRAUX || [],
-                    emotions_suscitees: videoAnalysis.EMOTIONS_SUSCITEES || [],
-                    cible_audience: videoAnalysis.CIBLE_AUDIENCE || 'Non déterminée',
-                    contenu_visuel: videoAnalysis.CONTENU_VISUEL || 'Non analysé',
-                    recommandations_visuelles: videoAnalysis.RECOMMANDATIONS_VISUELLES || []
-                } : null,
-                
-                contenu_audio: audioTranscription ? {
-                    transcription: audioTranscription.text || 'Non disponible',
-                    langue: audioTranscription.language || 'Non détectée',
-                    duree: audioTranscription.duration || null,
-                    sentiment: audioTranscription.sentiment || 'Non analysé',
-                    topics: audioTranscription.topics || [],
-                    confidence: audioTranscription.confidence || 0
-                } : null
-            },
-            metadata: {
-                analysisTimestamp: new Date().toISOString(), // CORRIGÉ: Date formatée correctement
-                frameworkVersion: "5.0-video-audio",
-                apiEndpoint: "/api/analyze-video",
-                userInfo: {
-                    country: userInfo.country,
-                    timestamp: userInfo.timestamp
-                },
-                features: {
-                    oembed: !!thumbnail,
-                    stats_extraction: !!stats,
-                    video_analysis: !!videoAnalysis,
-                    audio_transcription: !!audioTranscription,
-                    logging: true
-                }
+            features: {
+                oembed: !!thumbnail,
+                stats_extraction: !!stats,
+                video_analysis: !!videoAnalysis,
+                audio_transcription: !!audioTranscription,
+                logging: !!logId
             }
-        };
+        }
+    };
 
-        console.log(`✅ Analyse complète terminée - ID: ${logId}`);
-        console.log(`🎯 Score: ${predictiveScore.score}/100 (${predictiveScore.potentielViral})`);
-        
-        return new Response(
-            JSON.stringify(finalResponse), 
-            { 
-                status: 200,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'public, max-age=300',
-                    'X-Analysis-ID': logId,
-                    'X-Framework-Version': '5.0-video-audio'
-                }
-            }
-        );
-
-    } catch (error) {
-        console.error("❌ Erreur critique:", error.message);
-        
-        return new Response(
-            JSON.stringify({ 
-                error: "Erreur interne du serveur",
-                errorCode: "ANALYSIS_ERROR",
-                details: process.env.NODE_ENV === 'development' ? error.message : "Erreur de traitement",
-                timestamp: new Date().toISOString(),
-                support: "Réessayez dans quelques instants"
-            }), 
-            { 
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-    }
+    console.log(`✅ Analyse complète terminée - ID: ${logId}`);
+    console.log(`🎯 Score: ${predictiveScore.score}/100 (${predictiveScore.potentielViral})`);
+    
+    return jsonResponse(finalResponse, 200, {
+        'X-Analysis-ID': logId || 'unknown',
+        'X-Framework-Version': '5.0-video-audio-fixed'
+    });
 }
 
-// NOUVEAU: Endpoint pour récupérer les logs d'analyse (GET /api/analyze-video?logs=true)
+// Endpoint GET pour les logs d'analyse
 export async function GET(req) {
     try {
         const url = new URL(req.url);
@@ -784,30 +769,24 @@ export async function GET(req) {
                 analyse_par_jour: getAnalysesPerDay()
             };
             
-            return new Response(JSON.stringify({
+            return jsonResponse({
                 success: true,
                 stats: stats,
                 recent_analyses: analysisLogs.slice(-10) // 10 dernières analyses
-            }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
             });
         }
         
-        return new Response(JSON.stringify({
-            error: "Endpoint GET non supporté sans paramètre logs=true"
-        }), {
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return jsonResponse({
+            error: "Endpoint GET non supporté sans paramètre logs=true",
+            usage: "Utilisez GET /api/analyze-video?logs=true pour voir les statistiques"
+        }, 405);
         
     } catch (error) {
-        return new Response(JSON.stringify({
-            error: "Erreur lors de la récupération des logs"
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        console.error("❌ Erreur GET:", error);
+        return jsonResponse({
+            error: "Erreur lors de la récupération des logs",
+            errorCode: 'LOGS_ERROR'
+        }, 500);
     }
 }
 
@@ -852,9 +831,13 @@ function getAnalysesPerDay() {
     }
     
     analysisLogs.forEach(log => {
-        const dateStr = log.timestamp.split('T')[0];
-        if (daysCounts.hasOwnProperty(dateStr)) {
-            daysCounts[dateStr]++;
+        try {
+            const dateStr = log.timestamp.split('T')[0];
+            if (daysCounts.hasOwnProperty(dateStr)) {
+                daysCounts[dateStr]++;
+            }
+        } catch (error) {
+            console.warn("⚠️ Date invalide dans log:", log.timestamp);
         }
     });
     
