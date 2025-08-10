@@ -7,38 +7,450 @@
 <title>Analyseur de Vidéo – PRO</title>
 <style>
   :root {
-    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(217,70,239,0.2),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #d946ef; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%); --accent-strong: #c026d3; --radius: 16px; --font-sans: 'Inter', system-ui, sans-serif;
+    --bg: #111111;
+    --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0));
+    --card-bg: rgba(24, 24, 27, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --ink: #E4E4E7;
+    --muted: #A1A1AA;
+    --accent: #d946ef;
+    --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%);
+    --accent-strong: #c026d3;
+    --radius: 16px;
+    --font-sans: 'Inter', system-ui, sans-serif;
   }
-  [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%); }
-  * { box-sizing: border-box; } body { margin: 0; background-color: var(--bg); background-image: var(--bg-glow); background-attachment: fixed; color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; }
-  .main-layout { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
-  @media(min-width: 960px) { .main-layout { grid-template-columns: 450px 1fr; } }
-  header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-  .nav-link { color: var(--ink); text-decoration: none; border: 1px solid var(--card-border); padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,0.05); }
-  [data-theme="light"] .nav-link { background: var(--card-bg); }
-  .nav-link.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .nav-link:not(.active):hover { background: rgba(255,255,255,0.1); }
-  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; }
-  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-  .card-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
-  .icon { width: 24px; height: 24px; color: var(--muted); }
-  label { font-weight: 500; display: block; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
-  input[type="url"] { width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; background: rgba(0,0,0,0.2); color: var(--ink); font-size: 15px; }
-  input[type="url"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2); }
-  .btn { border: 0; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-  .btn.primary { background: var(--accent); color: #fff; }
-  .btn.primary:hover { background: var(--accent-strong); }
-  #results { min-height: 200px; }
-  .loader { text-align: center; padding: 2rem; }
-  .spinner { width: 32px; height: 32px; border: 4px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; }
-  [data-theme="light"] .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; }
-  .stat-card-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
-  .stat-card-value { font-size: 1.5rem; font-weight: 700; }
-  .er-card { grid-column: 1 / -1; text-align: center; }
-  .er-value { font-size: 2rem; font-weight: 800; }
-  .er-value.good { color: #22c55e; } .er-value.medium { color: #f59e0b; } .er-value.bad { color: #ef4444; }
-  .analysis-list h3 { font-size: 1rem; margin
+  
+  [data-theme="light"] {
+    --bg: #F7F8FA;
+    --bg-glow: none;
+    --card-bg: #FFFFFF;
+    --card-border: #E5E7EB;
+    --ink: #111827;
+    --muted: #6B7280;
+    --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%);
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    background-image: var(--bg-glow);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  
+  .main-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  @media(min-width: 960px) {
+    .main-layout {
+      grid-template-columns: 450px 1fr;
+    }
+  }
+  
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .nav-link {
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--card-border);
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+  }
+  
+  [data-theme="light"] .nav-link {
+    background: var(--card-bg);
+  }
+  
+  .nav-link.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  
+  .nav-link:not(.active):hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .icon {
+    width: 24px;
+    height: 24px;
+    color: var(--muted);
+  }
+  
+  label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  
+  input[type="url"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.2);
+    color: var(--ink);
+    font-size: 15px;
+  }
+  
+  input[type="url"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2);
+  }
+  
+  .btn {
+    border: 0;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  
+  .btn.primary:hover {
+    background: var(--accent-strong);
+  }
+  
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  #results {
+    min-height: 200px;
+  }
+  
+  .loader {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 4px solid var(--card-border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stat-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+  
+  [data-theme="light"] .stat-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .stat-card-title {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+  
+  .stat-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .er-card {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+  
+  .er-value {
+    font-size: 2rem;
+    font-weight: 800;
+  }
+  
+  .er-value.good {
+    color: #22c55e;
+  }
+  
+  .er-value.medium {
+    color: #f59e0b;
+  }
+  
+  .er-value.bad {
+    color: #ef4444;
+  }
+  
+  .analysis-list h3 {
+    font-size: 1rem;
+    margin: 1rem 0 0.5rem 0;
+    color: var(--ink);
+  }
+  
+  .analysis-list ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+  
+  .analysis-list li {
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+  }
+  
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .theme-toggle:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+  <div class="main-layout">
+    <header>
+      <h1>Analyseur de Vidéo – PRO</h1>
+      <nav>
+        <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+      </nav>
+    </header>
+    
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+        </svg>
+        <h2>Analyser une vidéo</h2>
+      </div>
+      
+      <form onsubmit="analyzeVideo(event)">
+        <label for="videoUrl">URL de la vidéo YouTube</label>
+        <input 
+          type="url" 
+          id="videoUrl" 
+          placeholder="https://www.youtube.com/watch?v=..." 
+          required
+        />
+        <br><br>
+        <button type="submit" class="btn primary" id="analyzeBtn">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 10.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
+          </svg>
+          Analyser
+        </button>
+      </form>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <h2>Résultats</h2>
+      </div>
+      
+      <div id="results">
+        <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
+          Entrez une URL YouTube pour commencer l'analyse
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+    }
+
+    function showLoader() {
+      document.getElementById('results').innerHTML = `
+        <div class="loader">
+          <div class="spinner"></div>
+          <p style="margin-top: 1rem; color: var(--muted);">Analyse en cours...</p>
+        </div>
+      `;
+    }
+
+    function showError(message) {
+      document.getElementById('results').innerHTML = `
+        <div class="error-message">
+          <strong>Erreur :</strong> ${message}
+        </div>
+      `;
+    }
+
+    function showResults(data) {
+      // Simulation de données d'analyse
+      const mockData = {
+        title: "Vidéo analysée",
+        views: "1,234,567",
+        likes: "45,678",
+        comments: "2,345",
+        duration: "10:45",
+        engagementRate: 8.5,
+        tags: ["tech", "tutorial", "coding"],
+        description: "Description de la vidéo..."
+      };
+
+      const erClass = mockData.engagementRate > 10 ? 'good' : 
+                     mockData.engagementRate > 5 ? 'medium' : 'bad';
+
+      document.getElementById('results').innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-title">Vues</div>
+            <div class="stat-card-value">${mockData.views}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">J'aime</div>
+            <div class="stat-card-value">${mockData.likes}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Commentaires</div>
+            <div class="stat-card-value">${mockData.comments}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Durée</div>
+            <div class="stat-card-value">${mockData.duration}</div>
+          </div>
+          <div class="stat-card er-card">
+            <div class="stat-card-title">Taux d'engagement</div>
+            <div class="er-value ${erClass}">${mockData.engagementRate}%</div>
+          </div>
+        </div>
+        
+        <div class="analysis-list">
+          <h3>Tags populaires</h3>
+          <ul>
+            ${mockData.tags.map(tag => `<li>#${tag}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    async function analyzeVideo(event) {
+      event.preventDefault();
+      
+      const url = document.getElementById('videoUrl').value;
+      const btn = document.getElementById('analyzeBtn');
+      
+      // Validation basique de l'URL YouTube
+      if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
+        showError('Veuillez entrer une URL YouTube valide');
+        return;
+      }
+      
+      btn.disabled = true;
+      showLoader();
+      
+      try {
+        // Simulation d'une requête API
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // En réalité, ici vous feriez un appel à votre API
+        showResults();
+        
+      } catch (error) {
+        showError('Impossible d\'analyser cette vidéo. Veuillez réessayer.');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Analyseur de vidéo initialisé');
+    });
+  </script>
+</body>
+</html>
