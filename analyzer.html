@@ -38,10 +38,13 @@
   .tab-btn { background: none; border: none; color: var(--muted); padding: 10px 16px; cursor: pointer; font-size: 15px; font-weight: 500; border-bottom: 2px solid transparent; }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-content { display: none; }
-  .tab-content.active { display: block; }
+  .tab-content.active { display: block; animation: fadeIn 0.5s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
   .info-card { background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; }
-  h3 { font-size: 1.1rem; margin-top: 0; }
+  [data-theme="light"] .info-card { background: #f9fafb; border: 1px solid #e5e7eb; }
+  h3 { font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem;}
+  ul { padding-left: 20px; margin: 0; } li { margin-bottom: 0.5rem; }
   .transcription-segment { margin-bottom: 1rem; padding: 0.5rem; border-left: 3px solid var(--card-border); }
   .transcription-segment:hover { background-color: rgba(255,255,255,0.05); }
   .timestamp { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
@@ -89,7 +92,7 @@
     const $ = id => document.getElementById(id);
 
     function showLoader() {
-        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p>Analyse en cours...</p></div>`;
+        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p>Analyse en cours... (peut prendre jusqu'à 2 minutes)</p></div>`;
     }
 
     function showError(message) {
@@ -104,58 +107,26 @@
     }
 
     function showResults(data) {
-        const { stats, audioAnalysis } = data;
+        const { audioAnalysis } = data;
         
-        // --- ONGLET 1: SYNTHÈSE ---
-        const A_insights = audioAnalysis.viralscope_insights.map(i => `<li>${i}</li>`).join('');
-        const B_optimizations = audioAnalysis.audio_optimization.map(o => `<li>${o}</li>`).join('');
-        const tab1_synthesis = `
-            <div class="grid-2">
-                <div class="info-card">
-                    <h3>✅ Insights Clés</h3>
-                    <ul>${A_insights}</ul>
-                </div>
-                <div class="info-card">
-                    <h3>💡 Optimisations Audio</h3>
-                    <ul>${B_optimizations}</ul>
-                </div>
-            </div>
-        `;
+        const insights = audioAnalysis.viralscope_insights.map(i => `<li>${i}</li>`).join('');
+        const optimizations = audioAnalysis.audio_optimization.map(o => `<li>${o}</li>`).join('');
+        const tab1_synthesis = `<div class="grid-2"><div class="info-card"><h3>✅ Insights Clés</h3><ul>${insights}</ul></div><div class="info-card"><h3>💡 Optimisations Audio</h3><ul>${optimizations}</ul></div></div>`;
         
-        // --- ONGLET 2: TRANSCRIPTION ---
-        const C_segments = audioAnalysis.segments.map(seg => `
-            <div class="transcription-segment">
-                <p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p>
-                <p>${seg.text}</p>
-            </div>
-        `).join('');
-        const tab2_transcription = `<div>${C_segments}</div>`;
+        const segments = audioAnalysis.segments.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('');
+        const tab2_transcription = `<div>${segments}</div>`;
         
-        // --- ONGLET 3: ANALYSE DÉTAILLÉE ---
-        const D_hooks = audioAnalysis.hooks_detected.map(h => `<li>"${h.text}" <i>(à ${h.start_time.toFixed(1)}s)</i></li>`).join('');
-        const E_ctas = audioAnalysis.cta_detected.map(c => `<li>"${c.text}" <i>(à ${c.start_time.toFixed(1)}s)</i></li>`).join('');
-        const F_wpm = audioAnalysis.temporal_analysis.words_per_minute.toFixed(0);
-        const G_fillers = audioAnalysis.speech_patterns.filler_words_count;
+        const hooks = audioAnalysis.hooks_detected.map(h => `<li>"${h.text}" <i>(à ${h.start_time.toFixed(1)}s)</i></li>`).join('');
+        const ctas = audioAnalysis.cta_detected.map(c => `<li>"${c.text}" <i>(à ${c.start_time.toFixed(1)}s)</i></li>`).join('');
+        const wpm = audioAnalysis.temporal_analysis.words_per_minute.toFixed(0);
+        const fillers = audioAnalysis.speech_patterns.filler_words_count;
         const tab3_details = `
             <div class="grid-2">
-                <div class="info-card">
-                    <h3>🎣 Hooks Détectés</h3>
-                    ${D_hooks ? `<ul>${D_hooks}</ul>` : '<p class="muted">Aucun hook détecté.</p>'}
-                </div>
-                <div class="info-card">
-                    <h3>📢 CTAs Détectés</h3>
-                    ${E_ctas ? `<ul>${E_ctas}</ul>` : '<p class="muted">Aucun CTA détecté.</p>'}
-                </div>
-                <div class="info-card">
-                    <h3>🗣️ Rythme de parole</h3>
-                    <p>${F_wpm} mots/minute</p>
-                </div>
-                <div class="info-card">
-                    <h3>💬 Mots de remplissage</h3>
-                    <p>${G_fillers} ("euh", "alors", etc.)</p>
-                </div>
-            </div>
-        `;
+                <div class="info-card"><h3>🎣 Hooks Détectés</h3>${hooks ? `<ul>${hooks}</ul>` : '<p class="muted">Aucun.</p>'}</div>
+                <div class="info-card"><h3>📢 CTAs Détectés</h3>${ctas ? `<ul>${ctas}</ul>` : '<p class="muted">Aucun.</p>'}</div>
+                <div class="info-card"><h3>🗣️ Rythme de parole</h3><p>${wpm} mots/minute</p></div>
+                <div class="info-card"><h3>💬 Mots de remplissage</h3><p>${fillers} ("euh", etc.)</p></div>
+            </div>`;
 
         $('results').innerHTML = `
             <div class="tabs">
