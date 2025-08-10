@@ -11,33 +11,50 @@ export default async function handler(req) {
   }
 
   try {
-    // --- Étape 1: Utilisation de l'endpoint oEmbed de TikTok ---
-    const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
-    const oembedResponse = await fetch(oembedUrl);
+    // --- Étape 1: Scraping "agressif" de la page TikTok ---
+    const tiktokResponse = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
 
-    if (!oembedResponse.ok) {
-      throw new Error("Impossible de récupérer les informations de la vidéo via l'endpoint oEmbed. L'URL est peut-être invalide ou la vidéo est privée.");
+    const html = await tiktokResponse.text();
+    
+    // On cherche le trésor : le JSON dans la balise <script id="__NEXT_DATA__">
+    const scriptTagContent = html.split('<script id="__NEXT_DATA__" type="application/json">')[1]?.split('</script>')[0];
+
+    if (!scriptTagContent) {
+        throw new Error("Impossible de trouver les données de la vidéo. La structure de la page a peut-être changé ou la vidéo est indisponible.");
     }
     
-    const videoData = await oembedResponse.json();
+    const data = JSON.parse(scriptTagContent);
+    const itemStruct = data.props.pageProps.itemInfo.itemStruct;
     
-    const description = videoData.title || "Aucune description trouvée.";
-    const thumbnail = videoData.thumbnail_url;
+    // --- Étape 2: Extraction de toutes les stats ---
+    const stats = {
+        views: parseInt(itemStruct.stats.playCount) || 0,
+        likes: parseInt(itemStruct.stats.diggCount) || 0,
+        comments: parseInt(itemStruct.stats.commentCount) || 0,
+        shares: parseInt(itemStruct.stats.shareCount) || 0,
+    };
+    const description = itemStruct.desc;
+    const thumbnail = itemStruct.video.cover;
 
-    if (!thumbnail) {
-        throw new Error("Miniature non trouvée dans les données oEmbed.");
-    }
+    // --- Étape 3: Calcul du Taux d'Engagement (ER) ---
+    const totalEngagements = stats.likes + stats.comments + stats.shares;
+    const engagementRate = stats.views > 0 ? (totalEngagements / stats.views) * 100 : 0;
 
-    // --- Étape 2: Analyse par l'IA d'OpenAI ---
-    const system_prompt = `Tu es un expert en marketing viral sur TikTok. Ton rôle est d'analyser la description textuelle et la miniature d'une vidéo pour évaluer son potentiel de réussite.
+
+    // --- Étape 4: Analyse par l'IA, boostée avec les stats ---
+    const system_prompt = `Tu es un expert en marketing viral sur TikTok. Ton rôle est d'analyser une vidéo en te basant sur ses statistiques de performance et son contenu (description, miniature).
+
+    Fournis une analyse structurée au format JSON. Le JSON doit contenir :
+    - "score": un nombre de 0 à 100 évaluant le potentiel global.
+    - "points_forts": un tableau de 2-3 points positifs (strings).
+    - "points_faibles": un tableau de 2-3 points négatifs (strings).
+    - "suggestions": un tableau de 2-3 conseils concrets.
     
-    Fournis une analyse structurée et concise au format JSON. Le JSON doit contenir les clés suivantes :
-    - "score": un nombre entier de 0 à 100 évaluant le potentiel de viralité.
-    - "points_forts": un tableau de 2 à 3 points positifs (strings).
-    - "points_faibles": un tableau de 2 à 3 points négatifs (strings).
-    - "suggestions": un tableau de 2 à 3 conseils concrets pour améliorer la vidéo (strings).
-    
-    Sois direct, honnête et base ton analyse sur des principes de marketing de contenu (clarté, curiosité, bénéfice, appel à l'action, etc.).`;
+    Interprète les statistiques fournies. Un taux d'engagement > 5% est excellent. Un ratio j'aime/vues > 10% est très bon. Commente ces chiffres dans ton analyse.`;
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -55,7 +72,13 @@ export default async function handler(req) {
             content: [
               {
                 type: "text",
-                text: `Analyse cette vidéo. Description: "${description}"`
+                text: `Analyse cette vidéo.
+                - Description: "${description}"
+                - Vues: ${stats.views}
+                - J'aime: ${stats.likes}
+                - Commentaires: ${stats.comments}
+                - Partages: ${stats.shares}
+                - Taux d'engagement calculé: ${engagementRate.toFixed(2)}%`
               },
               {
                 type: "image_url",
@@ -67,15 +90,19 @@ export default async function handler(req) {
       })
     });
     
-    if (!r.ok) {
-        const errText = await r.text();
-        throw new Error(`Erreur de l'API OpenAI: ${errText}`);
-    }
+    if (!r.ok) throw new Error(`Erreur de l'API OpenAI: ${await r.text()}`);
 
     const aiResponse = await r.json();
     const analysis = JSON.parse(aiResponse.choices[0].message.content);
 
-    return new Response(JSON.stringify(analysis), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    // On renvoie TOUT au frontend
+    const finalResponse = {
+        stats,
+        engagementRate: engagementRate.toFixed(2),
+        analysis
+    };
+
+    return new Response(JSON.stringify(finalResponse), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error(error);
