@@ -85,7 +85,7 @@ export default async function handler(req) {
         userPrompt += `\n(Les statistiques de performance n'ont pas pu être récupérées, concentre-toi uniquement sur le contenu : description et miniature).`;
     }
 
-    const system_prompt = `Tu es un expert en marketing viral sur TikTok... (prompt inchangé)`;
+    const system_prompt = `Tu es un expert en marketing viral sur TikTok. Ton rôle est d'analyser une vidéo en te basant sur ses statistiques de performance et son contenu. Fournis une analyse structurée au format JSON avec les clés "score", "points_forts", "points_faibles", "suggestions". Interprète les stats si elles sont là. Un ER > 5% est excellent. Un ratio j'aime/vues > 10% est très bon.`;
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -102,11 +102,13 @@ export default async function handler(req) {
     if (!r.ok) throw new Error(`Erreur de l'API OpenAI: ${await r.text()}`);
 
     const aiResponse = await r.json();
+    const content = aiResponse.choices[0].message.content;
     let analysis;
     try {
-      analysis = JSON.parse(aiResponse.choices[0].message.content);
+      analysis = JSON.parse(content);
     } catch (e) {
-      throw new Error(`L'IA a renvoyé une réponse invalide : "${aiResponse.choices[0].message.content}"`);
+      console.error("OpenAI response was not valid JSON:", content);
+      throw new Error(`L'IA a renvoyé une réponse invalide. Contenu : "${content}"`);
     }
 
     const finalResponse = { stats, engagementRate: engagementRate ? engagementRate.toFixed(2) : null, analysis };
