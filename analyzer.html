@@ -518,6 +518,8 @@
       showLoader();
       
       try {
+        console.log('📡 Envoi de la requête à l\'API...');
+        
         // Appel à votre API réelle
         const response = await fetch('/api/analyze-tiktok', {
           method: 'POST',
@@ -527,17 +529,45 @@
           body: JSON.stringify({ url })
         });
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Erreur lors de l\'analyse');
+        console.log('📥 Réponse reçue:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        // Vérifier le Content-Type de la réponse
+        const contentType = response.headers.get('content-type');
+        console.log('📋 Content-Type:', contentType);
+        
+        // Lire la réponse en tant que texte d'abord
+        const responseText = await response.text();
+        console.log('📝 Réponse brute (premiers 200 caractères):', responseText.substring(0, 200));
+        
+        // Si ce n'est pas du JSON, afficher l'erreur
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error(`L'API a retourné du ${contentType || 'HTML'} au lieu du JSON. Vérifiez que l'endpoint existe.`);
         }
         
-        const data = await response.json();
+        // Tenter de parser le JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('❌ Erreur de parsing JSON:', parseError);
+          throw new Error(`Réponse API invalide. Contenu reçu: "${responseText.substring(0, 100)}..."`);
+        }
+        
+        // Vérifier si l'API a retourné une erreur
+        if (!response.ok) {
+          throw new Error(data.error || `Erreur API: ${response.status} ${response.statusText}`);
+        }
+        
+        console.log('✅ Données parsées avec succès:', data);
         showResults(data);
         
       } catch (error) {
-        console.error('Erreur API:', error);
-        showError(error.message || 'Impossible d\'analyser cette vidéo. Veuillez réessayer.');
+        console.error('❌ Erreur complète:', error);
+        showError(`${error.message}`);
       } finally {
         btn.disabled = false;
       }
