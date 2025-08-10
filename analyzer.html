@@ -40,13 +40,13 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; animation: fadeIn 0.5s; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
-  .info-card { background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; }
-  [data-theme="light"] .info-card { background: #f9fafb; border: 1px solid #e5e7eb; }
-  h3 { font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem;}
-  ul { padding-left: 20px; margin: 0; } li { margin-bottom: 0.5rem; }
+  .framework-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+  .pillar-card { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem; }
+  .pillar-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .metric-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .metric-item:last-child { border-bottom: none; }
+  .metric-value { font-weight: 600; }
   .transcription-segment { margin-bottom: 1rem; padding: 0.5rem; border-left: 3px solid var(--card-border); }
-  .transcription-segment:hover { background-color: rgba(255,255,255,0.05); }
   .timestamp { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
 </style>
 </head>
@@ -108,7 +108,7 @@
 
     function showResults(data) {
         const { video, stats, metrics, analysis, transcription } = data;
-        
+
         const tab1_synthesis = `
             <div class="grid-2">
                 <div class="info-card"><h3>✅ Points Forts</h3><ul>${analysis.points_forts.map(i => `<li>${i}</li>`).join('')}</ul></div>
@@ -119,14 +119,30 @@
         const segments = transcription?.segments?.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('') || '<p class="muted">Transcription non disponible.</p>';
         const tab2_transcription = `<div>${segments}</div>`;
         
-        const tab3_details = `
-            <div class="grid-2">
-                <div class="info-card"><h3>📈 Vues</h3><p>${stats.views.toLocaleString('fr-FR')}</p></div>
-                <div class="info-card"><h3>❤️ J'aime</h3><p>${stats.likes.toLocaleString('fr-FR')}</p></div>
-                <div class="info-card"><h3>💬 Commentaires</h3><p>${stats.comments.toLocaleString('fr-FR')}</p></div>
-                <div class="info-card"><h3>📤 Partages</h3><p>${stats.shares.toLocaleString('fr-FR')}</p></div>
-                <div class="info-card"><h3>🔥 Taux d'engagement</h3><p>${metrics.engagementRate.toFixed(2)}%</p></div>
-                <div class="info-card"><h3>👍 Ratio J'aime/Vues</h3><p>${metrics.likesRatio.toFixed(2)}%</p></div>
+        const tab3_framework = `
+            <div class="framework-grid">
+                <div class="pillar-card">
+                    <div class="pillar-title"><span>📊</span>Quantitatif</div>
+                    <div class="metric-item"><span>Taux d'engagement</span><span class="metric-value">${metrics.engagementRate.toFixed(2)}%</span></div>
+                    <div class="metric-item"><span>Ratio J'aime/Vues</span><span class="metric-value">${metrics.likesRatio.toFixed(2)}%</span></div>
+                </div>
+                <div class="pillar-card">
+                    <div class="pillar-title"><span>🎨</span>Qualitatif</div>
+                    <div class="metric-item"><span>Hook puissant</span><span class="metric-value">${analysis.qualitatif.hookPuissant ? '✅' : '❌'}</span></div>
+                    <div class="metric-item"><span>Message clair</span><span class="metric-value">${analysis.qualitatif.messageClair ? '✅' : '❌'}</span></div>
+                    <div class="metric-item"><span>CTA présent</span><span class="metric-value">${analysis.qualitatif.ctaPresent ? '✅' : '❌'}</span></div>
+                </div>
+                <div class="pillar-card">
+                    <div class="pillar-title"><span>⚙️</span>Algorithmique</div>
+                    <div class="metric-item"><span>Hashtags pertinents</span><span class="metric-value">${analysis.algorithmique.hashtagsPertinents ? '✅' : '❌'}</span></div>
+                    <div class="metric-item"><span>Durée optimale</span><span class="metric-value">${analysis.algorithmique.dureeOptimale ? '✅' : '❌'}</span></div>
+                    <div class="metric-item"><span>Tendance utilisée</span><span class="metric-value">${analysis.algorithmique.tendanceUtilisee ? '✅' : '❌'}</span></div>
+                </div>
+                <div class="pillar-card">
+                    <div class="pillar-title"><span>📈</span>Comparatif</div>
+                    <div class="metric-item"><span>Potentiel Viral</span><span class="metric-value">${analysis.comparatif.potentielViral}</span></div>
+                    <div class="metric-item"><span>Benchmark ER</span><span class="metric-value">${analysis.comparatif.benchmarkER}</span></div>
+                </div>
             </div>`;
 
         $('results').innerHTML = `
@@ -139,11 +155,11 @@
             </div>
             <div class="tabs">
                 <button class="tab-btn active" id="tab-btn-synthesis" onclick="activateTab('synthesis')">Synthèse IA</button>
-                <button class="tab-btn" id="tab-btn-details" onclick="activateTab('details')">Statistiques</button>
+                <button class="tab-btn" id="tab-btn-framework" onclick="activateTab('framework')">Framework 4 Piliers</button>
                 <button class="tab-btn" id="tab-btn-transcription" onclick="activateTab('transcription')">Transcription Audio</button>
             </div>
             <div id="tab-content-synthesis" class="tab-content active">${tab1_synthesis}</div>
-            <div id="tab-content-details" class="tab-content">${tab3_details}</div>
+            <div id="tab-content-framework" class="tab-content">${tab3_framework}</div>
             <div id="tab-content-transcription" class="tab-content">${tab2_transcription}</div>
         `;
     }
