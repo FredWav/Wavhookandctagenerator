@@ -4,6 +4,29 @@ export const config = { runtime: "nodejs" };
 // Base de données en mémoire (CONSERVÉE)
 let analyticsDatabase = [];
 
+// Fonction pour parser le body en Node.js runtime Vercel
+async function parseRequestBody(req) {
+    try {
+        // En Node.js runtime Vercel, req est un objet NextRequest-like
+        if (req.json && typeof req.json === 'function') {
+            return await req.json();
+        }
+        
+        // Fallback pour les cas où req.json n'existe pas
+        if (req.body) {
+            return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        }
+        
+        // Si req est un ReadableStream
+        const text = await req.text();
+        return JSON.parse(text);
+        
+    } catch (error) {
+        console.error('❌ Error parsing request body:', error.message);
+        return null;
+    }
+}
+
 // Headers CORS
 const corsHeaders = {
     'Content-Type': 'application/json',
@@ -385,7 +408,7 @@ Analyse en profondeur cette corrélation ER/vues et donne des recommandations pr
                 max_tokens: 800,
                 temperature: 0.3
             }),
-            signal: AbortSignal.timeout(25000) // Node.js: timeout généreux 25s
+            signal: AbortSignal.timeout(30000) // 30s normal
         });
 
         if (response.ok) {
@@ -464,9 +487,9 @@ export default async function handler(req) {
     }
 
     try {
-        console.log(`🚀 Analyse TikTok 2025 démarrée (Node.js Runtime - 60s timeout)`);
+        console.log(`🚀 Analyse TikTok 2025 (Node.js Runtime - 60s disponibles)`);
         
-        const body = await req.json().catch(() => null);
+        const body = await parseRequestBody(req);
         if (!body || !body.url) {
             return json({ error: 'URL manquante' }, 400);
         }
@@ -483,13 +506,13 @@ export default async function handler(req) {
         let stats = null;
         let htmlContent = null;
 
-        // ÉTAPE 1: oEmbed (Node.js: timeout confortable)
+        // ÉTAPE 1: oEmbed (Node.js - timeout normal)
         try {
             console.log("📡 oEmbed...");
             const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
             const oembedResponse = await fetch(oembedUrl, {
                 headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TikTokAnalyzer/2025)' },
-                signal: AbortSignal.timeout(12000) // 12s - plus confortable
+                signal: AbortSignal.timeout(10000) // 10s normal
             });
 
             if (oembedResponse.ok) {
@@ -503,7 +526,7 @@ export default async function handler(req) {
             return json({ error: "Vidéo TikTok inaccessible ou privée" }, 404);
         }
 
-        // ÉTAPE 2: ScrapingBee (Node.js: timeout généreux)
+        // ÉTAPE 2: ScrapingBee (Node.js - timeout normal)
         const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
         if (SCRAPINGBEE_API_KEY) {
             try {
@@ -512,10 +535,10 @@ export default async function handler(req) {
                 scrapingBeeUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
                 scrapingBeeUrl.searchParams.set('url', tiktokUrl);
                 scrapingBeeUrl.searchParams.set('render_js', 'true');
-                scrapingBeeUrl.searchParams.set('wait', '4000'); // Retour aux 4s originaux
+                scrapingBeeUrl.searchParams.set('wait', '4000'); // 4s normal
 
                 const response = await fetch(scrapingBeeUrl.toString(), {
-                    signal: AbortSignal.timeout(35000) // Retour aux 35s originaux
+                    signal: AbortSignal.timeout(35000) // 35s normal
                 });
 
                 if (response.ok) {
@@ -629,7 +652,7 @@ export default async function handler(req) {
             metadata: {
                 analysisTimestamp: new Date().toISOString(),
                 analysisId: analyticsId,
-                frameworkVersion: "2025-nodejs-runtime",
+                frameworkVersion: "2025-nodejs-runtime-fixed",
                 totalAnalyses: analyticsDatabase.length,
                 features: {
                     oembed: !!oembedData,
