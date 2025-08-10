@@ -1,7 +1,7 @@
-// api/analyze-video.js - Analyseur TikTok 2025 - Version complète
+// api/analyze-video.js - Version COMPLÈTE avec timeouts optimisés
 export const config = { runtime: "edge" };
 
-// Base de données en mémoire (en production: utiliser une vraie DB)
+// Base de données en mémoire (CONSERVÉE)
 let analyticsDatabase = [];
 
 // Headers CORS
@@ -17,7 +17,7 @@ function json(res, status = 200) {
     return new Response(JSON.stringify(res), { status, headers: corsHeaders });
 }
 
-// Validation URL TikTok
+// Validation URL TikTok (CONSERVÉE)
 function validateTikTokUrl(url) {
     const patterns = [
         /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/,
@@ -27,7 +27,7 @@ function validateTikTokUrl(url) {
     return patterns.some(pattern => pattern.test(url));
 }
 
-// Hashtags TikTok 2025 mis à jour
+// Hashtags TikTok 2025 COMPLETS (CONSERVÉS)
 function getTrendingHashtags2025() {
     return {
         generaux: [
@@ -50,7 +50,7 @@ function getTrendingHashtags2025() {
     };
 }
 
-// Extraction description optimisée
+// Extraction description optimisée (CONSERVÉE)
 function extractDescription(oembedData, htmlContent = null) {
     let description = "";
     
@@ -79,7 +79,7 @@ function extractDescription(oembedData, htmlContent = null) {
         .trim() || "Description non disponible";
 }
 
-// Extraction hashtags 2025
+// Extraction hashtags 2025 (CONSERVÉE)
 function extractHashtags(description, htmlContent = null) {
     const hashtags = new Set();
     
@@ -100,7 +100,7 @@ function extractHashtags(description, htmlContent = null) {
     return Array.from(hashtags).slice(0, 15);
 }
 
-// Parsing JSON TikTok
+// Parsing JSON TikTok COMPLET (CONSERVÉ)
 function findJsonBlob(html) {
     const methods = [
         { name: "SIGI_STATE", regex: /<script id="SIGI_STATE" type="application\/json">([^<]*)<\/script>/ },
@@ -124,7 +124,7 @@ function findJsonBlob(html) {
     return null;
 }
 
-// Extraction stats avec données utilisateur
+// Extraction stats COMPLÈTE avec données utilisateur (CONSERVÉE)
 function extractStats(data, description, htmlContent) {
     const stats = {
         views: 0,
@@ -185,7 +185,7 @@ function extractStats(data, description, htmlContent) {
     }
 }
 
-// Métriques de base
+// Métriques de base (CONSERVÉES)
 function calculateMetrics(stats) {
     if (!stats || stats.views === 0) {
         return {
@@ -208,7 +208,7 @@ function calculateMetrics(stats) {
     };
 }
 
-// Analyse SEO TikTok 2025
+// Analyse SEO TikTok 2025 COMPLÈTE (CONSERVÉE)
 function analyzeSEO(description, hashtags) {
     const trending = getTrendingHashtags2025();
     const allTrendingTags = [
@@ -268,7 +268,7 @@ function analyzeSEO(description, hashtags) {
     return analysis;
 }
 
-// Scoring réaliste TikTok 2025
+// Scoring réaliste TikTok 2025 (CONSERVÉ)
 function calculateRealisticScore(stats, metrics, seoAnalysis) {
     let score = 20;
     
@@ -316,7 +316,7 @@ function calculateRealisticScore(stats, metrics, seoAnalysis) {
     return { score, potentielViral, niveau };
 }
 
-// Analyse IA avec OpenAI
+// Analyse IA avec OpenAI (CONSERVÉE avec timeout optimisé)
 async function generateAIRecommendations(stats, metrics, seoAnalysis, scoreResult, openaiKey) {
     if (!openaiKey) {
         return {
@@ -385,7 +385,7 @@ Analyse en profondeur cette corrélation ER/vues et donne des recommandations pr
                 max_tokens: 800,
                 temperature: 0.3
             }),
-            signal: AbortSignal.timeout(30000)
+            signal: AbortSignal.timeout(15000) // OPTIMISÉ: 15s au lieu de 30s
         });
 
         if (response.ok) {
@@ -410,7 +410,7 @@ Analyse en profondeur cette corrélation ER/vues et donne des recommandations pr
     }
 }
 
-// Enregistrement base de données analytique
+// Enregistrement base de données analytique (CONSERVÉ)
 function saveToAnalyticsDB(data) {
     const entry = {
         id: `TKA_${Date.now().toString(36).toUpperCase()}`,
@@ -433,7 +433,7 @@ function saveToAnalyticsDB(data) {
     
     analyticsDatabase.push(entry);
     
-    // Garder seulement les 1000 dernières entrées
+    // Garder seulement les 1000 dernières entrées (CONSERVÉ)
     if (analyticsDatabase.length > 1000) {
         analyticsDatabase = analyticsDatabase.slice(-1000);
     }
@@ -442,7 +442,7 @@ function saveToAnalyticsDB(data) {
     return entry.id;
 }
 
-// Formatage nombres
+// Formatage nombres (CONSERVÉ)
 function formatNumber(num) {
     if (!num || num === 0) return '0';
     if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
@@ -451,7 +451,7 @@ function formatNumber(num) {
     return num.toString();
 }
 
-// Handler principal
+// Handler principal (OPTIMISÉ seulement pour les timeouts)
 export default async function handler(req) {
     // CORS preflight
     if (req.method === 'OPTIONS') {
@@ -483,13 +483,13 @@ export default async function handler(req) {
         let stats = null;
         let htmlContent = null;
 
-        // ÉTAPE 1: oEmbed
+        // ÉTAPE 1: oEmbed (OPTIMISÉ: 8s au lieu de 10s)
         try {
             console.log("📡 oEmbed...");
             const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
             const oembedResponse = await fetch(oembedUrl, {
                 headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TikTokAnalyzer/2025)' },
-                signal: AbortSignal.timeout(10000)
+                signal: AbortSignal.timeout(8000) // OPTIMISÉ: 8s
             });
 
             if (oembedResponse.ok) {
@@ -503,7 +503,7 @@ export default async function handler(req) {
             return json({ error: "Vidéo TikTok inaccessible ou privée" }, 404);
         }
 
-        // ÉTAPE 2: ScrapingBee
+        // ÉTAPE 2: ScrapingBee (OPTIMISÉ: 20s au lieu de 35s)
         const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
         if (SCRAPINGBEE_API_KEY) {
             try {
@@ -512,19 +512,19 @@ export default async function handler(req) {
                 scrapingBeeUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
                 scrapingBeeUrl.searchParams.set('url', tiktokUrl);
                 scrapingBeeUrl.searchParams.set('render_js', 'true');
-                scrapingBeeUrl.searchParams.set('wait', '4000');
+                scrapingBeeUrl.searchParams.set('wait', '3000'); // OPTIMISÉ: 3s au lieu de 4s
 
                 const response = await fetch(scrapingBeeUrl.toString(), {
-                    signal: AbortSignal.timeout(35000)
+                    signal: AbortSignal.timeout(20000) // OPTIMISÉ: 20s au lieu de 35s
                 });
 
                 if (response.ok) {
                     htmlContent = await response.text();
-                    const data = findJsonBlob(htmlContent);
+                    const data = findJsonBlob(htmlContent); // FONCTION COMPLÈTE CONSERVÉE
                     
                     if (data) {
                         const description = extractDescription(oembedData, htmlContent);
-                        stats = extractStats(data, description, htmlContent);
+                        stats = extractStats(data, description, htmlContent); // FONCTION COMPLÈTE CONSERVÉE
                         console.log("✅ Stats extraites");
                     }
                 } else {
@@ -535,22 +535,22 @@ export default async function handler(req) {
             }
         }
 
-        // ÉTAPE 3: Analyse
+        // ÉTAPE 3: Analyse COMPLÈTE (CONSERVÉE)
         const description = extractDescription(oembedData, htmlContent);
         const thumbnail = oembedData?.thumbnail_url || null;
         const hashtags = stats?.hashtags || extractHashtags(description, htmlContent);
 
         const metrics = stats ? calculateMetrics(stats) : null;
-        const seoAnalysis = analyzeSEO(description, hashtags);
+        const seoAnalysis = analyzeSEO(description, hashtags); // FONCTION COMPLÈTE CONSERVÉE
         const scoreResult = calculateRealisticScore(stats, metrics, seoAnalysis);
 
-        // ÉTAPE 4: Analyse IA
+        // ÉTAPE 4: Analyse IA (CONSERVÉE avec timeout optimisé)
         const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
         const aiAnalysis = await generateAIRecommendations(
             stats, metrics, seoAnalysis, scoreResult, OPENAI_API_KEY
         );
 
-        // ÉTAPE 5: Sauvegarde base de données
+        // ÉTAPE 5: Sauvegarde base de données (CONSERVÉE)
         let analyticsId = null;
         if (stats) {
             analyticsId = saveToAnalyticsDB({
@@ -569,7 +569,7 @@ export default async function handler(req) {
             });
         }
 
-        // RÉPONSE FINALE
+        // RÉPONSE FINALE COMPLÈTE (CONSERVÉE)
         const finalResponse = {
             success: true,
             video: {
@@ -583,7 +583,7 @@ export default async function handler(req) {
                 createTime: stats?.createTime || null
             },
             
-            // SECTION STATS
+            // SECTION STATS (CONSERVÉE)
             stats: stats ? {
                 views: stats.views,
                 likes: stats.likes,
@@ -605,7 +605,7 @@ export default async function handler(req) {
                 }
             } : null,
             
-            // SECTION SEO
+            // SECTION SEO COMPLÈTE (CONSERVÉE)
             seo: {
                 score: seoAnalysis.score_seo,
                 description: seoAnalysis.description,
@@ -617,7 +617,7 @@ export default async function handler(req) {
                 }
             },
             
-            // SECTION ANALYSE
+            // SECTION ANALYSE (CONSERVÉE)
             analysis: {
                 score: scoreResult.score,
                 niveau: scoreResult.niveau,
@@ -629,7 +629,7 @@ export default async function handler(req) {
             metadata: {
                 analysisTimestamp: new Date().toISOString(),
                 analysisId: analyticsId,
-                frameworkVersion: "2025-refactored",
+                frameworkVersion: "2025-complete-optimized",
                 totalAnalyses: analyticsDatabase.length,
                 features: {
                     oembed: !!oembedData,
@@ -655,7 +655,7 @@ export default async function handler(req) {
     }
 }
 
-// ENDPOINT pour statistiques base de données (GET)
+// ENDPOINT pour statistiques base de données (CONSERVÉ)
 export async function GET(req) {
     try {
         const url = new URL(req.url);
@@ -682,7 +682,7 @@ export async function GET(req) {
     }
 }
 
-// Fonctions utilitaires pour les statistiques
+// Fonctions utilitaires pour les statistiques (CONSERVÉES)
 function getTopAuthors() {
     const authorStats = {};
     analyticsDatabase.forEach(entry => {
