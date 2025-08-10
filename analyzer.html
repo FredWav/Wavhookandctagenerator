@@ -82,7 +82,7 @@
       </div>
       <div id="results">
         <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          🎯 Entrez une URL pour lancer l'analyse audio et statistique.
+          🎯 Entrez une URL pour lancer l'analyse complète.
         </p>
       </div>
     </div>
@@ -92,7 +92,7 @@
     const $ = id => document.getElementById(id);
 
     function showLoader() {
-        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p>Analyse en cours... (peut prendre jusqu'à 2 minutes)</p></div>`;
+        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p>Analyse complète en cours... (peut prendre jusqu'à 2 minutes)</p></div>`;
     }
 
     function showError(message) {
@@ -107,36 +107,44 @@
     }
 
     function showResults(data) {
-        const { audioAnalysis } = data;
+        const { video, stats, metrics, analysis, transcription } = data;
         
-        const insights = audioAnalysis.viralscope_insights.map(i => `<li>${i}</li>`).join('');
-        const optimizations = audioAnalysis.audio_optimization.map(o => `<li>${o}</li>`).join('');
-        const tab1_synthesis = `<div class="grid-2"><div class="info-card"><h3>✅ Insights Clés</h3><ul>${insights}</ul></div><div class="info-card"><h3>💡 Optimisations Audio</h3><ul>${optimizations}</ul></div></div>`;
+        const tab1_synthesis = `
+            <div class="grid-2">
+                <div class="info-card"><h3>✅ Points Forts</h3><ul>${analysis.points_forts.map(i => `<li>${i}</li>`).join('')}</ul></div>
+                <div class="info-card"><h3>⚠️ Points Faibles</h3><ul>${analysis.points_faibles.map(i => `<li>${i}</li>`).join('')}</ul></div>
+                <div class="info-card" style="grid-column: 1 / -1;"><h3>💡 Suggestions</h3><ul>${analysis.suggestions.map(o => `<li>${o}</li>`).join('')}</ul></div>
+            </div>`;
         
-        const segments = audioAnalysis.segments.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('');
+        const segments = transcription?.segments?.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('') || '<p class="muted">Transcription non disponible.</p>';
         const tab2_transcription = `<div>${segments}</div>`;
         
-        const hooks = audioAnalysis.hooks_detected.map(h => `<li>"${h.text}" <i>(à ${h.start_time.toFixed(1)}s)</i></li>`).join('');
-        const ctas = audioAnalysis.cta_detected.map(c => `<li>"${c.text}" <i>(à ${c.start_time.toFixed(1)}s)</i></li>`).join('');
-        const wpm = audioAnalysis.temporal_analysis.words_per_minute.toFixed(0);
-        const fillers = audioAnalysis.speech_patterns.filler_words_count;
         const tab3_details = `
             <div class="grid-2">
-                <div class="info-card"><h3>🎣 Hooks Détectés</h3>${hooks ? `<ul>${hooks}</ul>` : '<p class="muted">Aucun.</p>'}</div>
-                <div class="info-card"><h3>📢 CTAs Détectés</h3>${ctas ? `<ul>${ctas}</ul>` : '<p class="muted">Aucun.</p>'}</div>
-                <div class="info-card"><h3>🗣️ Rythme de parole</h3><p>${wpm} mots/minute</p></div>
-                <div class="info-card"><h3>💬 Mots de remplissage</h3><p>${fillers} ("euh", etc.)</p></div>
+                <div class="info-card"><h3>📈 Vues</h3><p>${stats.views.toLocaleString('fr-FR')}</p></div>
+                <div class="info-card"><h3>❤️ J'aime</h3><p>${stats.likes.toLocaleString('fr-FR')}</p></div>
+                <div class="info-card"><h3>💬 Commentaires</h3><p>${stats.comments.toLocaleString('fr-FR')}</p></div>
+                <div class="info-card"><h3>📤 Partages</h3><p>${stats.shares.toLocaleString('fr-FR')}</p></div>
+                <div class="info-card"><h3>🔥 Taux d'engagement</h3><p>${metrics.engagementRate.toFixed(2)}%</p></div>
+                <div class="info-card"><h3>👍 Ratio J'aime/Vues</h3><p>${metrics.likesRatio.toFixed(2)}%</p></div>
             </div>`;
 
         $('results').innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                <img src="${video.thumbnail}" alt="Miniature" style="width: 80px; height: auto; border-radius: 8px;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0;">Analyse de @${video.author}</h3>
+                    <p class="muted" style="margin:0;">"${video.description}"</p>
+                </div>
+            </div>
             <div class="tabs">
-                <button class="tab-btn active" id="tab-btn-synthesis" onclick="activateTab('synthesis')">Synthèse</button>
-                <button class="tab-btn" id="tab-btn-transcription" onclick="activateTab('transcription')">Transcription</button>
-                <button class="tab-btn" id="tab-btn-details" onclick="activateTab('details')">Analyse Détaillée</button>
+                <button class="tab-btn active" id="tab-btn-synthesis" onclick="activateTab('synthesis')">Synthèse IA</button>
+                <button class="tab-btn" id="tab-btn-details" onclick="activateTab('details')">Statistiques</button>
+                <button class="tab-btn" id="tab-btn-transcription" onclick="activateTab('transcription')">Transcription Audio</button>
             </div>
             <div id="tab-content-synthesis" class="tab-content active">${tab1_synthesis}</div>
-            <div id="tab-content-transcription" class="tab-content">${tab2_transcription}</div>
             <div id="tab-content-details" class="tab-content">${tab3_details}</div>
+            <div id="tab-content-transcription" class="tab-content">${tab2_transcription}</div>
         `;
     }
 
@@ -160,12 +168,12 @@
                 body: JSON.stringify({ url })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Erreur réseau inattendue' }));
-                throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
-            }
-
             const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "Une erreur inconnue est survenue.");
+            }
+            
             showResults(data);
             
         } catch (error) {
