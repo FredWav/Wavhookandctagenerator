@@ -370,59 +370,135 @@
     }
 
     function showResults(data) {
-      // Simulation de données d'analyse TikTok
-      const mockData = {
-        title: "Vidéo TikTok analysée",
-        views: "2.5M",
-        likes: "156.2K",
-        comments: "8.9K",
-        shares: "12.3K",
-        duration: "0:58",
-        engagementRate: 12.4,
-        hashtags: ["fyp", "viral", "trending", "dance"],
-        description: "Check out this amazing TikTok video! 🔥"
-      };
+      if (!data || !data.success) {
+        showError('Données invalides reçues de l\'API');
+        return;
+      }
 
-      const erClass = mockData.engagementRate > 10 ? 'good' : 
-                     mockData.engagementRate > 5 ? 'medium' : 'bad';
+      const { video, stats, metrics, analysis } = data;
+      
+      // Si pas de stats, afficher seulement les infos de base
+      if (!stats) {
+        document.getElementById('results').innerHTML = `
+          <div style="text-align: center; padding: 2rem;">
+            <h3>📹 Vidéo analysée</h3>
+            <p><strong>Description:</strong> ${video?.description || 'Non disponible'}</p>
+            <p style="color: var(--muted); margin-top: 1rem;">
+              Les statistiques détaillées n'ont pas pu être récupérées pour cette vidéo.
+              Elle est peut-être récente ou privée.
+            </p>
+            ${analysis ? `
+              <div style="margin-top: 2rem; text-align: left;">
+                <h3>🤖 Analyse IA</h3>
+                <p><strong>Score:</strong> ${analysis.score || 'N/A'}/100</p>
+                ${analysis.points_forts ? `
+                  <h4>✅ Points forts:</h4>
+                  <ul>${analysis.points_forts.map(point => `<li>${point}</li>`).join('')}</ul>
+                ` : ''}
+                ${analysis.suggestions ? `
+                  <h4>💡 Suggestions:</h4>
+                  <ul>${analysis.suggestions.map(point => `<li>${point}</li>`).join('')}</ul>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        return;
+      }
+
+      // Calcul de la classe CSS pour le taux d'engagement
+      const engagementRate = metrics?.engagementRate || 0;
+      const erClass = engagementRate > 10 ? 'good' : 
+                     engagementRate > 5 ? 'medium' : 'bad';
 
       document.getElementById('results').innerHTML = `
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-card-title">Vues</div>
-            <div class="stat-card-value">${mockData.views}</div>
+            <div class="stat-card-title">👁️ Vues</div>
+            <div class="stat-card-value">${stats.formatted?.views || stats.views || '0'}</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-title">❤️ J'aime</div>
-            <div class="stat-card-value">${mockData.likes}</div>
+            <div class="stat-card-value">${stats.formatted?.likes || stats.likes || '0'}</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-title">💬 Commentaires</div>
-            <div class="stat-card-value">${mockData.comments}</div>
+            <div class="stat-card-value">${stats.formatted?.comments || stats.comments || '0'}</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-title">📤 Partages</div>
-            <div class="stat-card-value">${mockData.shares}</div>
+            <div class="stat-card-value">${stats.formatted?.shares || stats.shares || '0'}</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-card-title">⏱️ Durée</div>
-            <div class="stat-card-value">${mockData.duration}</div>
-          </div>
+          ${stats.duration ? `
+            <div class="stat-card">
+              <div class="stat-card-title">⏱️ Durée</div>
+              <div class="stat-card-value">${Math.floor(stats.duration / 60)}:${(stats.duration % 60).toString().padStart(2, '0')}</div>
+            </div>
+          ` : ''}
           <div class="stat-card er-card">
             <div class="stat-card-title">📈 Taux d'engagement</div>
-            <div class="er-value ${erClass}">${mockData.engagementRate}%</div>
+            <div class="er-value ${erClass}">${engagementRate.toFixed(1)}%</div>
           </div>
         </div>
         
-        <div class="analysis-list">
-          <h3>🏷️ Hashtags utilisés</h3>
-          <ul>
-            ${mockData.hashtags.map(tag => `<li>#${tag}</li>`).join('')}
-          </ul>
-          
-          <h3>📝 Description</h3>
-          <p style="color: var(--muted); font-style: italic;">"${mockData.description}"</p>
-        </div>
+        ${video?.description ? `
+          <div class="analysis-list">
+            <h3>📝 Description</h3>
+            <p style="color: var(--muted); font-style: italic; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+              "${video.description}"
+            </p>
+          </div>
+        ` : ''}
+        
+        ${analysis ? `
+          <div class="analysis-list">
+            <h3>🤖 Analyse IA</h3>
+            <div style="background: rgba(217, 70, 239, 0.1); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span><strong>Score global:</strong></span>
+                <span style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">${analysis.score || 'N/A'}/100</span>
+              </div>
+              ${analysis.potentiel_viral ? `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span><strong>Potentiel viral:</strong></span>
+                  <span style="font-weight: bold; color: ${analysis.potentiel_viral === 'élevé' ? '#22c55e' : analysis.potentiel_viral === 'moyen' ? '#f59e0b' : '#ef4444'};">
+                    ${analysis.potentiel_viral}
+                  </span>
+                </div>
+              ` : ''}
+            </div>
+            
+            ${analysis.points_forts ? `
+              <h4 style="color: #22c55e;">✅ Points forts</h4>
+              <ul style="margin-bottom: 1rem;">
+                ${analysis.points_forts.map(point => `<li>${point}</li>`).join('')}
+              </ul>
+            ` : ''}
+            
+            ${analysis.points_faibles ? `
+              <h4 style="color: #f59e0b;">⚠️ Points à améliorer</h4>
+              <ul style="margin-bottom: 1rem;">
+                ${analysis.points_faibles.map(point => `<li>${point}</li>`).join('')}
+              </ul>
+            ` : ''}
+            
+            ${analysis.suggestions ? `
+              <h4 style="color: var(--accent);">💡 Suggestions</h4>
+              <ul>
+                ${analysis.suggestions.map(point => `<li>${point}</li>`).join('')}
+              </ul>
+            ` : ''}
+          </div>
+        ` : ''}
+        
+        ${metrics?.likesRatio ? `
+          <div style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+            <small style="color: var(--muted);">
+              Ratio J'aime/Vues: <strong>${metrics.likesRatio}%</strong> | 
+              Analysé le ${new Date(data.timestamp).toLocaleString('fr-FR')}
+            </small>
+          </div>
+        ` : ''}
       `;
     }
 
@@ -442,14 +518,26 @@
       showLoader();
       
       try {
-        // Simulation d'une requête API
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Appel à votre API réelle
+        const response = await fetch('/api/analyze-tiktok', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url })
+        });
         
-        // En réalité, ici vous feriez un appel à votre API
-        showResults();
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erreur lors de l\'analyse');
+        }
+        
+        const data = await response.json();
+        showResults(data);
         
       } catch (error) {
-        showError('Impossible d\'analyser cette vidéo. Veuillez réessayer.');
+        console.error('Erreur API:', error);
+        showError(error.message || 'Impossible d\'analyser cette vidéo. Veuillez réessayer.');
       } finally {
         btn.disabled = false;
       }
