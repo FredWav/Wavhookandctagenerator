@@ -1,45 +1,64 @@
-// ANALYSEUR TIKTOK CLEAN - Version optimisée sans audio
+// ANALYSEUR TIKTOK 2025 - Version refactorisée avec base de données
 export const config = { runtime: "edge" };
 
-// Logging simple
-let analysisCount = 0;
+// Base de données en mémoire (en production: utiliser une vraie DB)
+let analyticsDatabase = [];
 
 function json(res, status = 200) {
     return new Response(JSON.stringify(res), { 
         status, 
         headers: { 
             "Content-Type": "application/json",
-            "Cache-Control": "public, max-age=300" // Cache 5min
+            "Cache-Control": "public, max-age=300"
         }
     });
 }
 
-// Validation URL TikTok robuste
+// Validation URL TikTok
 function validateTikTokUrl(url) {
     const patterns = [
         /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/,
         /^https?:\/\/vm\.tiktok\.com\/[\w]+/,
-        /^https?:\/\/www\.tiktok\.com\/t\/[\w]+/,
-        /^https?:\/\/(www\.)?tiktok\.com\/.*\/video\/\d+/
+        /^https?:\/\/www\.tiktok\.com\/t\/[\w]+/
     ];
     return patterns.some(pattern => pattern.test(url));
+}
+
+// Hashtags TikTok 2025 mis à jour
+function getTrendingHashtags2025() {
+    return {
+        generaux: [
+            'fyp', 'foryou', 'foryoupage', 'pourtoi', 'pourvouspage',
+            'viral', 'trending', 'trend', 'explorer', 'découvrir'
+        ],
+        tendance2025: [
+            'tiktokmademebuyit', 'coquette', 'charger', 'aurafarming',
+            'triangledesbermudes', 'rapfr', 'raptok'
+        ],
+        france: [
+            'tiktokfrance', 'france', 'psg', 'marseille', 'lyon'
+        ],
+        niches: [
+            'foodtok', 'cooking', 'cook', 'fashionhaul', 'ootd', 'style',
+            'glowup', 'capcuttemplate', 'capcutedit', 'learnfrench',
+            'frenchlesson', 'booktok', 'fitness', 'musculation',
+            'photography', 'shootingtime', 'diy', 'lifestyle'
+        ]
+    };
 }
 
 // Extraction description optimisée
 function extractDescription(oembedData, htmlContent = null) {
     let description = "";
     
-    // 1. Priorité oEmbed (plus fiable)
     if (oembedData?.title) {
         description = oembedData.title;
     }
     
-    // 2. Fallback meta tags
     if (!description && htmlContent) {
         const metaMatches = [
             htmlContent.match(/<meta[^>]+property="og:description"[^>]+content="([^"]*)"[^>]*>/i),
-            htmlContent.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"[^>]*>/i),
-            htmlContent.match(/<title>([^<]*)<\/title>/i)
+            htmlContent.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"[^>]*>/i)
         ];
         
         for (const match of metaMatches) {
@@ -50,23 +69,19 @@ function extractDescription(oembedData, htmlContent = null) {
         }
     }
     
-    // 3. Nettoyage
     return description
         .replace(/\s+/g, ' ')
         .replace(/&quot;/g, '"')
         .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
         .trim() || "Description non disponible";
 }
 
-// Extraction hashtags fiable
+// Extraction hashtags 2025
 function extractHashtags(description, htmlContent = null) {
     const hashtags = new Set();
     
     if (description) {
-        // Regex améliorée pour hashtags
-        const hashtagRegex = /#[\w\u00C0-\u017F\u4e00-\u9fff]+/g;
+        const hashtagRegex = /#[\w\u00C0-\u017F]+/g;
         const matches = description.match(hashtagRegex);
         
         if (matches) {
@@ -79,37 +94,15 @@ function extractHashtags(description, htmlContent = null) {
         }
     }
     
-    // Fallback HTML si peu de hashtags
-    if (hashtags.size < 2 && htmlContent) {
-        const htmlHashtags = htmlContent.match(/#[\w\u00C0-\u017F]+/g);
-        if (htmlHashtags) {
-            htmlHashtags.forEach(tag => {
-                const cleanTag = tag.slice(1).toLowerCase();
-                if (cleanTag.length > 1 && cleanTag.length < 30) {
-                    hashtags.add(cleanTag);
-                }
-            });
-        }
-    }
-    
-    return Array.from(hashtags).slice(0, 15); // Max 15 hashtags
+    return Array.from(hashtags).slice(0, 15);
 }
 
-// Parsing JSON TikTok robuste
+// Parsing JSON TikTok
 function findJsonBlob(html) {
     const methods = [
-        {
-            name: "SIGI_STATE",
-            regex: /<script id="SIGI_STATE" type="application\/json">([^<]*)<\/script>/
-        },
-        {
-            name: "__UNIVERSAL_DATA_FOR_REHYDRATION__",
-            regex: /<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json">([^<]*)<\/script>/
-        },
-        {
-            name: "__INITIAL_STATE__",
-            regex: /window\.__INITIAL_STATE__\s*=\s*({.*?});/s
-        }
+        { name: "SIGI_STATE", regex: /<script id="SIGI_STATE" type="application\/json">([^<]*)<\/script>/ },
+        { name: "__UNIVERSAL_DATA_FOR_REHYDRATION__", regex: /<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json">([^<]*)<\/script>/ },
+        { name: "__INITIAL_STATE__", regex: /window\.__INITIAL_STATE__\s*=\s*({.*?});/s }
     ];
     
     for (const method of methods) {
@@ -121,16 +114,14 @@ function findJsonBlob(html) {
                 return data;
             }
         } catch (error) {
-            console.warn(`⚠️ Échec ${method.name}:`, error.message);
             continue;
         }
     }
     
-    console.warn("❌ Aucune structure JSON trouvée");
     return null;
 }
 
-// Extraction stats optimisée
+// Extraction stats avec données utilisateur
 function extractStats(data, description, htmlContent) {
     const stats = {
         views: 0,
@@ -138,6 +129,7 @@ function extractStats(data, description, htmlContent) {
         comments: 0,
         shares: 0,
         author: null,
+        authorFollowers: null, // NOUVEAU: nombre d'abonnés
         music: null,
         createTime: null,
         hashtags: [],
@@ -146,14 +138,13 @@ function extractStats(data, description, htmlContent) {
 
     try {
         let itemStruct = null;
+        let userInfo = null;
         
-        // Méthode 1: ItemModule
+        // Extraction données vidéo
         if (data.ItemModule) {
             const videoId = Object.keys(data.ItemModule)[0];
             itemStruct = data.ItemModule[videoId];
-        }
-        // Méthode 2: webapp.video-detail
-        else if (data['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct) {
+        } else if (data['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct) {
             itemStruct = data['__DEFAULT_SCOPE__']['webapp.video-detail'].itemInfo.itemStruct;
         }
         
@@ -163,18 +154,24 @@ function extractStats(data, description, htmlContent) {
             stats.comments = parseInt(itemStruct.stats.commentCount) || 0;
             stats.shares = parseInt(itemStruct.stats.shareCount) || 0;
             
-            // Métadonnées
             stats.author = itemStruct.author?.uniqueId || null;
+            stats.authorFollowers = parseInt(itemStruct.author?.stats?.followerCount) || null; // NOUVEAU
             stats.music = itemStruct.music?.title || null;
             stats.createTime = itemStruct.createTime ? new Date(itemStruct.createTime * 1000) : null;
             
-            // Description plus complète
             if (itemStruct.desc && itemStruct.desc.length > description.length) {
                 stats.description = itemStruct.desc;
             }
         }
         
-        // Hashtags depuis description finale
+        // Extraction données utilisateur si disponibles
+        if (data.UserModule && stats.author) {
+            userInfo = data.UserModule[stats.author];
+            if (userInfo?.stats?.followerCount) {
+                stats.authorFollowers = parseInt(userInfo.stats.followerCount);
+            }
+        }
+        
         stats.hashtags = extractHashtags(stats.description, htmlContent);
         
         return stats.views > 0 ? stats : null;
@@ -185,7 +182,7 @@ function extractStats(data, description, htmlContent) {
     }
 }
 
-// Calcul métriques
+// Métriques de base
 function calculateMetrics(stats) {
     if (!stats || stats.views === 0) {
         return {
@@ -193,8 +190,7 @@ function calculateMetrics(stats) {
             likesRatio: 0,
             commentsRatio: 0,
             sharesRatio: 0,
-            totalEngagements: 0,
-            viralityIndex: 0
+            totalEngagements: 0
         };
     }
 
@@ -205,217 +201,243 @@ function calculateMetrics(stats) {
         likesRatio: (stats.likes / stats.views) * 100,
         commentsRatio: (stats.comments / stats.views) * 100,
         sharesRatio: (stats.shares / stats.views) * 100,
-        totalEngagements,
-        viralityIndex: Math.min(100, ((stats.shares * 10) + (stats.comments * 4) + (stats.likes * 2)) / stats.views * 100)
+        totalEngagements
     };
 }
 
-// Analyse créative améliorée
-function analyzeCreativeContent(stats, description, hashtags) {
+// Analyse SEO TikTok 2025
+function analyzeSEO(description, hashtags) {
+    const trending = getTrendingHashtags2025();
+    const allTrendingTags = [
+        ...trending.generaux,
+        ...trending.tendance2025,
+        ...trending.france,
+        ...trending.niches
+    ];
+    
     const analysis = {
-        structureNarrative: {
-            hookPresent: false,
-            hookType: null,
-            messageClaire: false,
-            ctaPresent: false,
-            ctaType: null
+        description: {
+            longueur: description.length,
+            longueurOptimale: description.length >= 50 && description.length <= 200,
+            contientMotsCles: false,
+            lisibilite: 'moyenne'
         },
-        optimisationPlateforme: {
-            hashtagsPertinents: false,
-            hashtagsCount: hashtags?.length || 0,
-            descriptionEngageante: false,
-            longueurOptimale: false
+        hashtags: {
+            nombre: hashtags.length,
+            nombreOptimal: hashtags.length >= 3 && hashtags.length <= 6,
+            tendance2025: [],
+            generiques: [],
+            niche: []
         },
-        tendances: {
-            utiliseTendance: false,
-            hashtagsTendance: []
-        }
+        score_seo: 0
     };
     
-    if (!description) return analysis;
-    
+    // Analyse description
     const desc = description.toLowerCase();
+    const motsClesTikTok = ['comment', 'pourquoi', 'astuce', 'conseil', 'secret', 'découvrez'];
+    analysis.description.contientMotsCles = motsClesTikTok.some(mot => desc.includes(mot));
     
-    // DÉTECTION HOOKS TikTok réels
-    const hookPatterns = {
-        question: /^(pourquoi|comment|qui|que|quoi|où|quand|est-ce que|vous savez)/,
-        chiffres: /^\d+/,
-        secret: /(secret|astuce|conseil|truc|technique|méthode)/,
-        negatif: /(jamais|pas|arrête|stop|erreur|problème|mal)/,
-        fomo: /(urgent|limité|dernier|rapidement|maintenant|dernière chance)/,
-        controverse: /(personne ne|tout le monde|on vous ment|vérité|révélation)/,
-        promesse: /(voici comment|je vais vous|découvrez|apprenez)/
-    };
+    if (description.length < 30) analysis.description.lisibilite = 'faible';
+    else if (description.length > 300) analysis.description.lisibilite = 'trop_longue';
+    else analysis.description.lisibilite = 'bonne';
     
-    for (const [type, pattern] of Object.entries(hookPatterns)) {
-        if (pattern.test(desc)) {
-            analysis.structureNarrative.hookPresent = true;
-            analysis.structureNarrative.hookType = type;
-            break;
+    // Analyse hashtags
+    hashtags.forEach(tag => {
+        if (trending.generaux.includes(tag) || trending.tendance2025.includes(tag)) {
+            analysis.hashtags.tendance2025.push(tag);
+        } else if (trending.france.includes(tag)) {
+            analysis.hashtags.generiques.push(tag);
+        } else if (trending.niches.includes(tag)) {
+            analysis.hashtags.niche.push(tag);
         }
-    }
+    });
     
-    // DÉTECTION CTA
-    const ctaPatterns = {
-        subscribe: /(abonne|follow|suit|subscribe)/,
-        engage: /(like|commente|partage|réagis|comment)/,
-        save: /(sauvegarde|enregistre|garde|save)/,
-        action: /(clique|va sur|regarde|découvre|lien|bio|swipe)/
-    };
+    // Score SEO
+    let score = 0;
+    if (analysis.description.longueurOptimale) score += 25;
+    if (analysis.description.contientMotsCles) score += 15;
+    if (analysis.hashtags.nombreOptimal) score += 20;
+    if (analysis.hashtags.tendance2025.length > 0) score += 20;
+    if (analysis.hashtags.niche.length > 0) score += 20;
     
-    for (const [type, pattern] of Object.entries(ctaPatterns)) {
-        if (pattern.test(desc)) {
-            analysis.structureNarrative.ctaPresent = true;
-            analysis.structureNarrative.ctaType = type;
-            break;
-        }
-    }
-    
-    // ANALYSE DESCRIPTION
-    analysis.structureNarrative.messageClaire = description.length > 15 && description.length < 500;
-    analysis.optimisationPlateforme.descriptionEngageante = description.length > 30 && description.length < 300;
-    analysis.optimisationPlateforme.longueurOptimale = description.length >= 50 && description.length <= 200;
-    
-    // ANALYSE HASHTAGS
-    if (hashtags && hashtags.length > 0) {
-        analysis.optimisationPlateforme.hashtagsPertinents = hashtags.length >= 3 && hashtags.length <= 10;
-        
-        // Hashtags tendance TikTok FR 2024
-        const trendingHashtags = [
-            'fyp', 'foryou', 'pourtoi', 'viral', 'trending', 'tiktokfrance', 'france',
-            'comedy', 'funny', 'humour', 'dance', 'danse', 'tutorial', 'tuto',
-            'lifestyle', 'ootd', 'mood', 'aesthetic', 'storytime', 'pov', 
-            'transition', 'challenge', 'duet', 'makeup', 'beauté', 'fitness',
-            'motivation', 'business', 'entrepreneur', 'food', 'cuisine', 'diy'
-        ];
-        
-        analysis.tendances.hashtagsTendance = hashtags.filter(tag => 
-            trendingHashtags.some(trend => tag.includes(trend) || trend.includes(tag))
-        );
-        analysis.tendances.utiliseTendance = analysis.tendances.hashtagsTendance.length > 0;
-    }
+    analysis.score_seo = score;
     
     return analysis;
 }
 
-// Scoring TikTok réaliste
-function calculateTikTokScore(stats, metrics, creativeAnalysis) {
-    let score = 20; // Base plus réaliste
+// Scoring réaliste TikTok 2025
+function calculateRealisticScore(stats, metrics, seoAnalysis) {
+    let score = 20;
     
     if (!stats || !metrics) {
-        return { score: 30, potentielViral: 'faible' };
+        return { score: 25, potentielViral: 'faible', niveau: 'Données insuffisantes' };
     }
     
-    // 1. PERFORMANCE QUANTITATIVE (50 points)
-    // Taux d'engagement (critère #1 TikTok)
-    if (metrics.engagementRate > 20) score += 25; // Viral
-    else if (metrics.engagementRate > 10) score += 20; // Excellent
-    else if (metrics.engagementRate > 5) score += 15; // Bon
-    else if (metrics.engagementRate > 2) score += 10; // Moyen
-    else if (metrics.engagementRate > 1) score += 5; // Faible
+    // PERFORMANCE (60 points max)
+    // Taux d'engagement (critère principal)
+    if (metrics.engagementRate > 20) score += 30;
+    else if (metrics.engagementRate > 10) score += 25;
+    else if (metrics.engagementRate > 5) score += 20;
+    else if (metrics.engagementRate > 2) score += 15;
+    else if (metrics.engagementRate > 1) score += 10;
     
-    // Volume ajusté selon ER
-    if (stats.views > 10000000 && metrics.engagementRate > 3) score += 15;
-    else if (stats.views > 1000000 && metrics.engagementRate > 2) score += 12;
-    else if (stats.views > 100000 && metrics.engagementRate > 1) score += 8;
-    else if (stats.views > 10000) score += 4;
+    // Volume pondéré par ER
+    if (stats.views > 1000000 && metrics.engagementRate > 3) score += 20;
+    else if (stats.views > 100000 && metrics.engagementRate > 2) score += 15;
+    else if (stats.views > 10000 && metrics.engagementRate > 1) score += 10;
+    else if (stats.views > 1000) score += 5;
     
-    // Partages = viralité
+    // Partages = indicateur de viralité
     if (metrics.sharesRatio > 1) score += 10;
-    else if (metrics.sharesRatio > 0.5) score += 6;
-    else if (metrics.sharesRatio > 0.1) score += 3;
+    else if (metrics.sharesRatio > 0.3) score += 5;
     
-    // 2. OPTIMISATION CRÉATIVE (30 points)
-    if (creativeAnalysis.structureNarrative.hookPresent) score += 8;
-    if (creativeAnalysis.structureNarrative.ctaPresent) score += 5;
-    if (creativeAnalysis.optimisationPlateforme.hashtagsPertinents) score += 7;
-    if (creativeAnalysis.optimisationPlateforme.longueurOptimale) score += 5;
-    if (creativeAnalysis.tendances.utiliseTendance) score += 5;
+    // SEO (20 points max)
+    score += Math.round(seoAnalysis.score_seo * 0.2);
     
-    // 3. FACTEURS ALGORITHMIQUES (20 points)
-    // Comments = engagement fort
-    if (metrics.commentsRatio > 2) score += 8;
-    else if (metrics.commentsRatio > 1) score += 5;
-    
-    // Ratio global d'engagement
-    if (metrics.viralityIndex > 50) score += 7;
-    else if (metrics.viralityIndex > 20) score += 4;
-    
-    // Hashtags optimisés
-    if (creativeAnalysis.optimisationPlateforme.hashtagsCount >= 5) score += 5;
-    
-    // Plafonnement réaliste
+    // Plafonnement
     score = Math.min(95, Math.max(15, score));
     
     let potentielViral = "faible";
-    if (score >= 80) potentielViral = "élevé";
-    else if (score >= 60) potentielViral = "moyen";
+    let niveau = "Débutant";
     
-    return { score, potentielViral };
+    if (score >= 80) {
+        potentielViral = "élevé";
+        niveau = "Viral";
+    } else if (score >= 65) {
+        potentielViral = "bon";
+        niveau = "Performant";
+    } else if (score >= 50) {
+        potentielViral = "moyen";
+        niveau = "Correct";
+    }
+    
+    return { score, potentielViral, niveau };
 }
 
-// Recommandations personnalisées
-function generateRecommendations(stats, metrics, creativeAnalysis) {
-    const recommendations = {
-        points_forts: [],
-        points_faibles: [],
-        suggestions: []
+// Analyse IA avec OpenAI
+async function generateAIRecommendations(stats, metrics, seoAnalysis, scoreResult, openaiKey) {
+    if (!openaiKey) {
+        return {
+            diagnostic: "Clé OpenAI manquante - Analyse basique disponible",
+            recommandations: [
+                "🔧 Configurez une clé OpenAI pour obtenir des recommandations personnalisées",
+                "📊 Votre taux d'engagement actuel: " + (metrics?.engagementRate?.toFixed(1) || 'N/A') + "%"
+            ]
+        };
+    }
+
+    try {
+        const systemPrompt = `Tu es un expert TikTok qui analyse la performance des vidéos. Fournis un diagnostic précis et des recommandations actionables.
+
+Règles importantes:
+- Corrèle TOUJOURS le taux d'engagement et les vues
+- Si bon ER (>5%) + peu de vues (<10k) = hook faible (majorité des cas)
+- Si bon ER + bonnes vues = contenu performant, optimiser pour viralité
+- Évite les phrases pré-construites, sois spécifique aux données
+- Fournis max 4 recommandations concrètes
+- Utilise les données réelles, pas de généralités
+
+Format JSON attendu:
+{
+  "diagnostic": "Analyse personnalisée basée sur les données",
+  "recommandations": ["Action 1", "Action 2", "Action 3", "Action 4"]
+}`;
+
+        const userPrompt = `Analyse cette vidéo TikTok:
+
+📊 STATISTIQUES:
+- Vues: ${stats?.views?.toLocaleString() || 'N/A'}
+- Likes: ${stats?.likes?.toLocaleString() || 'N/A'} 
+- Commentaires: ${stats?.comments?.toLocaleString() || 'N/A'}
+- Partages: ${stats?.shares?.toLocaleString() || 'N/A'}
+- Auteur: @${stats?.author || 'Inconnu'}
+- Abonnés auteur: ${stats?.authorFollowers?.toLocaleString() || 'N/A'}
+
+📈 MÉTRIQUES:
+- Taux d'engagement: ${metrics?.engagementRate?.toFixed(1) || 'N/A'}%
+- Ratio likes: ${metrics?.likesRatio?.toFixed(1) || 'N/A'}%
+- Ratio partages: ${metrics?.sharesRatio?.toFixed(1) || 'N/A'}%
+
+🎯 SEO TIKTOK:
+- Score SEO: ${seoAnalysis?.score_seo || 'N/A'}/100
+- Hashtags: ${stats?.hashtags?.length || 0} utilisés
+- Description: ${seoAnalysis?.description?.longueur || 0} caractères
+
+🏆 SCORE GLOBAL: ${scoreResult.score}/100 (${scoreResult.potentielViral})
+
+Analyse en profondeur cette corrélation ER/vues et donne des recommandations précises.`;
+
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${openaiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                response_format: { type: "json_object" },
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
+                ],
+                max_tokens: 800,
+                temperature: 0.3
+            }),
+            signal: AbortSignal.timeout(30000)
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const analysis = JSON.parse(data.choices[0]?.message?.content || '{}');
+            console.log("✅ Analyse IA générée");
+            return analysis;
+        } else {
+            throw new Error(`OpenAI error: ${response.status}`);
+        }
+        
+    } catch (error) {
+        console.error("❌ Erreur analyse IA:", error.message);
+        return {
+            diagnostic: "Analyse IA temporairement indisponible",
+            recommandations: [
+                "📊 Analysez la corrélation entre votre taux d'engagement et vos vues",
+                "🎯 Optimisez vos hashtags selon les tendances 2025",
+                "🚀 Testez différents hooks dans les 3 premières secondes"
+            ]
+        };
+    }
+}
+
+// Enregistrement base de données analytique
+function saveToAnalyticsDB(data) {
+    const entry = {
+        id: `TKA_${Date.now().toString(36).toUpperCase()}`,
+        timestamp: new Date().toISOString(),
+        url: data.url,
+        author: data.author,
+        authorFollowers: data.authorFollowers,
+        stats: {
+            views: data.views,
+            likes: data.likes,
+            comments: data.comments,
+            shares: data.shares
+        },
+        metrics: data.metrics,
+        score: data.score,
+        potentielViral: data.potentielViral,
+        hashtags: data.hashtags,
+        seoScore: data.seoScore
     };
     
-    if (!stats) {
-        recommendations.suggestions.push("🔧 Vidéo inaccessible - Vérifiez les paramètres de confidentialité");
-        return recommendations;
+    analyticsDatabase.push(entry);
+    
+    // Garder seulement les 1000 dernières entrées
+    if (analyticsDatabase.length > 1000) {
+        analyticsDatabase = analyticsDatabase.slice(-1000);
     }
     
-    // Points forts
-    if (metrics.engagementRate > 10) {
-        recommendations.points_forts.push(`🚀 Excellent taux d'engagement (${metrics.engagementRate.toFixed(1)}%)`);
-    }
-    if (metrics.sharesRatio > 0.5) {
-        recommendations.points_forts.push("📤 Fort taux de partage - Contenu viral");
-    }
-    if (creativeAnalysis.structureNarrative.hookPresent) {
-        recommendations.points_forts.push(`🎯 Hook ${creativeAnalysis.structureNarrative.hookType} détecté`);
-    }
-    if (creativeAnalysis.tendances.utiliseTendance) {
-        recommendations.points_forts.push("🔥 Utilise des hashtags tendance");
-    }
-    
-    // Points faibles
-    if (metrics.engagementRate < 2) {
-        recommendations.points_faibles.push("📉 Taux d'engagement faible (< 2%)");
-    }
-    if (!creativeAnalysis.structureNarrative.hookPresent) {
-        recommendations.points_faibles.push("🎣 Aucun hook détecté dans la description");
-    }
-    if (!creativeAnalysis.structureNarrative.ctaPresent) {
-        recommendations.points_faibles.push("📢 Pas d'appel à l'action explicite");
-    }
-    if (creativeAnalysis.optimisationPlateforme.hashtagsCount < 3) {
-        recommendations.points_faibles.push("🏷️ Pas assez de hashtags (3-8 recommandés)");
-    }
-    
-    // Suggestions
-    if (metrics.engagementRate < 5) {
-        recommendations.suggestions.push("💡 Créer un hook plus percutant dans les 3 premières secondes");
-        recommendations.suggestions.push("🤔 Poser des questions pour inciter aux commentaires");
-    }
-    
-    if (!creativeAnalysis.structureNarrative.ctaPresent) {
-        recommendations.suggestions.push("📣 Ajouter un CTA: 'Likez si vous êtes d'accord', 'Commentez votre avis'");
-    }
-    
-    if (creativeAnalysis.optimisationPlateforme.hashtagsCount < 5) {
-        recommendations.suggestions.push("🏷️ Ajouter des hashtags de niche + hashtags larges (#fyp, #pourtoi)");
-    }
-    
-    if (metrics.commentsRatio < 1) {
-        recommendations.suggestions.push("💬 Inciter davantage aux commentaires avec des questions controversées");
-    }
-    
-    recommendations.suggestions.push("📊 Analyser les heures de publication optimales pour votre audience");
-    
-    return recommendations;
+    console.log(`💾 Données sauvegardées: ${entry.id} - @${data.author}`);
+    return entry.id;
 }
 
 // Formatage nombres
@@ -427,7 +449,7 @@ function formatNumber(num) {
     return num.toString();
 }
 
-// Handler principal optimisé
+// Handler principal
 export default async function handler(req) {
     if (req.method !== 'POST') {
         return json({ error: 'Méthode non autorisée' }, 405);
@@ -445,21 +467,18 @@ export default async function handler(req) {
             return json({ error: 'URL TikTok invalide' }, 400);
         }
 
-        analysisCount++;
-        console.log(`🚀 Analyse #${analysisCount}: ${tiktokUrl}`);
+        console.log(`🚀 Analyse TikTok 2025: ${tiktokUrl}`);
         
         let oembedData = null;
         let stats = null;
         let htmlContent = null;
 
-        // ÉTAPE 1: oEmbed (toujours en premier)
+        // ÉTAPE 1: oEmbed
         try {
             console.log("📡 oEmbed...");
             const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
             const oembedResponse = await fetch(oembedUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (compatible; TikTokAnalyzer/2.0)'
-                },
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TikTokAnalyzer/2025)' },
                 signal: AbortSignal.timeout(10000)
             });
 
@@ -474,7 +493,7 @@ export default async function handler(req) {
             return json({ error: "Vidéo TikTok inaccessible ou privée" }, 404);
         }
 
-        // ÉTAPE 2: ScrapingBee (si clé disponible)
+        // ÉTAPE 2: ScrapingBee
         const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
         if (SCRAPINGBEE_API_KEY) {
             try {
@@ -484,7 +503,6 @@ export default async function handler(req) {
                 scrapingBeeUrl.searchParams.set('url', tiktokUrl);
                 scrapingBeeUrl.searchParams.set('render_js', 'true');
                 scrapingBeeUrl.searchParams.set('wait', '4000');
-                scrapingBeeUrl.searchParams.set('premium_proxy', 'true');
 
                 const response = await fetch(scrapingBeeUrl.toString(), {
                     signal: AbortSignal.timeout(35000)
@@ -497,29 +515,47 @@ export default async function handler(req) {
                     if (data) {
                         const description = extractDescription(oembedData, htmlContent);
                         stats = extractStats(data, description, htmlContent);
-                        
-                        if (stats) {
-                            console.log("✅ Stats extraites");
-                        }
+                        console.log("✅ Stats extraites");
                     }
-                } else {
-                    console.warn(`⚠️ ScrapingBee échec: ${response.status}`);
                 }
             } catch (error) {
                 console.warn("⚠️ Échec ScrapingBee:", error.message);
             }
         }
 
-        // ÉTAPE 3: Préparation données finales
+        // ÉTAPE 3: Analyse
         const description = extractDescription(oembedData, htmlContent);
         const thumbnail = oembedData?.thumbnail_url || null;
         const hashtags = stats?.hashtags || extractHashtags(description, htmlContent);
 
-        // ÉTAPE 4: Calculs
         const metrics = stats ? calculateMetrics(stats) : null;
-        const creativeAnalysis = analyzeCreativeContent(stats, description, hashtags);
-        const scoreResult = calculateTikTokScore(stats, metrics, creativeAnalysis);
-        const recommendations = generateRecommendations(stats, metrics, creativeAnalysis);
+        const seoAnalysis = analyzeSEO(description, hashtags);
+        const scoreResult = calculateRealisticScore(stats, metrics, seoAnalysis);
+
+        // ÉTAPE 4: Analyse IA
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+        const aiAnalysis = await generateAIRecommendations(
+            stats, metrics, seoAnalysis, scoreResult, OPENAI_API_KEY
+        );
+
+        // ÉTAPE 5: Sauvegarde base de données
+        let analyticsId = null;
+        if (stats) {
+            analyticsId = saveToAnalyticsDB({
+                url: tiktokUrl,
+                author: stats.author,
+                authorFollowers: stats.authorFollowers,
+                views: stats.views,
+                likes: stats.likes,
+                comments: stats.comments,
+                shares: stats.shares,
+                metrics,
+                score: scoreResult.score,
+                potentielViral: scoreResult.potentielViral,
+                hashtags,
+                seoScore: seoAnalysis.score_seo
+            });
+        }
 
         // RÉPONSE FINALE
         const finalResponse = {
@@ -529,10 +565,13 @@ export default async function handler(req) {
                 description,
                 thumbnail,
                 author: stats?.author || null,
+                authorFollowers: stats?.authorFollowers || null,
                 music: stats?.music || null,
                 hashtags,
                 createTime: stats?.createTime || null
             },
+            
+            // SECTION STATS
             stats: stats ? {
                 views: stats.views,
                 likes: stats.likes,
@@ -542,30 +581,54 @@ export default async function handler(req) {
                     views: formatNumber(stats.views),
                     likes: formatNumber(stats.likes),
                     comments: formatNumber(stats.comments),
-                    shares: formatNumber(stats.shares)
+                    shares: formatNumber(stats.shares),
+                    followers: formatNumber(stats.authorFollowers)
+                },
+                metrics: {
+                    engagementRate: metrics.engagementRate,
+                    likesRatio: metrics.likesRatio,
+                    commentsRatio: metrics.commentsRatio,
+                    sharesRatio: metrics.sharesRatio,
+                    totalEngagements: metrics.totalEngagements
                 }
             } : null,
-            metrics,
+            
+            // SECTION SEO
+            seo: {
+                score: seoAnalysis.score_seo,
+                description: seoAnalysis.description,
+                hashtags: seoAnalysis.hashtags,
+                recommandations_hashtags_2025: {
+                    tendance: getTrendingHashtags2025().tendance2025.slice(0, 5),
+                    generaux: getTrendingHashtags2025().generaux.slice(0, 3),
+                    niche_suggestions: getTrendingHashtags2025().niches.slice(0, 4)
+                }
+            },
+            
+            // SECTION ANALYSE
             analysis: {
                 score: scoreResult.score,
+                niveau: scoreResult.niveau,
                 potentiel_viral: scoreResult.potentielViral,
-                creative: creativeAnalysis,
-                points_forts: recommendations.points_forts,
-                points_faibles: recommendations.points_faibles,
-                suggestions: recommendations.suggestions
+                diagnostic_ia: aiAnalysis.diagnostic,
+                recommandations_ia: aiAnalysis.recommandations
             },
+            
             metadata: {
                 analysisTimestamp: new Date().toISOString(),
-                analysisId: `TKA_${Date.now().toString(36).toUpperCase()}`,
+                analysisId: analyticsId,
+                frameworkVersion: "2025-refactored",
+                totalAnalyses: analyticsDatabase.length,
                 features: {
                     oembed: !!oembedData,
                     stats_extraction: !!stats,
-                    scrapingbee: !!htmlContent
+                    ai_analysis: !!OPENAI_API_KEY,
+                    database_storage: !!analyticsId
                 }
             }
         };
 
-        console.log(`✅ Analyse terminée - Score: ${scoreResult.score}/100 (${scoreResult.potentielViral})`);
+        console.log(`✅ Analyse terminée - Score: ${scoreResult.score}/100 (${scoreResult.niveau})`);
         
         return json(finalResponse);
 
@@ -577,4 +640,85 @@ export default async function handler(req) {
             timestamp: new Date().toISOString()
         }, 500);
     }
+}
+
+// ENDPOINT pour statistiques base de données
+export async function GET(req) {
+    try {
+        const url = new URL(req.url);
+        const action = url.searchParams.get('action');
+        
+        if (action === 'stats') {
+            const stats = {
+                totalAnalyses: analyticsDatabase.length,
+                derniereAnalyse: analyticsDatabase.length > 0 ? 
+                    analyticsDatabase[analyticsDatabase.length - 1].timestamp : null,
+                
+                topAuteurs: getTopAuthors(),
+                tendancesHashtags: getTrendingHashtagsUsage(),
+                scoresMoyens: getAverageScores()
+            };
+            
+            return json({ success: true, stats });
+        }
+        
+        return json({ error: "Action non supportée" }, 400);
+        
+    } catch (error) {
+        return json({ error: "Erreur lors de la récupération des stats" }, 500);
+    }
+}
+
+// Fonctions utilitaires pour les statistiques
+function getTopAuthors() {
+    const authorStats = {};
+    analyticsDatabase.forEach(entry => {
+        if (entry.author) {
+            if (!authorStats[entry.author]) {
+                authorStats[entry.author] = {
+                    analyses: 0,
+                    totalViews: 0,
+                    avgScore: 0,
+                    followers: entry.authorFollowers
+                };
+            }
+            authorStats[entry.author].analyses++;
+            authorStats[entry.author].totalViews += entry.stats.views;
+        }
+    });
+    
+    return Object.entries(authorStats)
+        .sort(([,a], [,b]) => b.totalViews - a.totalViews)
+        .slice(0, 10)
+        .map(([author, stats]) => ({ author, ...stats }));
+}
+
+function getTrendingHashtagsUsage() {
+    const hashtagCounts = {};
+    analyticsDatabase.forEach(entry => {
+        entry.hashtags?.forEach(tag => {
+            hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1;
+        });
+    });
+    
+    return Object.entries(hashtagCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 20)
+        .map(([hashtag, count]) => ({ hashtag, count }));
+}
+
+function getAverageScores() {
+    if (analyticsDatabase.length === 0) return { avg: 0, distribution: {} };
+    
+    const scores = analyticsDatabase.map(entry => entry.score);
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    
+    const distribution = {
+        viral: scores.filter(s => s >= 80).length,
+        bon: scores.filter(s => s >= 65 && s < 80).length,
+        moyen: scores.filter(s => s >= 50 && s < 65).length,
+        faible: scores.filter(s => s < 50).length
+    };
+    
+    return { avg: avg.toFixed(1), distribution };
 }
