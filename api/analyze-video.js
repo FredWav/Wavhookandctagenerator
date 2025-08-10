@@ -52,27 +52,39 @@ export default async function handler(req, res) {
   const { url: tiktokUrl } = req.body;
   if (!tiktokUrl) return res.status(400).json({ success: false, error: 'URL invalide' });
 
+  let videoData = {};
+  let audioAnalysis = null;
+  let directVideoUrl = null;
+
   try {
-    // --- ÉTAPE 1: SCRAPING DES DONNÉES DE BASE ---
+    // --- ÉTAPE 1: TENTATIVE DE SCRAPING COMPLET (PLAN A) ---
     console.log("🐝 Démarrage du scraping avec ScrapingBee...");
     const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
     if (!SCRAPINGBEE_API_KEY) throw new Error("Clé API ScrapingBee manquante.");
     
-    const scrapingBeeUrl = `https://app.scrapingbee.com/api/v1/?api_key=${SCRAPINGBEE_API_KEY}&url=${encodeURIComponent(tiktokUrl)}&render_js=true`;
+    // On ajoute `wait_for` pour s'assurer que le script a le temps de se charger
+    const scrapingBeeUrl = `https://app.scrapingbee.com/api/v1/?api_key=${SCRAPINGBEE_API_KEY}&url=${encodeURIComponent(tiktokUrl)}&render_js=true&wait_for=%23SIGI_STATE`;
     const response = await fetch(scrapingBeeUrl);
-    if (!response.ok) throw new Error(`ScrapingBee a échoué: ${response.statusText}`);
+    
+    if (!response.ok) {
+        console.warn(`ScrapingBee a échoué (status: ${response.status}), passage au Plan B.`);
+        throw new Error("Fallback"); // On force le passage au Plan B
+    }
     
     const html = await response.text();
     const scriptTagContent = html.split('<script id="SIGI_STATE" type="application/json">')[1]?.split('</script>')[0];
-    if (!scriptTagContent) throw new Error("Impossible de trouver les données SIGI_STATE. La structure de la page a peut-être changé.");
+    
+    if (!scriptTagContent) {
+        console.warn("SIGI_STATE non trouvé, passage au Plan B.");
+        throw new Error("Fallback"); // On force le passage au Plan B
+    }
     
     const data = JSON.parse(scriptTagContent);
     const videoId = Object.keys(data.ItemModule)[0];
     const itemStruct = data.ItemModule[videoId];
-    const directVideoUrl = itemStruct.video.playAddr;
-    console.log("✅ Scraping des métadonnées réussi.");
+    directVideoUrl = itemStruct.video.playAddr;
 
-    const videoData = {
+    videoData = {
         description: itemStruct.desc,
         thumbnail: itemStruct.video.cover,
         author: itemStruct.author.uniqueId,
@@ -83,59 +95,83 @@ export default async function handler(req, res) {
             shares: parseInt(itemStruct.stats.shareCount) || 0,
         }
     };
-    const totalEngagements = videoData.stats.likes + videoData.stats.comments + videoData.stats.shares;
-    const engagementRate = videoData.stats.views > 0 ? (totalEngagements / videoData.stats.views) * 100 : 0;
-
-    // --- ÉTAPE 2: TRANSCRIPTION AUDIO (Ton moteur) ---
-    const LEMONFOX_API_KEY = process.env.LEMONFOX_API_KEY;
-    const audioAnalysis = await transcribeAudioWithLemonfox(directVideoUrl, LEMONFOX_API_KEY);
-
-    // --- ÉTAPE 3: ANALYSE FINALE PAR OPENAI ---
-    console.log("🤖 Préparation de la requête pour OpenAI...");
-    let userPrompt = `Analyse cette vidéo TikTok.
-    **Données quantitatives :** Vues: ${videoData.stats.views}, J'aime: ${videoData.stats.likes}, Taux d'engagement: ${engagementRate.toFixed(2)}%.
-    **Contenu :** Description: "${videoData.description}".`;
-
-    if (audioAnalysis && audioAnalysis.text) {
-        userPrompt += `\n\n**Transcription audio :**\n"${audioAnalysis.text}"`;
-    } else {
-        userPrompt += `\n\n**Transcription audio :** N'a pas pu être récupérée.`;
-    }
-
-    const system_prompt = `Tu es ViralScope, un expert IA en stratégie de contenu TikTok. Analyse les données fournies et renvoie un objet JSON VALIDE avec la structure: {"score": (0-100), "potentiel_viral": "(faible|moyen|élevé)", "qualitatif": {"hookPuissant": bool, "messageClair": bool, "ctaPresent": bool}, "algorithmique": {"hashtagsPertinents": bool, "dureeOptimale": bool, "tendanceUtilisee": bool}, "comparatif": {"benchmarkER": "(faible|moyen|bon)"}, "points_forts": ["point"], "points_faibles": ["point"], "suggestions": ["suggestion"]}`;
-
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`},
-        body: JSON.stringify({
-            model: "gpt-4o", response_format: { type: "json_object" },
-            messages: [
-                { role: "system", content: system_prompt },
-                { role: "user", content: [{ type: "text", text: userPrompt }, { type: "image_url", image_url: { "url": videoData.thumbnail } }] }
-            ]
-        })
-    });
-
-    if (!r.ok) throw new Error(`Erreur de l'API OpenAI: ${await r.text()}`);
-    const aiResponse = await r.json();
-    const finalAnalysis = JSON.parse(aiResponse.choices[0].message.content);
-    console.log("✅ Analyse OpenAI réussie.");
-
-    const finalResponse = {
-        success: true,
-        video: videoData,
-        metrics: {
-            engagementRate: engagementRate,
-            likesRatio: videoData.stats.views > 0 ? (videoData.stats.likes / videoData.stats.views) * 100 : 0,
-        },
-        analysis: finalAnalysis,
-        audioAnalysis: audioAnalysis 
-    };
-    
-    return res.status(200).json(finalResponse);
+    console.log("✅ Scraping complet (Plan A) réussi.");
 
   } catch (error) {
-    console.error("❌ Erreur finale dans le handler:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    // --- PLAN B: RETRAITE TACTIQUE SUR OEMBED ---
+    console.log("⚠️ Exécution du Plan B (oEmbed)...");
+    try {
+        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
+        const oembedResponse = await fetch(oembedUrl);
+        if (!oembedResponse.ok) throw new Error("oEmbed a aussi échoué. La vidéo est probablement privée ou l'URL est incorrecte.");
+        
+        const oembedData = await oembedResponse.json();
+        videoData = {
+            description: oembedData.title || "Description non trouvée.",
+            thumbnail: oembedData.thumbnail_url,
+            author: oembedData.author_name || "Inconnu",
+            stats: null // Pas de stats avec oEmbed
+        };
+        console.log("✅ Plan B (oEmbed) réussi.");
+    } catch (finalError) {
+        console.error("❌ Échec de toutes les stratégies de récupération:", finalError.message);
+        return res.status(500).json({ success: false, error: finalError.message });
+    }
   }
+
+  // --- ÉTAPE 2: TRANSCRIPTION AUDIO (Ton moteur, si possible) ---
+  if (directVideoUrl) {
+    const LEMONFOX_API_KEY = process.env.LEMONFOX_API_KEY;
+    audioAnalysis = await transcribeAudioWithLemonfox(directVideoUrl, LEMONFOX_API_KEY);
+  }
+
+  // --- ÉTAPE 3: ANALYSE FINALE PAR OPENAI (s'adapte à ce qu'on a) ---
+  console.log("🤖 Préparation de la requête pour OpenAI...");
+  let userPrompt = `Analyse cette vidéo TikTok.\n**Contenu :** Description: "${videoData.description}".`;
+
+  if (videoData.stats) {
+      const totalEngagements = videoData.stats.likes + videoData.stats.comments + videoData.stats.shares;
+      const engagementRate = videoData.stats.views > 0 ? (totalEngagements / videoData.stats.views) * 100 : 0;
+      userPrompt += `\n**Données quantitatives :** Vues: ${videoData.stats.views}, J'aime: ${videoData.stats.likes}, Taux d'engagement: ${engagementRate.toFixed(2)}%.`;
+  } else {
+      userPrompt += `\n**Données quantitatives :** N'ont pas pu être récupérées.`;
+  }
+
+  if (audioAnalysis && audioAnalysis.transcription) {
+      userPrompt += `\n\n**Transcription audio :**\n"${audioAnalysis.transcription}"`;
+  } else {
+      userPrompt += `\n\n**Transcription audio :** N'a pas pu être récupérée.`;
+  }
+
+  const system_prompt = `Tu es ViralScope, un expert IA en stratégie de contenu TikTok. Analyse les données fournies et renvoie un objet JSON VALIDE avec la structure: {"score": (0-100), "potentiel_viral": "(faible|moyen|élevé)", "qualitatif": {"hookPuissant": bool, "messageClair": bool, "ctaPresent": bool}, "algorithmique": {"hashtagsPertinents": bool, "dureeOptimale": bool, "tendanceUtilisee": bool}, "comparatif": {"benchmarkER": "(faible|moyen|bon|N/A)"}, "points_forts": ["point"], "points_faibles": ["point"], "suggestions": ["suggestion"]}`;
+
+  const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`},
+      body: JSON.stringify({
+          model: "gpt-4o", response_format: { type: "json_object" },
+          messages: [
+              { role: "system", content: system_prompt },
+              { role: "user", content: [{ type: "text", text: userPrompt }, { type: "image_url", image_url: { "url": videoData.thumbnail } }] }
+          ]
+      })
+  });
+
+  if (!r.ok) throw new Error(`Erreur de l'API OpenAI: ${await r.text()}`);
+  const aiResponse = await r.json();
+  const finalAnalysis = JSON.parse(aiResponse.choices[0].message.content);
+  console.log("✅ Analyse OpenAI réussie.");
+
+  const finalResponse = {
+      success: true,
+      video: videoData,
+      metrics: videoData.stats ? {
+          engagementRate: videoData.stats.views > 0 ? ((videoData.stats.likes + videoData.stats.comments + videoData.stats.shares) / videoData.stats.views) * 100 : 0,
+          likesRatio: videoData.stats.views > 0 ? (videoData.stats.likes / videoData.stats.views) * 100 : 0,
+      } : null,
+      analysis: finalAnalysis,
+      audioAnalysis: audioAnalysis 
+  };
+  
+  return res.status(200).json(finalResponse);
 }
