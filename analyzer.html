@@ -1,862 +1,1059 @@
-// analyze-video.js - Version complète avec analyse vidéo/audio et logging
-export const config = { runtime: "edge" };
-
-// Base de données simulée (en production, utiliser une vraie DB)
-let analysisLogs = [];
-
-// Fonction pour logger les analyses
-function logAnalysis(data) {
-    const logEntry = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-        timestamp: new Date().toISOString(),
-        url: data.url,
-        author: data.author || 'Inconnu',
-        stats: data.stats || null,
-        metrics: data.metrics || null,
-        score: data.score || null,
-        potentiel_viral: data.potentiel_viral || null,
-        niche_detectee: data.niche_detectee || null,
-        contenu_audio: data.contenu_audio || null,
-        contenu_visuel: data.contenu_visuel || null,
-        user_ip: data.user_ip || null,
-        user_agent: data.user_agent || null
-    };
-    
-    analysisLogs.push(logEntry);
-    
-    // Garder seulement les 1000 dernières entrées en mémoire
-    if (analysisLogs.length > 1000) {
-        analysisLogs = analysisLogs.slice(-1000);
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="dark light"/>
+<title>Analyseur TikTok – PRO</title>
+<style>
+  :root {
+    --bg: #111111;
+    --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0));
+    --card-bg: rgba(24, 24, 27, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --ink: #E4E4E7;
+    --muted: #A1A1AA;
+    --accent: #d946ef;
+    --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%);
+    --accent-strong: #c026d3;
+    --radius: 16px;
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+  
+  [data-theme="light"] {
+    --bg: #F7F8FA;
+    --bg-glow: none;
+    --card-bg: #FFFFFF;
+    --card-border: #E5E7EB;
+    --ink: #111827;
+    --muted: #6B7280;
+    --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%);
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    background-image: var(--bg-glow);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  
+  .main-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  @media(min-width: 960px) {
+    .main-layout {
+      grid-template-columns: 450px 1fr;
     }
-    
-    console.log(`📝 Analyse enregistrée: ${logEntry.id} - ${data.author} - ${data.stats?.views || 0} vues`);
-    return logEntry.id;
-}
-
-// Fonction pour parser les données JSON TikTok
-function findJsonBlob(html) {
-    try {
-        let scriptContent = html.split('<script id="SIGI_STATE" type="application/json">')[1]?.split('</script>')[0];
-        if (scriptContent) {
-            console.log("✅ Données via SIGI_STATE");
-            return JSON.parse(scriptContent);
-        }
-        
-        scriptContent = html.split('<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">')[1]?.split('</script>')[0];
-        if (scriptContent) {
-            console.log("✅ Données via __UNIVERSAL_DATA_FOR_REHYDRATION__");
-            return JSON.parse(scriptContent);
-        }
-        
-        const initialStateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?});/s);
-        if (initialStateMatch) {
-            console.log("✅ Données via __INITIAL_STATE__");
-            return JSON.parse(initialStateMatch[1]);
-        }
-        
-        return null;
-    } catch (error) {
-        console.error("❌ Erreur parsing JSON:", error.message);
-        return null;
+  }
+  
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .nav-link {
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--card-border);
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+  }
+  
+  [data-theme="light"] .nav-link {
+    background: var(--card-bg);
+  }
+  
+  .nav-link.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  
+  .nav-link:not(.active):hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .icon {
+    width: 24px;
+    height: 24px;
+    color: var(--muted);
+  }
+  
+  label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  
+  input[type="url"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.2);
+    color: var(--ink);
+    font-size: 15px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  [data-theme="light"] input[type="url"] {
+    background: rgba(255,255,255,0.8);
+  }
+  
+  input[type="url"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2);
+  }
+  
+  .btn {
+    border: 0;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    min-width: 120px;
+  }
+  
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  
+  .btn.primary:hover:not(:disabled) {
+    background: var(--accent-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
+  }
+  
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+  
+  #results {
+    min-height: 200px;
+  }
+  
+  .loader {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 4px solid var(--card-border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px auto;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
     }
-}
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .framework-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+  
+  .pillar-card {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .pillar-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 25px rgba(217, 70, 239, 0.15);
+  }
+  
+  .pillar-card.quantitative { border-left: 4px solid #3b82f6; }
+  .pillar-card.qualitative { border-left: 4px solid #10b981; }
+  .pillar-card.algorithmic { border-left: 4px solid #f59e0b; }
+  .pillar-card.comparative { border-left: 4px solid #ef4444; }
+  
+  .pillar-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .pillar-content {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  .metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  .metric-item:last-child {
+    border-bottom: none;
+  }
+  
+  .metric-value {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  
+  .stat-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: transform 0.2s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+  }
+  
+  [data-theme="light"] .stat-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .stat-card-title {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+  }
+  
+  .stat-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .er-card {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+  
+  .er-value {
+    font-size: 2rem;
+    font-weight: 800;
+  }
+  
+  .er-value.excellent {
+    color: #10b981;
+  }
+  
+  .er-value.good {
+    color: #22c55e;
+  }
+  
+  .er-value.medium {
+    color: #f59e0b;
+  }
+  
+  .er-value.bad {
+    color: #ef4444;
+  }
+  
+  .analysis-list h3 {
+    font-size: 1rem;
+    margin: 1.5rem 0 0.5rem 0;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .analysis-list ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+  
+  .analysis-list li {
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+  }
+  
+  .theme-toggle:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.1);
+  }
+  
+  .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+    animation: shake 0.5s ease-in-out;
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  
+  .success-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #10b981;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+  
+  .video-thumbnail {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    border-radius: 12px;
+    margin: 1rem auto;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: loading 2s ease-in-out infinite;
+  }
+  
+  @keyframes loading {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+  }
+  
+  .score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    position: relative;
+    background: conic-gradient(var(--accent) 0deg, var(--accent) calc(var(--score) * 3.6deg), rgba(255,255,255,0.1) calc(var(--score) * 3.6deg));
+  }
+  
+  .score-inner {
+    width: 90px;
+    height: 90px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .score-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  
+  .score-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .hashtag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .hashtag-item {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+  <div class="main-layout">
+    <header>
+      <h1>🎵 Analyseur TikTok – PRO</h1>
+      <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <a href="./hooks.html" class="nav-link">Hooks</a>
+        <a href="./cta.html" class="nav-link">Appels à l'Action</a>
+        <a href="./analyzer.html" class="nav-link active">Analyseur</a>
+        <a href="./history.html" class="nav-link">Historique</a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">🌓</button>
+      </nav>
+    </header>
+    
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+        <h2>Analyser une vidéo TikTok</h2>
+      </div>
+      
+      <form onsubmit="analyzeVideo(event)">
+        <label for="videoUrl">URL de la vidéo TikTok</label>
+        <input 
+          type="url" 
+          id="videoUrl" 
+          placeholder="https://www.tiktok.com/@username/video/..." 
+          required
+        />
+        <br><br>
+        <button type="submit" class="btn primary" id="analyzeBtn">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 10.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
+          </svg>
+          <span id="btnText">Analyser</span>
+        </button>
+      </form>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <h2>Analyse Framework Intégré</h2>
+      </div>
+      
+      <div id="results">
+        <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
+          🎯 Entrez une URL TikTok pour commencer l'analyse complète selon le framework à 4 piliers
+        </p>
+      </div>
+    </div>
+  </div>
 
-// Extraction des stats avec URL vidéo pour l'analyse
-function extractStats(data) {
-    try {
-        let extractedData = {
-            views: 0,
-            likes: 0,
-            comments: 0,
-            shares: 0,
-            duration: null,
-            description: null,
-            author: null,
-            music: null,
-            hashtags: [],
-            createTime: null,
-            videoUrl: null, // NOUVEAU: URL directe de la vidéo
-            coverUrl: null  // NOUVEAU: URL de la miniature HD
-        };
+  <script>
+    // Configuration - API endpoint corrigé
+    const API_ENDPOINT = '/api/analyze-video';
 
-        if (data.ItemModule) {
-            const videoId = Object.keys(data.ItemModule)[0];
-            const itemStruct = data.ItemModule[videoId];
+    // Fonction pour basculer entre thème sombre et clair
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+
+    // Fonction pour afficher le loader avec étapes du framework
+    function showLoader() {
+      const steps = [
+        '🔍 Validation de l\'URL TikTok...',
+        '📡 Récupération via oEmbed...',
+        '🕷️ Extraction données ScrapingBee...',
+        '📊 Analyse Pilier Quantitatif...',
+        '🎨 Analyse Pilier Qualitatif...',
+        '⚙️ Analyse Pilier Algorithmique...',
+        '📈 Analyse Pilier Comparatif...',
+        '🤖 Génération recommandations IA...',
+        '✅ Finalisation du framework intégré...'
+      ];
+      
+      let currentStep = 0;
+      
+      const updateStep = () => {
+        document.getElementById('results').innerHTML = `
+          <div class="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem; color: var(--muted); font-weight: 500; font-size: 0.95rem;">
+              ${steps[currentStep]}
+            </p>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${((currentStep + 1) / steps.length) * 100}%"></div>
+            </div>
+            <p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">
+              Étape ${currentStep + 1}/${steps.length} - Framework d'analyse TikTok PRO
+            </p>
+          </div>
+        `;
+      };
+      
+      updateStep();
+      
+      const interval = setInterval(() => {
+        currentStep = (currentStep + 1) % steps.length;
+        updateStep();
+      }, 1500);
+      
+      window.loaderInterval = interval;
+    }
+
+    // Fonction pour afficher les erreurs
+    function showError(message) {
+      if (window.loaderInterval) {
+        clearInterval(window.loaderInterval);
+      }
+      
+      document.getElementById('results').innerHTML = `
+        <div class="error-message">
+          <strong>❌ Erreur :</strong> ${message}
+          <br><br>
+          <small style="opacity: 0.8;">
+            💡 <strong>Conseils :</strong> Vérifiez que l'URL est correcte et que la vidéo est publique.
+          </small>
+        </div>
+      `;
+    }
+
+    // Fonction pour créer le cercle de score
+    function createScoreCircle(score, label) {
+      return `
+        <div class="score-circle" style="--score: ${score || 0}">
+          <div class="score-inner">
+            <div class="score-number">${score || 'N/A'}</div>
+            <div class="score-label">${label}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Fonction pour afficher les résultats du framework
+    function showResults(data) {
+      if (window.loaderInterval) {
+        clearInterval(window.loaderInterval);
+      }
+      
+      if (!data || !data.success) {
+        showError('Données invalides reçues de l\'API');
+        return;
+      }
+
+      const { video, stats, metrics, analysis } = data;
+      
+      // Si pas de stats, afficher seulement les infos de base
+      if (!stats) {
+        document.getElementById('results').innerHTML = `
+          <div class="success-indicator">
+            <span>✅</span> Vidéo trouvée - Analyse partielle disponible
+          </div>
+          
+          ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : ''}
+          
+          <div style="text-align: center; padding: 1rem;">
+            <h3 style="margin-bottom: 1rem;">📹 Informations de base</h3>
             
-            if (itemStruct?.stats) {
-                extractedData = {
-                    views: parseInt(itemStruct.stats.playCount) || 0,
-                    likes: parseInt(itemStruct.stats.diggCount) || 0,
-                    comments: parseInt(itemStruct.stats.commentCount) || 0,
-                    shares: parseInt(itemStruct.stats.shareCount) || 0,
-                    duration: itemStruct.video?.duration || null,
-                    description: itemStruct.desc || null,
-                    author: itemStruct.author?.uniqueId || null,
-                    music: itemStruct.music?.title || null,
-                    hashtags: itemStruct.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || [],
-                    createTime: itemStruct.createTime ? new Date(itemStruct.createTime * 1000) : null,
-                    videoUrl: itemStruct.video?.playAddr || itemStruct.video?.downloadAddr || null,
-                    coverUrl: itemStruct.video?.originCover || itemStruct.video?.dynamicCover || null
-                };
-            }
-        }
-        
-        else if (data['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct) {
-            const itemStruct = data['__DEFAULT_SCOPE__']['webapp.video-detail'].itemInfo.itemStruct;
+            ${video?.author ? `
+              <div class="author-info">
+                <span>👤</span>
+                <strong>@${video.author}</strong>
+              </div>
+            ` : ''}
             
-            if (itemStruct.stats) {
-                extractedData = {
-                    views: parseInt(itemStruct.stats.playCount) || 0,
-                    likes: parseInt(itemStruct.stats.diggCount) || 0,
-                    comments: parseInt(itemStruct.stats.commentCount) || 0,
-                    shares: parseInt(itemStruct.stats.shareCount) || 0,
-                    duration: itemStruct.video?.duration || null,
-                    description: itemStruct.desc || null,
-                    author: itemStruct.author?.uniqueId || null,
-                    music: itemStruct.music?.title || null,
-                    hashtags: itemStruct.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || [],
-                    createTime: itemStruct.createTime ? new Date(itemStruct.createTime * 1000) : null,
-                    videoUrl: itemStruct.video?.playAddr || itemStruct.video?.downloadAddr || null,
-                    coverUrl: itemStruct.video?.originCover || itemStruct.video?.dynamicCover || null
-                };
-            }
-        }
-        
-        return extractedData.views > 0 ? extractedData : null;
-        
-    } catch (error) {
-        console.error("❌ Erreur extraction stats:", error.message);
-        return null;
-    }
-}
-
-// NOUVEAU: Analyse du contenu vidéo avec OpenAI GPT-4 Vision
-async function analyzeVideoContent(videoUrl, thumbnailUrl, description, openaiKey) {
-    if (!openaiKey) {
-        console.warn("⚠️ OpenAI key manquante - Analyse vidéo désactivée");
-        return null;
-    }
-
-    try {
-        console.log("🎬 Analyse du contenu vidéo via OpenAI GPT-4 Vision...");
-        
-        const systemPrompt = `Tu es un expert en analyse de contenu TikTok. Analyse cette vidéo et fournis un JSON structuré avec:
-
-1. CONTENU_VISUEL: Que vois-tu dans la vidéo? (décor, personne, objets, actions, esthétique)
-2. NICHE_DETECTEE: Quelle niche/catégorie? (fitness, beauté, humour, éducation, lifestyle, business, etc.)
-3. TYPE_CONTENU: Quel format? (tutorial, storytime, dance, comedy, educational, review, etc.)
-4. QUALITE_PRODUCTION: Niveau de production (amateur, semi-pro, professionnel)
-5. ELEMENTS_VIRAUX: Quels éléments peuvent rendre cette vidéo virale?
-6. EMOTIONS_SUSCITEES: Quelles émotions cette vidéo provoque-t-elle?
-7. CIBLE_AUDIENCE: À qui s'adresse cette vidéo? (âge, genre, intérêts)
-8. POINTS_ATTENTION: Moments clés qui captent l'attention
-9. RECOMMANDATIONS_VISUELLES: Comment améliorer visuellement
-
-Sois précis et professionnel.`;
-
-        const userPrompt = `Analyse cette vidéo TikTok:
-
-📝 DESCRIPTION: "${description}"
-
-🎯 MISSION: Fournis une analyse complète du contenu visuel et identifie la niche, le type de contenu, et les éléments qui peuvent contribuer à la viralité.`;
-
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${openaiKey}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                response_format: { type: "json_object" },
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { 
-                        role: "user", 
-                        content: [
-                            { type: "text", text: userPrompt },
-                            { type: "image_url", image_url: { url: thumbnailUrl } }
-                        ]
-                    }
-                ],
-                max_tokens: 1500,
-                temperature: 0.3
-            }),
-            signal: AbortSignal.timeout(30000)
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const content = data.choices[0]?.message?.content;
+            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+              <p><strong>📝 Description:</strong></p>
+              <p style="color: var(--muted); font-style: italic;">"${video?.description || 'Non disponible'}"</p>
+            </div>
             
-            if (content) {
-                const analysis = JSON.parse(content);
-                console.log("✅ Analyse vidéo complétée");
-                return analysis;
-            }
-        } else {
-            console.warn(`⚠️ Erreur OpenAI Vision: ${response.status}`);
-        }
-        
-        return null;
-    } catch (error) {
-        console.error("❌ Erreur analyse vidéo:", error.message);
-        return null;
-    }
-}
-
-// NOUVEAU: Transcription audio (simulation - en production utiliser Whisper API)
-async function transcribeAudio(videoUrl, openaiKey) {
-    if (!openaiKey || !videoUrl) {
-        console.warn("⚠️ Transcription audio désactivée - Clé OpenAI ou URL vidéo manquante");
-        return null;
-    }
-
-    try {
-        console.log("🎤 Transcription audio en cours...");
-        
-        // NOTE: En production, vous devrez:
-        // 1. Télécharger la vidéo TikTok
-        // 2. Extraire l'audio en format supporté (mp3, wav, etc.)
-        // 3. Envoyer à l'API Whisper d'OpenAI
-        
-        // Pour l'instant, on simule avec l'analyse de la description
-        // Remplacez cette partie par l'implémentation Whisper réelle
-        
-        const simulatedTranscription = {
-            text: "Transcription non disponible - Implémentation Whisper requise",
-            language: "fr",
-            confidence: 0,
-            duration: null,
-            words: [],
-            sentiment: "neutral",
-            topics: []
-        };
-        
-        console.log("⚠️ Transcription simulée - Implémentez Whisper API pour la transcription réelle");
-        return simulatedTranscription;
-        
-        /* IMPLÉMENTATION RÉELLE WHISPER (décommenter et adapter):
-        
-        // 1. Télécharger la vidéo
-        const videoResponse = await fetch(videoUrl);
-        const videoBuffer = await videoResponse.arrayBuffer();
-        
-        // 2. Extraire l'audio (utiliser FFmpeg ou similaire)
-        const audioBuffer = await extractAudioFromVideo(videoBuffer);
-        
-        // 3. Transcription Whisper
-        const formData = new FormData();
-        formData.append('file', new Blob([audioBuffer], { type: 'audio/mp3' }), 'audio.mp3');
-        formData.append('model', 'whisper-1');
-        formData.append('language', 'fr');
-        formData.append('response_format', 'verbose_json');
-        
-        const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${openaiKey}`
-            },
-            body: formData
-        });
-        
-        if (whisperResponse.ok) {
-            const transcription = await whisperResponse.json();
-            console.log("✅ Transcription audio complétée");
-            return {
-                text: transcription.text,
-                language: transcription.language,
-                duration: transcription.duration,
-                words: transcription.words || [],
-                confidence: transcription.confidence || 0,
-                sentiment: analyzeTextSentiment(transcription.text),
-                topics: extractTopics(transcription.text)
-            };
-        }
-        
-        */
-        
-    } catch (error) {
-        console.error("❌ Erreur transcription audio:", error.message);
-        return null;
-    }
-}
-
-// Calcul des métriques avancées
-function calculateAdvancedMetrics(stats) {
-    if (!stats || stats.views === 0) {
-        return {
-            engagementRate: 0,
-            likesRatio: 0,
-            commentsRatio: 0,
-            sharesRatio: 0,
-            totalEngagements: 0,
-            viralityIndex: 0
-        };
-    }
-
-    const totalEngagements = stats.likes + stats.comments + stats.shares;
-    
-    return {
-        engagementRate: (totalEngagements / stats.views) * 100,
-        likesRatio: (stats.likes / stats.views) * 100,
-        commentsRatio: (stats.comments / stats.views) * 100,
-        sharesRatio: (stats.shares / stats.views) * 100,
-        totalEngagements,
-        viralityIndex: Math.min(100, ((stats.shares * 10) + (stats.comments * 4) + (stats.likes * 2)) / stats.views * 100)
-    };
-}
-
-// Analyse créative complète
-function analyzeCreativeContent(stats, description, hashtags, videoAnalysis = null, audioTranscription = null) {
-    const analysis = {
-        structureNarrative: {
-            hookPresent: false,
-            hookType: null,
-            messageClaire: false,
-            ctaPresent: false,
-            ctaType: null
-        },
-        optimisationPlateforme: {
-            hashtagsPertinents: false,
-            hashtagsCount: hashtags?.length || 0,
-            descriptionEngageante: false
-        },
-        tendances: {
-            utiliseTendance: false,
-            hashtagsTendance: []
-        },
-        contenuEnrichi: {
-            niche: videoAnalysis?.NICHE_DETECTEE || 'Non déterminée',
-            typeContenu: videoAnalysis?.TYPE_CONTENU || 'Non déterminé',
-            qualiteProduction: videoAnalysis?.QUALITE_PRODUCTION || 'Non évaluée',
-            elementsViraux: videoAnalysis?.ELEMENTS_VIRAUX || [],
-            cibleAudience: videoAnalysis?.CIBLE_AUDIENCE || 'Non déterminée',
-            contenuParle: audioTranscription?.text || 'Non disponible'
-        }
-    };
-    
-    if (description) {
-        const desc = description.toLowerCase();
-        
-        // Détection du hook
-        const hookPatterns = {
-            question: /^(pourquoi|comment|qui|que|quoi|où|quand)/,
-            secret: /(secret|astuce|conseil|truc)/,
-            revelation: /(révélation|vérité|découverte)/,
-            negation: /(pas|jamais|aucun|stop|arrête)/,
-            number: /^\d+/,
-            controversial: /(personne ne|tout le monde|on vous ment)/
-        };
-        
-        for (const [type, pattern] of Object.entries(hookPatterns)) {
-            if (pattern.test(desc)) {
-                analysis.structureNarrative.hookPresent = true;
-                analysis.structureNarrative.hookType = type;
-                break;
-            }
-        }
-        
-        // Détection du CTA
-        const ctaPatterns = {
-            subscribe: /(abonne|follow|suit)/,
-            engage: /(like|commente|partage|réagis)/,
-            action: /(clique|va sur|regarde|découvre)/,
-            save: /(sauvegarde|enregistre|garde)/
-        };
-        
-        for (const [type, pattern] of Object.entries(ctaPatterns)) {
-            if (pattern.test(desc)) {
-                analysis.structureNarrative.ctaPresent = true;
-                analysis.structureNarrative.ctaType = type;
-                break;
-            }
-        }
-        
-        analysis.structureNarrative.messageClaire = description.length > 10 && description.length < 300;
-        analysis.optimisationPlateforme.descriptionEngageante = description.length > 20;
-    }
-    
-    // Analyse des hashtags
-    if (hashtags && hashtags.length > 0) {
-        analysis.optimisationPlateforme.hashtagsPertinents = hashtags.length >= 3 && hashtags.length <= 8;
-        
-        const hashtagsTendance = ['fyp', 'viral', 'trending', 'pourtoi', 'france', 'tiktokfrance'];
-        analysis.tendances.hashtagsTendance = hashtags.filter(tag => 
-            hashtagsTendance.some(trend => tag.toLowerCase().includes(trend))
-        );
-        analysis.tendances.utiliseTendance = analysis.tendances.hashtagsTendance.length > 0;
-    }
-    
-    return analysis;
-}
-
-// Scoring prédictif enrichi
-function calculatePredictiveScore(stats, metrics, creativeAnalysis) {
-    let score = 50;
-    
-    // Performance quantitative (40 points)
-    if (metrics.engagementRate > 15) score += 15;
-    else if (metrics.engagementRate > 10) score += 12;
-    else if (metrics.engagementRate > 5) score += 8;
-    else if (metrics.engagementRate > 2) score += 4;
-    
-    if (metrics.likesRatio > 10) score += 10;
-    else if (metrics.likesRatio > 5) score += 6;
-    
-    if (stats.views > 1000000) score += 15;
-    else if (stats.views > 100000) score += 10;
-    else if (stats.views > 10000) score += 5;
-    
-    // Analyse créative (30 points)
-    if (creativeAnalysis.structureNarrative.hookPresent) score += 8;
-    if (creativeAnalysis.structureNarrative.messageClaire) score += 6;
-    if (creativeAnalysis.structureNarrative.ctaPresent) score += 4;
-    if (creativeAnalysis.optimisationPlateforme.hashtagsPertinents) score += 6;
-    if (creativeAnalysis.optimisationPlateforme.descriptionEngageante) score += 3;
-    if (creativeAnalysis.tendances.utiliseTendance) score += 3;
-    
-    // Bonus contenu enrichi (10 points)
-    if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') score += 3;
-    if (creativeAnalysis.contenuEnrichi.qualiteProduction === 'professionnel') score += 4;
-    if (creativeAnalysis.contenuEnrichi.elementsViraux?.length > 0) score += 3;
-    
-    let potentielViral = "faible";
-    if (score >= 85) potentielViral = "élevé";
-    else if (score >= 70) potentielViral = "moyen";
-    
-    return { score: Math.min(100, Math.max(0, score)), potentielViral };
-}
-
-// Génération de recommandations enrichies
-function generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis = null) {
-    const recommendations = {
-        points_forts: [],
-        points_faibles: [],
-        suggestions: []
-    };
-    
-    // Points forts
-    if (metrics.engagementRate > 10) {
-        recommendations.points_forts.push(`Excellent taux d'engagement (${metrics.engagementRate.toFixed(1)}%) - Audience très réactive`);
-    }
-    if (metrics.likesRatio > 8) {
-        recommendations.points_forts.push("Ratio likes/vues élevé - Contenu très apprécié");
-    }
-    if (creativeAnalysis.structureNarrative.hookPresent) {
-        recommendations.points_forts.push(`Hook ${creativeAnalysis.structureNarrative.hookType} détecté - Accroche efficace`);
-    }
-    if (videoAnalysis?.QUALITE_PRODUCTION === 'professionnel') {
-        recommendations.points_forts.push("Qualité de production professionnelle détectée");
-    }
-    if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') {
-        recommendations.points_forts.push(`Niche clairement identifiée: ${creativeAnalysis.contenuEnrichi.niche}`);
-    }
-    
-    // Points faibles
-    if (metrics.engagementRate < 3) {
-        recommendations.points_faibles.push("Taux d'engagement faible - Contenu peu engageant");
-    }
-    if (!creativeAnalysis.structureNarrative.hookPresent) {
-        recommendations.points_faibles.push("Absence de hook détectable - Accroche à renforcer");
-    }
-    if (!creativeAnalysis.structureNarrative.ctaPresent) {
-        recommendations.points_faibles.push("Aucun appel à l'action explicite");
-    }
-    if (!creativeAnalysis.optimisationPlateforme.hashtagsPertinents) {
-        recommendations.points_faibles.push(`Stratégie hashtags non optimale (${creativeAnalysis.optimisationPlateforme.hashtagsCount} hashtags)`);
-    }
-    
-    // Suggestions enrichies
-    if (metrics.engagementRate < 5) {
-        recommendations.suggestions.push("🎯 Créer un hook plus percutant dans les 3 premières secondes");
-        recommendations.suggestions.push("💬 Poser des questions pour inciter aux commentaires");
-    }
-    
-    if (videoAnalysis?.ELEMENTS_VIRAUX?.length > 0) {
-        recommendations.suggestions.push(`🔥 Exploiter davantage ces éléments viraux détectés: ${videoAnalysis.ELEMENTS_VIRAUX.join(', ')}`);
-    }
-    
-    if (creativeAnalysis.contenuEnrichi.niche !== 'Non déterminée') {
-        recommendations.suggestions.push(`🎯 Optimiser pour la niche ${creativeAnalysis.contenuEnrichi.niche}: utiliser ses codes et hashtags spécifiques`);
-    }
-    
-    if (!creativeAnalysis.structureNarrative.ctaPresent) {
-        recommendations.suggestions.push("📢 Ajouter un CTA clair: 'Abonnez-vous pour plus', 'Dites-moi en commentaire'");
-    }
-    
-    recommendations.suggestions.push("📊 Analyser cette vidéo comme référence pour optimiser les prochaines");
-    
-    return recommendations;
-}
-
-// Validation URL TikTok
-function validateTikTokUrl(url) {
-    const patterns = [
-        /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/,
-        /^https?:\/\/vm\.tiktok\.com\/[\w]+/,
-        /^https?:\/\/www\.tiktok\.com\/t\/[\w]+/
-    ];
-    return patterns.some(pattern => pattern.test(url));
-}
-
-// Formatage des nombres
-function formatNumber(num) {
-    if (!num || num === 0) return '0';
-    if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
-    else if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    else if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-}
-
-// NOUVEAU: Extraction des infos utilisateur
-function extractUserInfo(request) {
-    const headers = request.headers;
-    return {
-        ip: headers.get('x-forwarded-for') || headers.get('x-real-ip') || 'unknown',
-        userAgent: headers.get('user-agent') || 'unknown',
-        country: headers.get('cf-ipcountry') || 'unknown',
-        timestamp: new Date().toISOString()
-    };
-}
-
-// Handler principal avec analyse complète
-export default async function handler(req) {
-    if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Méthode non autorisée' }), { 
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
-
-    try {
-        const body = await req.json().catch(() => null);
-        if (!body || !body.url) {
-            return new Response(JSON.stringify({ error: 'URL manquante' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        const { url: tiktokUrl } = body;
-        
-        if (!validateTikTokUrl(tiktokUrl)) {
-            return new Response(JSON.stringify({ error: 'URL TikTok invalide' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        console.log(`🚀 Analyse complète: ${tiktokUrl}`);
-        
-        // Extraction des infos utilisateur
-        const userInfo = extractUserInfo(req);
-        console.log(`👤 Utilisateur: ${userInfo.ip} (${userInfo.country})`);
-
-        let description = null;
-        let thumbnail = null;
-        let stats = null;
-        let videoAnalysis = null;
-        let audioTranscription = null;
-
-        // Étape 1: oEmbed
-        try {
-            console.log("📡 oEmbed...");
-            const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
-            const oembedResponse = await fetch(oembedUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                },
-                signal: AbortSignal.timeout(15000)
-            });
-
-            if (oembedResponse.ok) {
-                const oembedData = await oembedResponse.json();
-                description = oembedData.title || "Description non disponible";
-                thumbnail = oembedData.thumbnail_url;
-                console.log("✅ oEmbed réussi");
-            } else {
-                throw new Error(`oEmbed failed: ${oembedResponse.status}`);
-            }
-        } catch (error) {
-            console.error("❌ Erreur oEmbed:", error.message);
-            return new Response(JSON.stringify({ 
-                error: "Impossible d'accéder à cette vidéo TikTok"
-            }), { 
-                status: 404,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        // Étape 2: Statistiques ScrapingBee
-        const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
-        if (SCRAPINGBEE_API_KEY) {
-            try {
-                console.log("🕷️ ScrapingBee...");
-                const scrapingBeeUrl = new URL('https://app.scrapingbee.com/api/v1/');
-                scrapingBeeUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
-                scrapingBeeUrl.searchParams.set('url', tiktokUrl);
-                scrapingBeeUrl.searchParams.set('render_js', 'true');
-                scrapingBeeUrl.searchParams.set('wait', '4000');
-
-                const response = await fetch(scrapingBeeUrl.toString(), {
-                    signal: AbortSignal.timeout(35000)
-                });
-
-                if (response.ok) {
-                    const html = await response.text();
-                    const data = findJsonBlob(html);
-                    if (data) {
-                        stats = extractStats(data);
-                        if (stats) {
-                            console.log("✅ Stats extraites");
-                            if (stats.description && stats.description.length > description.length) {
-                                description = stats.description;
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn("⚠️ Échec ScrapingBee:", error.message);
-            }
-        }
-
-        // Étape 3: NOUVEAU - Analyse vidéo/audio
-        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-        if (OPENAI_API_KEY && thumbnail) {
-            // Analyse du contenu visuel
-            videoAnalysis = await analyzeVideoContent(stats?.videoUrl, thumbnail, description, OPENAI_API_KEY);
+            ${video?.hashtags?.length ? `
+              <div style="margin-bottom: 1rem;">
+                <p><strong>🏷️ Hashtags:</strong></p>
+                <div class="hashtag-list">
+                  ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
             
-            // Transcription audio (si URL vidéo disponible)
-            if (stats?.videoUrl) {
-                audioTranscription = await transcribeAudio(stats.videoUrl, OPENAI_API_KEY);
-            }
-        }
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: 12px;">
+              <p style="color: #ef4444; margin: 0;">
+                ⚠️ Analyse framework limitée - Statistiques détaillées non disponibles
+                <br><small>Pour une analyse complète des 4 piliers, configurez les clés API ScrapingBee et OpenAI</small>
+              </p>
+            </div>
+          </div>
+        `;
+        return;
+      }
 
-        // Calculs et analyses
-        const metrics = stats ? calculateAdvancedMetrics(stats) : null;
-        const creativeAnalysis = analyzeCreativeContent(stats, description, stats?.hashtags, videoAnalysis, audioTranscription);
-        const predictiveScore = stats ? calculatePredictiveScore(stats, metrics, creativeAnalysis) : { score: 50, potentielViral: 'moyen' };
-        const recommendations = stats ? generateRecommendations(stats, metrics, creativeAnalysis, videoAnalysis) : null;
+      // Calcul de la classe CSS pour le taux d'engagement
+      const engagementRate = metrics?.engagementRate || 0;
+      let erClass = 'bad';
+      if (engagementRate > 15) erClass = 'excellent';
+      else if (engagementRate > 10) erClass = 'good';
+      else if (engagementRate > 5) erClass = 'medium';
 
-        // NOUVEAU: Enregistrement de l'analyse
-        const logId = logAnalysis({
-            url: tiktokUrl,
-            author: stats?.author,
-            stats: stats,
-            metrics: metrics,
-            score: predictiveScore.score,
-            potentiel_viral: predictiveScore.potentielViral,
-            niche_detectee: videoAnalysis?.NICHE_DETECTEE,
-            contenu_audio: audioTranscription?.text,
-            contenu_visuel: videoAnalysis?.CONTENU_VISUEL,
-            user_ip: userInfo.ip,
-            user_agent: userInfo.userAgent
-        });
+      // Score et potentiel
+      const score = analysis?.score || 50;
+      const potentiel = analysis?.potentiel_viral || 'moyen';
+      
+      let potentielColor = '#f59e0b';
+      let potentielIcon = '📈';
+      if (potentiel === 'élevé') {
+        potentielColor = '#10b981';
+        potentielIcon = '🚀';
+      } else if (potentiel === 'faible') {
+        potentielColor = '#ef4444';
+        potentielIcon = '🌱';
+      }
 
-        // Réponse finale enrichie
-        const finalResponse = {
-            success: true,
-            analysisId: logId,
-            analysisType: "framework_complet_avec_video_audio",
-            video: {
-                url: tiktokUrl,
-                description,
-                thumbnail,
-                author: stats?.author || null,
-                music: stats?.music || null,
-                hashtags: stats?.hashtags || [],
-                createTime: stats?.createTime || null,
-                videoUrl: stats?.videoUrl || null
-            },
-            stats: stats ? {
-                ...stats,
-                formatted: {
-                    views: formatNumber(stats.views),
-                    likes: formatNumber(stats.likes),
-                    comments: formatNumber(stats.comments),
-                    shares: formatNumber(stats.shares)
-                }
-            } : null,
-            metrics: metrics || {
-                engagementRate: null,
-                likesRatio: null,
-                commentsRatio: null,
-                sharesRatio: null,
-                totalEngagements: null,
-                viralityIndex: null
-            },
-            analysis: {
-                score: predictiveScore.score,
-                potentiel_viral: predictiveScore.potentielViral,
-                points_forts: recommendations?.points_forts || [],
-                points_faibles: recommendations?.points_faibles || [],
-                suggestions: recommendations?.suggestions || [],
-                creative: creativeAnalysis,
-                
-                // NOUVEAU: Contenu enrichi
-                contenu_video: videoAnalysis ? {
-                    niche_detectee: videoAnalysis.NICHE_DETECTEE || 'Non déterminée',
-                    type_contenu: videoAnalysis.TYPE_CONTENU || 'Non déterminé',
-                    qualite_production: videoAnalysis.QUALITE_PRODUCTION || 'Non évaluée',
-                    elements_viraux: videoAnalysis.ELEMENTS_VIRAUX || [],
-                    emotions_suscitees: videoAnalysis.EMOTIONS_SUSCITEES || [],
-                    cible_audience: videoAnalysis.CIBLE_AUDIENCE || 'Non déterminée',
-                    contenu_visuel: videoAnalysis.CONTENU_VISUEL || 'Non analysé',
-                    recommandations_visuelles: videoAnalysis.RECOMMANDATIONS_VISUELLES || []
-                } : null,
-                
-                contenu_audio: audioTranscription ? {
-                    transcription: audioTranscription.text || 'Non disponible',
-                    langue: audioTranscription.language || 'Non détectée',
-                    duree: audioTranscription.duration || null,
-                    sentiment: audioTranscription.sentiment || 'Non analysé',
-                    topics: audioTranscription.topics || [],
-                    confidence: audioTranscription.confidence || 0
-                } : null
-            },
-            metadata: {
-                analysisTimestamp: new Date().toISOString(), // CORRIGÉ: Date formatée correctement
-                frameworkVersion: "5.0-video-audio",
-                apiEndpoint: "/api/analyze-video",
-                userInfo: {
-                    country: userInfo.country,
-                    timestamp: userInfo.timestamp
-                },
-                features: {
-                    oembed: !!thumbnail,
-                    stats_extraction: !!stats,
-                    video_analysis: !!videoAnalysis,
-                    audio_transcription: !!audioTranscription,
-                    logging: true
-                }
-            }
-        };
-
-        console.log(`✅ Analyse complète terminée - ID: ${logId}`);
-        console.log(`🎯 Score: ${predictiveScore.score}/100 (${predictiveScore.potentielViral})`);
+      document.getElementById('results').innerHTML = `
+        <div class="success-indicator">
+          <span>✅</span> Analyse Framework Intégré terminée
+        </div>
         
-        return new Response(
-            JSON.stringify(finalResponse), 
-            { 
-                status: 200,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'public, max-age=300',
-                    'X-Analysis-ID': logId,
-                    'X-Framework-Version': '5.0-video-audio'
-                }
-            }
-        );
-
-    } catch (error) {
-        console.error("❌ Erreur critique:", error.message);
-        
-        return new Response(
-            JSON.stringify({ 
-                error: "Erreur interne du serveur",
-                errorCode: "ANALYSIS_ERROR",
-                details: process.env.NODE_ENV === 'development' ? error.message : "Erreur de traitement",
-                timestamp: new Date().toISOString(),
-                support: "Réessayez dans quelques instants"
-            }), 
-            { 
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-    }
-}
-
-// NOUVEAU: Endpoint pour récupérer les logs d'analyse (GET /api/analyze-video?logs=true)
-export async function GET(req) {
-    try {
-        const url = new URL(req.url);
-        const showLogs = url.searchParams.get('logs') === 'true';
-        
-        if (showLogs) {
-            // Statistiques des analyses
-            const stats = {
-                total_analyses: analysisLogs.length,
-                derniere_analyse: analysisLogs.length > 0 ? analysisLogs[analysisLogs.length - 1].timestamp : null,
-                top_auteurs: getTopAuthors(),
-                top_niches: getTopNiches(),
-                analyse_par_jour: getAnalysesPerDay()
-            };
+        <!-- En-tête avec infos vidéo -->
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+          ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail" style="margin: 0; max-width: 150px;">` : ''}
+          
+          <div>
+            ${video?.author ? `
+              <div class="author-info">
+                <span>👤</span>
+                <strong>@${video.author}</strong>
+              </div>
+            ` : ''}
             
-            return new Response(JSON.stringify({
-                success: true,
-                stats: stats,
-                recent_analyses: analysisLogs.slice(-10) // 10 dernières analyses
-            }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-        
-        return new Response(JSON.stringify({
-            error: "Endpoint GET non supporté sans paramètre logs=true"
-        }), {
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-    } catch (error) {
-        return new Response(JSON.stringify({
-            error: "Erreur lors de la récupération des logs"
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
-}
+            <p style="color: var(--muted); font-style: italic; margin: 0; line-height: 1.5;">
+              "${video?.description || 'Description non disponible'}"
+            </p>
+            
+            ${video?.hashtags?.length ? `
+              <div class="hashtag-list" style="margin-top: 1rem;">
+                ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            
+            ${video?.music ? `
+              <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted);">
+                🎵 <strong>Musique:</strong> ${video.music}
+              </p>
+            ` : ''}
+          </div>
+        </div>
 
-// Fonctions utilitaires pour les statistiques
-function getTopAuthors() {
-    const authorCounts = {};
-    analysisLogs.forEach(log => {
-        if (log.author && log.author !== 'Inconnu') {
-            authorCounts[log.author] = (authorCounts[log.author] || 0) + 1;
+        <!-- Scores principaux -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; text-align: center;">
+          <div>
+            ${createScoreCircle(score, 'SCORE')}
+            <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Score Framework Global</p>
+          </div>
+          <div>
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">${potentielIcon}</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: ${potentielColor}; text-transform: uppercase;">
+              ${potentiel}
+            </div>
+            <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Potentiel Viral</p>
+          </div>
+        </div>
+
+        <!-- Framework 4 Piliers -->
+        <h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">
+          🏛️ Framework d'Analyse à 4 Piliers
+        </h3>
+        
+        <div class="framework-grid">
+          <!-- Pilier 1: Quantitatif -->
+          <div class="pillar-card quantitative">
+            <div class="pillar-title">
+              <span>📊</span> Pilier Quantitatif
+            </div>
+            <div class="pillar-content">
+              <div class="metric-item">
+                <span>Vues totales</span>
+                <span class="metric-value">${stats.formatted?.views || stats.views.toLocaleString()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Taux d'engagement</span>
+                <span class="metric-value ${erClass}">${engagementRate.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Ratio Likes/Vues</span>
+                <span class="metric-value">${metrics.likesRatio.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Ratio Partages/Vues</span>
+                <span class="metric-value">${metrics.sharesRatio.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Engagements totaux</span>
+                <span class="metric-value">${metrics.totalEngagements.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pilier 2: Qualitatif -->
+          <div class="pillar-card qualitative">
+            <div class="pillar-title">
+              <span>🎨</span> Pilier Qualitatif
+            </div>
+            <div class="pillar-content">
+              ${analysis.creative ? `
+                <div class="metric-item">
+                  <span>Hook présent</span>
+                  <span class="metric-value">${analysis.creative.structureNarrative.hookPresent ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Message clair</span>
+                  <span class="metric-value">${analysis.creative.structureNarrative.messageClaire ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>CTA présent</span>
+                  <span class="metric-value">${analysis.creative.structureNarrative.ctaPresent ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Description engageante</span>
+                  <span class="metric-value">${analysis.creative.optimisationPlateforme.descriptionEngageante ? '✅' : '❌'}</span>
+                </div>
+              ` : `
+                <p style="color: var(--muted); font-style: italic;">Analyse qualitative en cours de développement</p>
+              `}
+            </div>
+          </div>
+
+          <!-- Pilier 3: Algorithmique -->
+          <div class="pillar-card algorithmic">
+            <div class="pillar-title">
+              <span>⚙️</span> Pilier Algorithmique
+            </div>
+            <div class="pillar-content">
+              ${analysis.creative ? `
+                <div class="metric-item">
+                  <span>Hashtags optimaux</span>
+                  <span class="metric-value">${analysis.creative.optimisationPlateforme.hashtagsPertinents ? '✅' : '❌'}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Nombre hashtags</span>
+                  <span class="metric-value">${analysis.creative.optimisationPlateforme.hashtagsCount}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Tendance utilisée</span>
+                  <span class="metric-value">${analysis.creative.tendances.utiliseTendance ? '✅' : '❌'}</span>
+                </div>
+                ${analysis.temporal ? `
+                  <div class="metric-item">
+                    <span>Durée optimale</span>
+                    <span class="metric-value">${analysis.temporal.dureeOptimale ? '✅' : '❌'}</span>
+                  </div>
+                  <div class="metric-item">
+                    <span>Temps visionnage</span>
+                    <span class="metric-value">${analysis.temporal.tempsVisionnage}</span>
+                  </div>
+                ` : ''}
+              ` : `
+                <p style="color: var(--muted); font-style: italic;">Optimisation algorithmique détectée automatiquement</p>
+              `}
+            </div>
+          </div>
+
+          <!-- Pilier 4: Comparatif -->
+          <div class="pillar-card comparative">
+            <div class="pillar-title">
+              <span>📈</span> Pilier Comparatif
+            </div>
+            <div class="pillar-content">
+              <div class="metric-item">
+                <span>Score vs Moyenne</span>
+                <span class="metric-value">${score > 70 ? 'Au-dessus' : score > 50 ? 'Moyenne' : 'En-dessous'}</span>
+              </div>
+              <div class="metric-item">
+                <span>Potentiel viral</span>
+                <span class="metric-value" style="color: ${potentielColor};">${potentiel.toUpperCase()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Benchmark ER</span>
+                <span class="metric-value">${engagementRate > 5 ? 'Bon' : engagementRate > 2 ? 'Moyen' : 'Faible'}</span>
+              </div>
+              <div class="metric-item">
+                <span>Position industrie</span>
+                <span class="metric-value">${stats.views > 100000 ? 'Top 10%' : stats.views > 10000 ? 'Top 30%' : 'Standard'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistiques détaillées -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+          <div class="stat-card">
+            <div class="stat-card-title">👁️ Vues</div>
+            <div class="stat-card-value">${stats.formatted?.views || stats.views.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">❤️ J'aime</div>
+            <div class="stat-card-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">💬 Commentaires</div>
+            <div class="stat-card-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">📤 Partages</div>
+            <div class="stat-card-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <!-- Recommandations Framework -->
+        ${analysis.points_forts?.length || analysis.points_faibles?.length || analysis.suggestions?.length ? `
+          <div class="analysis-list" style="margin-top: 2rem;">
+            <h3 style="text-align: center; margin-bottom: 1.5rem; font-size: 1.2rem;">
+              🎯 Recommandations Framework
+            </h3>
+            
+            ${analysis.points_forts?.length ? `
+              <h3 style="color: #10b981;">✅ Points forts identifiés</h3>
+              <ul style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+                ${analysis.points_forts.map(point => `<li style="color: var(--ink);">${point}</li>`).join('')}
+              </ul>
+            ` : ''}
+            
+            ${analysis.points_faibles?.length ? `
+              <h3 style="color: #f59e0b;">⚠️ Axes d'amélioration</h3>
+              <ul style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                ${analysis.points_faibles.map(point => `<li style="color: var(--ink);">${point}</li>`).join('')}
+              </ul>
+            ` : ''}
+            
+            ${analysis.suggestions?.length ? `
+              <h3 style="color: var(--accent);">💡 Optimisations recommandées</h3>
+              <ul style="background: rgba(217, 70, 239, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">
+                ${analysis.suggestions.map(point => `<li style="color: var(--ink);">${point}</li>`).join('')}
+              </ul>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <!-- Footer analyse -->
+        <div style="margin-top: 3rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; text-align: center; border: 1px solid var(--accent);">
+          <h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse Framework Complète</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Score Global</div>
+              <div style="font-size: 1.5rem; font-weight: 800;">${score}/100</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Potentiel Viral</div>
+              <div style="font-size: 1.2rem; font-weight: 700; color: ${potentielColor};">${potentiel.toUpperCase()}</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Piliers Analysés</div>
+              <div style="font-size: 1.2rem; font-weight: 700;">4/4 ✅</div>
+            </div>
+          </div>
+          <small style="color: var(--muted);">
+            📅 Analyse générée le ${new Date(data.timestamp).toLocaleString('fr-FR')}
+            <br>Framework d'analyse TikTok PRO - Tous droits réservés
+          </small>
+        </div>
+      `;
+    }
+
+    // Fonction principale d'analyse
+    async function analyzeVideo(event) {
+      event.preventDefault();
+      
+      const url = document.getElementById('videoUrl').value.trim();
+      const btn = document.getElementById('analyzeBtn');
+      const btnText = document.getElementById('btnText');
+      
+      // Validation URL TikTok
+      if (!url.includes('tiktok.com')) {
+        showError('Veuillez entrer une URL TikTok valide (ex: https://www.tiktok.com/@user/video/...)');
+        return;
+      }
+      
+      btn.disabled = true;
+      btnText.textContent = 'Analyse Framework...';
+      showLoader();
+      
+      try {
+        console.log('🚀 Démarrage analyse Framework TikTok...');
+        
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur réseau' }));
+          throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('✅ Framework complet reçu:', data);
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Échec de l\'analyse framework');
+        }
+        
+        showResults(data);
+        
+      } catch (error) {
+        console.error('❌ Erreur Framework:', error);
+        
+        let errorMessage = error.message;
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Impossible de contacter le serveur d\'analyse. Vérifiez votre connexion.';
+        } else if (error.message.includes('404')) {
+          errorMessage = 'Vidéo TikTok introuvable. Vérifiez l\'URL ou les permissions de la vidéo.';
+        } else if (error.message.includes('403')) {
+          errorMessage = 'Accès interdit. Cette vidéo est peut-être géo-restreinte ou privée.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Erreur serveur d\'analyse. Réessayez dans quelques instants.';
+        }
+        
+        showError(errorMessage);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Analyser';
+      }
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('✅ Analyseur TikTok Framework PRO initialisé');
+      
+      // Restaurer le thème
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+      
+      // Auto-focus
+      document.getElementById('videoUrl').focus();
+      
+      // Gestion du collage
+      document.getElementById('videoUrl').addEventListener('paste', function(e) {
+        setTimeout(() => {
+          const url = e.target.value;
+          if (url && url.includes('tiktok.com')) {
+            console.log('📋 URL TikTok détectée - Prêt pour analyse framework');
+          }
+        }, 100);
+      });
+      
+      // Raccourci clavier
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          const form = document.querySelector('form');
+          if (form) {
+            form.dispatchEvent(new Event('submit'));
+          }
+        }
+      });
     });
-    
-    return Object.entries(authorCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10)
-        .map(([author, count]) => ({ author, analyses: count }));
-}
 
-function getTopNiches() {
-    const nicheCounts = {};
-    analysisLogs.forEach(log => {
-        if (log.niche_detectee && log.niche_detectee !== 'Non déterminée') {
-            nicheCounts[log.niche_detectee] = (nicheCounts[log.niche_detectee] || 0) + 1;
-        }
+    // Gestion des erreurs globales
+    window.addEventListener('error', function(e) {
+      console.error('❌ Erreur JavaScript Framework:', e.error);
     });
-    
-    return Object.entries(nicheCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10)
-        .map(([niche, count]) => ({ niche, analyses: count }));
-}
-
-function getAnalysesPerDay() {
-    const daysCounts = {};
-    const now = new Date();
-    
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        daysCounts[dateStr] = 0;
-    }
-    
-    analysisLogs.forEach(log => {
-        const dateStr = log.timestamp.split('T')[0];
-        if (daysCounts.hasOwnProperty(dateStr)) {
-            daysCounts[dateStr]++;
-        }
-    });
-    
-    return Object.entries(daysCounts).map(([date, count]) => ({ date, analyses: count }));
-}
+  </script>
+</body>
+</html>
