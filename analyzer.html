@@ -927,6 +927,8 @@
       
       try {
         console.log('🚀 Démarrage analyse TikTok 2025...');
+        console.log('📍 URL à analyser:', url);
+        console.log('📡 Endpoint:', API_ENDPOINT);
         
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
@@ -936,22 +938,38 @@
           body: JSON.stringify({ url })
         });
         
+        console.log('📨 Réponse reçue:', response.status, response.statusText);
+        console.log('🔍 Headers réponse:', [...response.headers.entries()]);
+        
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Erreur réseau' }));
-          throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ Erreur réponse:', errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        console.log('📄 Content-Type:', contentType);
+        
+        if (!contentType || !contentType.includes('application/json')) {
+          const responseText = await response.text();
+          console.error('❌ Réponse non-JSON:', responseText);
+          throw new Error('Réponse du serveur non-JSON: ' + responseText.substring(0, 200));
         }
         
         const data = await response.json();
-        console.log('✅ Analyse TikTok 2025 reçue:', data);
+        console.log('✅ Données JSON reçues:', data);
         
         if (!data.success) {
+          console.error('❌ API retourne success=false:', data);
           throw new Error(data.error || 'Échec de l\'analyse');
         }
         
+        console.log('🎯 Appel showResults avec:', data);
         showResults(data);
         
       } catch (error) {
-        console.error('❌ Erreur analyse:', error);
+        console.error('❌ Erreur complète:', error);
+        console.error('📊 Stack trace:', error.stack);
         
         let errorMessage = error.message;
         if (error.message.includes('Failed to fetch')) {
@@ -964,10 +982,11 @@
           errorMessage = 'Erreur serveur d\'analyse. Réessayez dans quelques instants.';
         }
         
-        showError(errorMessage);
+        showError(errorMessage + '<br><br><strong>Debug:</strong> ' + error.message);
       } finally {
         btn.disabled = false;
         btnText.textContent = 'Analyser';
+        console.log('🏁 Analyse terminée (finally)');
       }
     }
 
