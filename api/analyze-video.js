@@ -7,8 +7,6 @@ export const config = {
 // ===================================================================================
 // == DÉBUT DE TON CODE - L'INTÉGRALITÉ DE TON MOTEUR D'ANALYSE LEMONFOX ==
 // ===================================================================================
-// NOTE: J'ai juste simplifié quelques fonctions pour qu'elles retournent des données
-// que notre IA pourra utiliser. La logique de base est la tienne.
 
 async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
     if (!lemonfoxApiKey || !videoUrl) {
@@ -17,6 +15,7 @@ async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
     }
     try {
         console.log("🍋 ViralScope: Transcription audio via Lemonfox.ai...");
+        console.log("📥 Téléchargement de la vidéo...");
         const videoResponse = await fetch(videoUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -33,6 +32,8 @@ async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
         formData.append('language', 'auto');
         formData.append('model', 'whisper-large-v3');
         formData.append('response_format', 'verbose_json');
+        formData.append('temperature', '0.2');
+        formData.append('timestamp_granularities[]', 'word');
         formData.append('timestamp_granularities[]', 'segment');
 
         console.log("🔄 Envoi à Lemonfox.ai API...");
@@ -48,14 +49,126 @@ async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
         const transcriptionData = await lemonfoxResponse.json();
         console.log("✅ ViralScope: Transcription Lemonfox complétée");
 
-        // On retourne directement les données brutes, l'enrichissement se fera après
-        return transcriptionData;
-
+        const enrichedAnalysis = await enrichLemonfoxTranscription(transcriptionData);
+        return {
+            transcription: transcriptionData.text || '',
+            langue: transcriptionData.language || 'auto',
+            duree: transcriptionData.duration || null,
+            segments: transcriptionData.segments || [],
+            words: transcriptionData.words || [],
+            confidence: calculateLemonfoxConfidence(transcriptionData),
+            quality_score: assessLemonfoxQuality(transcriptionData),
+            ...enrichedAnalysis,
+            provider: 'Lemonfox.ai',
+            model_used: 'whisper-large-v3',
+            processed_at: new Date().toISOString()
+        };
     } catch (error) {
         console.error("❌ ViralScope: Erreur transcription Lemonfox:", error.message);
-        return null; // On ne bloque pas tout si la transcription échoue
+        return null;
     }
 }
+
+function calculateLemonfoxConfidence(transcriptionData) {
+    if (!transcriptionData.segments || transcriptionData.segments.length === 0) return 0;
+    const scores = transcriptionData.segments.map(s => s.avg_logprob || s.confidence || 0).filter(s => s !== 0);
+    if (scores.length === 0) return 0.5;
+    const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+    return avg < 0 ? Math.max(0, Math.min(1, Math.exp(avg))) : Math.max(0, Math.min(1, avg));
+}
+
+function assessLemonfoxQuality(transcriptionData) {
+    let score = 100;
+    const text = transcriptionData.text || '';
+    if (text.length < 10) score -= 40;
+    if ((transcriptionData.segments || []).length === 0) score -= 30;
+    [/\[.*?\]/g, /\(.*?\)/g, /\.{3,}/g, /\s{3,}/g].forEach(p => { score -= (text.match(p) || []).length * 5; });
+    if (transcriptionData.words && transcriptionData.words.length > 0) score += 10;
+    return Math.max(0, Math.min(100, score));
+}
+
+async function enrichLemonfoxTranscription(transcriptionData) {
+    const { text = '', segments = [], words = [] } = transcriptionData;
+    if (!text.trim()) return getEmptyAnalysis();
+    console.log("🔍 ViralScope: Enrichissement de la transcription...");
+    const temporal = analyzeTemporalPatterns(segments, words);
+    const hooks = detectHooksWithTimestamps(segments, text);
+    const ctas = detectCTAsWithTimestamps(segments, text);
+    const speech = analyzeSpeechPatterns(segments, words);
+    return {
+        sentiment: "non analysé", topics: [], emotions: [], keywords: [], viral_words: [],
+        speech_patterns: speech,
+        hooks_detected: hooks,
+        cta_detected: ctas,
+        temporal_analysis: temporal,
+        viralscope_insights: generateViralScopeAudioInsights(segments, hooks, ctas),
+        audio_optimization: generateAudioOptimizationTips(speech, temporal, hooks, ctas)
+    };
+}
+
+function analyzeTemporalPatterns(segments, words) {
+    if (!segments || segments.length === 0) return { total_duration: 0, words_per_minute: 0, speech_rhythm: 'inconnu' };
+    const duration = segments[segments.length - 1]?.end || 0;
+    const totalWords = words.length || segments.reduce((sum, s) => sum + (s.text?.split(' ').length || 0), 0);
+    const wpm = duration > 0 ? (totalWords / duration) * 60 : 0;
+    return { total_duration: duration, words_per_minute: wpm, speech_rhythm: wpm > 170 ? 'rapide' : wpm > 120 ? 'normal' : 'lent' };
+}
+
+function detectHooksWithTimestamps(segments, text) {
+    const hooks = [];
+    const patterns = [ { p: /^(pourquoi|comment|qui|que|quoi|où|quand)/i, t: 'question' }, { p: /(secret|astuce|méthode|technique)/i, t: 'secret' }, { p: /(incroyable|choc|fou|dingue)/i, t: 'emotion' }, { p: /(personne ne|jamais|interdit)/i, t: 'controversial' } ];
+    segments.forEach(seg => {
+        patterns.forEach(({ p, t }) => {
+            if (p.test(seg.text || '')) hooks.push({ type: t, text: seg.text.trim(), start_time: seg.start });
+        });
+    });
+    return hooks;
+}
+
+function detectCTAsWithTimestamps(segments, text) {
+    const ctas = [];
+    const patterns = [ { p: /(abonne|follow|s'abonner)/i, t: 'subscribe' }, { p: /(like|j'aime|double.*tap)/i, t: 'like' }, { p: /(commente|commentaire|dis.*moi)/i, t: 'comment' }, { p: /(partage|share|montre)/i, t: 'share' } ];
+    segments.forEach(seg => {
+        patterns.forEach(({ p, t }) => {
+            if (p.test(seg.text || '')) ctas.push({ type: t, text: seg.text.trim(), start_time: seg.start });
+        });
+    });
+    return ctas;
+}
+
+function analyzeSpeechPatterns(segments, words) {
+    if (!segments || !segments.length === 0) return { filler_words_count: 0 };
+    const wordFreq = {};
+    words.forEach(w => {
+        const clean = w.word?.toLowerCase().replace(/[^\w]/g, '') || '';
+        if (clean.length > 2) wordFreq[clean] = (wordFreq[clean] || 0) + 1;
+    });
+    const fillerCount = ['euh', 'hum', 'alors', 'donc', 'voilà'].reduce((c, fw) => c + (wordFreq[fw] || 0), 0);
+    return { filler_words_count: fillerCount };
+}
+
+function generateViralScopeAudioInsights(segments, hooks, ctas) {
+    const insights = [];
+    const duration = segments[segments.length - 1]?.end || 0;
+    if (duration > 60) insights.push("📏 Contenu audio long - Risque de perte d'attention.");
+    else insights.push(`✅ Durée audio optimale (${duration.toFixed(1)}s).`);
+    if (hooks.some(h => h.start_time < 3)) insights.push("🎣 Hook efficace détecté dans les 3 premières secondes.");
+    else insights.push("❌ Aucun hook audio détecté en début de vidéo.");
+    if (ctas.length > 0) insights.push("📢 Appel à l'action verbal détecté.");
+    else insights.push("📢 Aucun appel à l'action verbal détecté.");
+    return insights;
+}
+
+function generateAudioOptimizationTips(speechPatterns, temporalAnalysis, hooks, ctas) {
+    const tips = [];
+    if (temporalAnalysis?.words_per_minute > 180) tips.push("🚨 Débit trop rapide - Ralentir pour améliorer la compréhension.");
+    if (speechPatterns?.filler_words_count > 3) tips.push("🗣️ Réduire les mots de remplissage ('euh', 'alors').");
+    if (hooks.length === 0) tips.push("🎣 Ajouter une phrase d'accroche forte dans les 3 premières secondes.");
+    return tips;
+}
+
+function getEmptyAnalysis() { return { viralscope_insights: ['❌ Échec de la transcription audio'], audio_optimization: ['🔧 Vérifier la qualité audio de la vidéo'] }; }
+
 
 // ===================================================================================
 // ==                          FONCTION PRINCIPALE DE L'API                         ==
@@ -87,8 +200,6 @@ export default async function handler(req, res) {
         description: itemStruct.desc,
         thumbnail: itemStruct.video.cover,
         author: itemStruct.author.uniqueId,
-        music: itemStruct.music.title,
-        hashtags: itemStruct.challenges?.map(c => c.title) || [],
         stats: {
             views: parseInt(itemStruct.stats.playCount) || 0,
             likes: parseInt(itemStruct.stats.diggCount) || 0,
@@ -101,40 +212,20 @@ export default async function handler(req, res) {
 
     // --- ÉTAPE 2: TRANSCRIPTION AUDIO VIA TON MOTEUR LEMONFOX ---
     const LEMONFOX_API_KEY = process.env.LEMONFOX_API_KEY;
-    const transcriptionData = await transcribeAudioWithLemonfox(directVideoUrl, LEMONFOX_API_KEY);
+    const audioAnalysis = await transcribeAudioWithLemonfox(directVideoUrl, LEMONFOX_API_KEY);
 
     // --- ÉTAPE 3: LE GRAND FINAL - ANALYSE PAR OPENAI ---
     let userPrompt = `Analyse cette vidéo TikTok.
-    
-    **Données quantitatives :**
-    - Vues: ${videoData.stats.views.toLocaleString('fr-FR')}
-    - J'aime: ${videoData.stats.likes.toLocaleString('fr-FR')}
-    - Taux d'engagement: ${engagementRate.toFixed(2)}%
+    **Données quantitatives :** Vues: ${videoData.stats.views}, J'aime: ${videoData.stats.likes}, Taux d'engagement: ${engagementRate.toFixed(2)}%.
+    **Contenu textuel & visuel :** Description: "${videoData.description}".`;
 
-    **Contenu textuel & visuel :**
-    - Description: "${videoData.description}"
-    - Hashtags: ${videoData.hashtags.join(', ')}
-    `;
-
-    if (transcriptionData && transcriptionData.text) {
-        userPrompt += `\n\n**Transcription audio complète :**\n"${transcriptionData.text}"`;
+    if (audioAnalysis && audioAnalysis.transcription) {
+        userPrompt += `\n\n**Transcription audio complète :**\n"${audioAnalysis.transcription}"`;
     } else {
         userPrompt += `\n\n**Transcription audio :** N'a pas pu être récupérée.`;
     }
 
-    const system_prompt = `Tu es ViralScope, un expert IA en stratégie de contenu sur TikTok. Ton analyse se base sur un framework à 4 piliers. Sois direct, actionnable et utilise des emojis.
-    
-    **Ta réponse DOIT être un objet JSON valide avec la structure suivante :**
-    {
-      "score": (nombre de 0 à 100),
-      "potentiel_viral": "(faible, moyen, ou élevé)",
-      "qualitatif": { "hookPuissant": (booléen), "messageClair": (booléen), "ctaPresent": (booléen) },
-      "algorithmique": { "hashtagsPertinents": (booléen), "dureeOptimale": (booléen), "tendanceUtilisee": (booléen) },
-      "comparatif": { "benchmarkER": "(faible, moyen, ou bon)", "potentielViral": "(faible, moyen, ou élevé)" },
-      "points_forts": ["point 1", "point 2"],
-      "points_faibles": ["point 1", "point 2"],
-      "suggestions": ["suggestion 1", "suggestion 2"]
-    }`;
+    const system_prompt = `Tu es ViralScope, un expert IA en stratégie de contenu sur TikTok. Analyse les données fournies et renvoie un objet JSON valide avec la structure: {"score": (0-100), "potentiel_viral": "(faible|moyen|élevé)", "qualitatif": {"hookPuissant": bool, "messageClair": bool, "ctaPresent": bool}, "algorithmique": {"hashtagsPertinents": bool, "dureeOptimale": bool, "tendanceUtilisee": bool}, "comparatif": {"benchmarkER": "(faible|moyen|bon)", "potentielViral": "(faible|moyen|élevé)"}, "points_forts": ["point"], "points_faibles": ["point"], "suggestions": ["suggestion"]}`;
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -150,26 +241,17 @@ export default async function handler(req, res) {
 
     if (!r.ok) throw new Error(`Erreur de l'API OpenAI: ${await r.text()}`);
     const aiResponse = await r.json();
-    const analysis = JSON.parse(aiResponse.choices[0].message.content);
+    const finalAnalysis = JSON.parse(aiResponse.choices[0].message.content);
 
     const finalResponse = {
         success: true,
-        timestamp: new Date().toISOString(),
-        video: {
-            description: videoData.description,
-            thumbnail: videoData.thumbnail,
-            author: videoData.author,
-            music: videoData.music,
-            hashtags: videoData.hashtags,
-        },
-        stats: videoData.stats,
+        video: videoData,
         metrics: {
             engagementRate: engagementRate,
             likesRatio: videoData.stats.views > 0 ? (videoData.stats.likes / videoData.stats.views) * 100 : 0,
-            totalEngagements: totalEngagements
         },
-        analysis: analysis,
-        transcription: transcriptionData // On ajoute la transcription complète pour le frontend
+        analysis: finalAnalysis,
+        audioAnalysis: audioAnalysis 
     };
     
     return res.status(200).json(finalResponse);
@@ -179,216 +261,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }
-```
-
----
-### 2. Le Tableau de Bord Final : `analyzer.html`
-
-Ce code est la version finale de ton interface, prête à afficher la nouvelle structure de données complète.
-
-
-```html
-<!doctype html>
-<html lang="fr" data-theme="dark">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="color-scheme" content="dark light"/>
-<title>ViralScope PRO – Analyseur TikTok</title>
-<style>
-  :root {
-    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #d946ef; --accent-strong: #c026d3; --radius: 16px; --font-sans: 'Inter', system-ui, sans-serif;
-  }
-  [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background-color: var(--bg); background-image: var(--bg-glow); background-attachment: fixed; color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; }
-  .main-layout { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
-  @media(min-width: 960px) { .main-layout { grid-template-columns: 450px 1fr; } }
-  header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-  .nav-link { color: var(--ink); text-decoration: none; border: 1px solid var(--card-border); padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,0.05); }
-  [data-theme="light"] .nav-link { background: var(--card-bg); }
-  .nav-link.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .nav-link:not(.active):hover { background: rgba(255,255,255,0.1); }
-  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; backdrop-filter: blur(10px); }
-  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-  .card-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
-  .icon { width: 24px; height: 24px; color: var(--muted); }
-  label { font-weight: 500; display: block; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
-  input[type="url"] { width: 100%; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 10px; background: rgba(0,0,0,0.2); color: var(--ink); font-size: 15px; }
-  .btn { border: 0; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-  .btn.primary { background: var(--accent); color: #fff; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  #results { min-height: 200px; }
-  .loader { text-align: center; padding: 2rem; }
-  .spinner { width: 32px; height: 32px; border: 4px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px auto; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 1rem; border-radius: 12px; }
-  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--card-border); margin-bottom: 1.5rem; }
-  .tab-btn { background: none; border: none; color: var(--muted); padding: 10px 16px; cursor: pointer; font-size: 15px; font-weight: 500; border-bottom: 2px solid transparent; }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; animation: fadeIn 0.5s; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .framework-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
-  .pillar-card { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem; }
-  .pillar-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-  .metric-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .metric-item:last-child { border-bottom: none; }
-  .metric-value { font-weight: 600; }
-  .transcription-segment { margin-bottom: 1rem; padding: 0.5rem; border-left: 3px solid var(--card-border); }
-  .timestamp { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
-</style>
-</head>
-<body>
-  <div class="main-layout">
-    <header>
-      <h1>🔬 ViralScope PRO</h1>
-      <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <a href="./hooks.html" class="nav-link">Hooks</a>
-        <a href="./cta.html" class="nav-link">CTAs</a>
-        <a href="./analyzer.html" class="nav-link active">Analyseur</a>
-        <a href="./history.html" class="nav-link">Historique</a>
-      </nav>
-    </header>
-    
-    <div class="card">
-      <div class="card-header">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-        <h2>Analyser une vidéo TikTok</h2>
-      </div>
-      <form onsubmit="analyzeVideo(event)">
-        <label for="videoUrl">URL de la vidéo TikTok</label>
-        <input type="url" id="videoUrl" placeholder="https://www.tiktok.com/@username/video/..." required />
-        <br><br>
-        <button type="submit" class="btn primary" id="analyzeBtn"><span id="btnText">Analyser</span></button>
-      </form>
-    </div>
-    
-    <div class="card">
-      <div class="card-header">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        <h2>Résultats de l'analyse</h2>
-      </div>
-      <div id="results">
-        <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          🎯 Entrez une URL pour lancer l'analyse complète.
-        </p>
-      </div>
-    </div>
-  </div>
-
-<script>
-    const $ = id => document.getElementById(id);
-
-    function showLoader() {
-        $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p>Analyse complète en cours... (peut prendre jusqu'à 2 minutes)</p></div>`;
-    }
-
-    function showError(message) {
-        $('results').innerHTML = `<div class="error-message"><strong>❌ Erreur :</strong> ${message}</div>`;
-    }
-    
-    function activateTab(tabName) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        $(`tab-btn-${tabName}`).classList.add('active');
-        $(`tab-content-${tabName}`).classList.add('active');
-    }
-
-    function showResults(data) {
-        const { video, stats, metrics, analysis, transcription } = data;
-
-        const tab1_synthesis = `
-            <div class="grid-2">
-                <div class="info-card"><h3>✅ Points Forts</h3><ul>${analysis.points_forts.map(i => `<li>${i}</li>`).join('')}</ul></div>
-                <div class="info-card"><h3>⚠️ Points Faibles</h3><ul>${analysis.points_faibles.map(i => `<li>${i}</li>`).join('')}</ul></div>
-                <div class="info-card" style="grid-column: 1 / -1;"><h3>💡 Suggestions</h3><ul>${analysis.suggestions.map(o => `<li>${o}</li>`).join('')}</ul></div>
-            </div>`;
-        
-        const segments = transcription?.segments?.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('') || '<p class="muted">Transcription non disponible.</p>';
-        const tab2_transcription = `<div>${segments}</div>`;
-        
-        const tab3_framework = `
-            <div class="framework-grid">
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>📊</span>Quantitatif</div>
-                    <div class="metric-item"><span>Taux d'engagement</span><span class="metric-value">${metrics.engagementRate.toFixed(2)}%</span></div>
-                    <div class="metric-item"><span>Ratio J'aime/Vues</span><span class="metric-value">${metrics.likesRatio.toFixed(2)}%</span></div>
-                </div>
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>🎨</span>Qualitatif</div>
-                    <div class="metric-item"><span>Hook puissant</span><span class="metric-value">${analysis.qualitatif.hookPuissant ? '✅' : '❌'}</span></div>
-                    <div class="metric-item"><span>Message clair</span><span class="metric-value">${analysis.qualitatif.messageClair ? '✅' : '❌'}</span></div>
-                    <div class="metric-item"><span>CTA présent</span><span class="metric-value">${analysis.qualitatif.ctaPresent ? '✅' : '❌'}</span></div>
-                </div>
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>⚙️</span>Algorithmique</div>
-                    <div class="metric-item"><span>Hashtags pertinents</span><span class="metric-value">${analysis.algorithmique.hashtagsPertinents ? '✅' : '❌'}</span></div>
-                    <div class="metric-item"><span>Durée optimale</span><span class="metric-value">${analysis.algorithmique.dureeOptimale ? '✅' : '❌'}</span></div>
-                    <div class="metric-item"><span>Tendance utilisée</span><span class="metric-value">${analysis.algorithmique.tendanceUtilisee ? '✅' : '❌'}</span></div>
-                </div>
-                <div class="pillar-card">
-                    <div class="pillar-title"><span>📈</span>Comparatif</div>
-                    <div class="metric-item"><span>Potentiel Viral</span><span class="metric-value">${analysis.comparatif.potentielViral}</span></div>
-                    <div class="metric-item"><span>Benchmark ER</span><span class="metric-value">${analysis.comparatif.benchmarkER}</span></div>
-                </div>
-            </div>`;
-
-        $('results').innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                <img src="${video.thumbnail}" alt="Miniature" style="width: 80px; height: auto; border-radius: 8px;">
-                <div>
-                    <h3 style="margin: 0 0 0.5rem 0;">Analyse de @${video.author}</h3>
-                    <p class="muted" style="margin:0;">"${video.description}"</p>
-                </div>
-            </div>
-            <div class="tabs">
-                <button class="tab-btn active" id="tab-btn-synthesis" onclick="activateTab('synthesis')">Synthèse IA</button>
-                <button class="tab-btn" id="tab-btn-framework" onclick="activateTab('framework')">Framework 4 Piliers</button>
-                <button class="tab-btn" id="tab-btn-transcription" onclick="activateTab('transcription')">Transcription Audio</button>
-            </div>
-            <div id="tab-content-synthesis" class="tab-content active">${tab1_synthesis}</div>
-            <div id="tab-content-framework" class="tab-content">${tab3_framework}</div>
-            <div id="tab-content-transcription" class="tab-content">${tab2_transcription}</div>
-        `;
-    }
-
-    async function analyzeVideo(event) {
-        event.preventDefault();
-        const url = $('videoUrl').value.trim();
-        const btn = $('analyzeBtn');
-        
-        if (!url.includes('tiktok.com')) {
-            showError('Veuillez entrer une URL TikTok valide.');
-            return;
-        }
-        
-        btn.disabled = true;
-        showLoader();
-        
-        try {
-            const response = await fetch('/api/analyze-video', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || "Une erreur inconnue est survenue.");
-            }
-            
-            showResults(data);
-            
-        } catch (error) {
-            console.error('❌ Erreur:', error);
-            showError(error.message);
-        } finally {
-            btn.disabled = false;
-        }
-    }
-</script>
-</body>
-</html>
