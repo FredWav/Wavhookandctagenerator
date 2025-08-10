@@ -5,40 +5,44 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: 'Use POST' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
   }
 
-  const { url } = await req.json();
-  if (!url || !url.includes('tiktok.com')) {
+  const { url: tiktokUrl } = await req.json();
+  if (!tiktokUrl || !tiktokUrl.includes('tiktok.com')) {
     return new Response(JSON.stringify({ error: 'URL is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
-  try {
-    const tiktokResponse = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
+  const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
+  if (!SCRAPINGBEE_API_KEY) {
+    return new Response(JSON.stringify({ error: 'ScrapingBee API key is not configured' }), { status: 500 });
+  }
 
-    const html = await tiktokResponse.text();
+  try {
+    // --- Étape 1: On passe par ScrapingBee pour scraper la page ---
+    const scrapingBeeUrl = `https://app.scrapingbee.com/api/v1/?api_key=${SCRAPINGBEE_API_KEY}&url=${encodeURIComponent(tiktokUrl)}&render_js=true`;
+    
+    const response = await fetch(scrapingBeeUrl);
+    
+    if (!response.ok) {
+        throw new Error(`ScrapingBee a échoué. Status: ${response.status} ${response.statusText}`);
+    }
+
+    const html = await response.text();
     
     const scriptTagContent = html.split('<script id="SIGI_STATE" type="application/json">')[1]?.split('</script>')[0];
 
     if (!scriptTagContent) {
-        throw new Error("Impossible de trouver les données SIGI_STATE. La structure de la page a probablement changé.");
+        throw new Error("Impossible de trouver les données SIGI_STATE même après scraping. La vidéo est peut-être privée ou inaccessible.");
     }
     
     const data = JSON.parse(scriptTagContent);
-
-    // --- PLAN B / DÉBOGAGE ---
-    // Si ça plante encore, supprime les "/*" et "*/" de la ligne ci-dessous,
-    // redéploie, et envoie-moi le gros texte que l'analyseur affichera.
-    /* return new Response(JSON.stringify(data, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } }); */
     
     const videoId = Object.keys(data.ItemModule)[0];
     const itemStruct = data.ItemModule[videoId];
 
     if (!itemStruct) {
-        throw new Error("Impossible d'extraire les détails de la vidéo depuis les données JSON. La structure interne de SIGI_STATE a peut-être changé.");
+        throw new Error("Impossible d'extraire les détails de la vidéo. La structure interne de SIGI_STATE a peut-être changé.");
     }
     
+    // --- Le reste du code (extraction, calcul, IA) est inchangé ---
     const stats = {
         views: parseInt(itemStruct.stats.playCount) || 0,
         likes: parseInt(itemStruct.stats.diggCount) || 0,
@@ -53,11 +57,11 @@ export default async function handler(req) {
 
     const system_prompt = `Tu es un expert en marketing viral sur TikTok. Ton rôle est d'analyser une vidéo en te basant sur ses statistiques de performance et son contenu (description, miniature).
     Fournis une analyse structurée au format JSON. Le JSON doit contenir :
-    - "score": un nombre de 0 à 100 évaluant le potentiel global.
-    - "points_forts": un tableau de 2-3 points positifs (strings).
-    - "points_faibles": un tableau de 2-3 points négatifs (strings).
+    - "score": un nombre de 0 à 100.
+    - "points_forts": un tableau de 2-3 points positifs.
+    - "points_faibles": un tableau de 2-3 points négatifs.
     - "suggestions": un tableau de 2-3 conseils concrets.
-    Interprète les statistiques fournies. Un taux d'engagement > 5% est excellent. Un ratio j'aime/vues > 10% est très bon. Commente ces chiffres dans ton analyse.`;
+    Interprète les statistiques. Un taux d'engagement > 5% est excellent. Un ratio j'aime/vues > 10% est très bon.`;
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
