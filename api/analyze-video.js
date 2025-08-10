@@ -44,6 +44,7 @@ async function transcribeAudioWithLemonfox(videoUrl, lemonfoxApiKey) {
     }
 }
 
+
 // ===================================================================================
 // ==                          FONCTION PRINCIPALE DE L'API                         ==
 // ===================================================================================
