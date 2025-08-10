@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="color-scheme" content="dark light"/>
-<title>Analyseur de Vidéo – PRO</title>
+<title>Analyseur TikTok – PRO</title>
 <style>
   :root {
     --bg: #111111;
@@ -295,7 +295,7 @@
 <body>
   <div class="main-layout">
     <header>
-      <h1>Analyseur de Vidéo – PRO</h1>
+      <h1>Analyseur TikTok – PRO</h1>
       <nav>
         <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
       </nav>
@@ -306,15 +306,15 @@
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
         </svg>
-        <h2>Analyser une vidéo</h2>
+        <h2>Analyser une vidéo TikTok</h2>
       </div>
       
       <form onsubmit="analyzeVideo(event)">
-        <label for="videoUrl">URL de la vidéo YouTube</label>
+        <label for="videoUrl">URL de la vidéo TikTok</label>
         <input 
           type="url" 
           id="videoUrl" 
-          placeholder="https://www.youtube.com/watch?v=..." 
+          placeholder="https://www.tiktok.com/@username/video/..." 
           required
         />
         <br><br>
@@ -338,7 +338,7 @@
       
       <div id="results">
         <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          Entrez une URL YouTube pour commencer l'analyse
+          Entrez une URL TikTok pour commencer l'analyse
         </p>
       </div>
     </div>
@@ -370,16 +370,17 @@
     }
 
     function showResults(data) {
-      // Simulation de données d'analyse
+      // Simulation de données d'analyse TikTok
       const mockData = {
-        title: "Vidéo analysée",
-        views: "1,234,567",
-        likes: "45,678",
-        comments: "2,345",
-        duration: "10:45",
-        engagementRate: 8.5,
-        tags: ["tech", "tutorial", "coding"],
-        description: "Description de la vidéo..."
+        title: "Vidéo TikTok analysée",
+        views: "2.5M",
+        likes: "156.2K",
+        comments: "8.9K",
+        shares: "12.3K",
+        duration: "0:58",
+        engagementRate: 12.4,
+        hashtags: ["fyp", "viral", "trending", "dance"],
+        description: "Check out this amazing TikTok video! 🔥"
       };
 
       const erClass = mockData.engagementRate > 10 ? 'good' : 
@@ -392,28 +393,35 @@
             <div class="stat-card-value">${mockData.views}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-card-title">J'aime</div>
+            <div class="stat-card-title">❤️ J'aime</div>
             <div class="stat-card-value">${mockData.likes}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-card-title">Commentaires</div>
+            <div class="stat-card-title">💬 Commentaires</div>
             <div class="stat-card-value">${mockData.comments}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-card-title">Durée</div>
+            <div class="stat-card-title">📤 Partages</div>
+            <div class="stat-card-value">${mockData.shares}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">⏱️ Durée</div>
             <div class="stat-card-value">${mockData.duration}</div>
           </div>
           <div class="stat-card er-card">
-            <div class="stat-card-title">Taux d'engagement</div>
+            <div class="stat-card-title">📈 Taux d'engagement</div>
             <div class="er-value ${erClass}">${mockData.engagementRate}%</div>
           </div>
         </div>
         
         <div class="analysis-list">
-          <h3>Tags populaires</h3>
+          <h3>🏷️ Hashtags utilisés</h3>
           <ul>
-            ${mockData.tags.map(tag => `<li>#${tag}</li>`).join('')}
+            ${mockData.hashtags.map(tag => `<li>#${tag}</li>`).join('')}
           </ul>
+          
+          <h3>📝 Description</h3>
+          <p style="color: var(--muted); font-style: italic;">"${mockData.description}"</p>
         </div>
       `;
     }
@@ -424,9 +432,9 @@
       const url = document.getElementById('videoUrl').value;
       const btn = document.getElementById('analyzeBtn');
       
-      // Validation basique de l'URL YouTube
-      if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
-        showError('Veuillez entrer une URL YouTube valide');
+      // Validation basique de l'URL TikTok
+      if (!url.includes('tiktok.com')) {
+        showError('Veuillez entrer une URL TikTok valide');
         return;
       }
       
@@ -449,7 +457,7 @@
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('Analyseur de vidéo initialisé');
+      console.log('Analyseur TikTok initialisé');
     });
   </script>
 </body>
