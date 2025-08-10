@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="color-scheme" content="dark light"/>
-<title>Analyseur de Vidéos – PRO</title>
+<title>Analyseur TikTok 2025 – PRO</title>
 <style>
   :root {
     --bg: #111111;
@@ -16,12 +16,11 @@
     --accent: #d946ef;
     --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%);
     --accent-strong: #c026d3;
-    --radius: 16px;
-    --font-sans: 'Inter', system-ui, sans-serif;
-    --success: #10b981;
+    --success: #22c55e;
     --warning: #f59e0b;
     --error: #ef4444;
-    --info: #3b82f6;
+    --radius: 16px;
+    --font-sans: 'Inter', system-ui, sans-serif;
   }
   
   [data-theme="light"] {
@@ -34,9 +33,7 @@
     --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%);
   }
   
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
   
   body {
     margin: 0;
@@ -50,7 +47,7 @@
   }
   
   .main-layout {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 2rem 1rem;
     display: grid;
@@ -75,8 +72,12 @@
   
   h1 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .nav-link {
@@ -101,6 +102,7 @@
   
   .nav-link:not(.active):hover {
     background: rgba(255,255,255,0.1);
+    transform: translateY(-1px);
   }
   
   .card {
@@ -211,51 +213,40 @@
   }
   
   @keyframes spin {
-    to {
-      transform: rotate(360deg);
+    to { transform: rotate(360deg); }
+  }
+  
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  @media(min-width: 960px) {
+    .results-grid {
+      grid-template-columns: repeat(3, 1fr);
     }
   }
   
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  @media(min-width: 768px) {
-    .stats-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-  
-  .framework-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin: 2rem 0;
-  }
-  
-  .pillar-card {
-    background: rgba(255,255,255,0.03);
-    border: 2px solid var(--card-border);
-    border-radius: 16px;
-    padding: 1.5rem;
+  .section-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 24px;
     transition: all 0.3s ease;
   }
   
-  .pillar-card:hover {
+  .section-card:hover {
     transform: translateY(-4px);
-    border-color: var(--accent);
-    box-shadow: 0 8px 25px rgba(217, 70, 239, 0.15);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
   }
   
-  .pillar-card.quantitative { border-left: 4px solid var(--info); }
-  .pillar-card.qualitative { border-left: 4px solid var(--success); }
-  .pillar-card.algorithmic { border-left: 4px solid var(--warning); }
-  .pillar-card.comparative { border-left: 4px solid var(--error); }
+  .section-card.stats { border-left: 4px solid #3b82f6; }
+  .section-card.seo { border-left: 4px solid var(--success); }
+  .section-card.analysis { border-left: 4px solid var(--accent); }
   
-  .pillar-title {
+  .section-title {
     font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 1rem;
@@ -264,7 +255,7 @@
     gap: 0.5rem;
   }
   
-  .pillar-content {
+  .section-content {
     font-size: 0.9rem;
     line-height: 1.6;
   }
@@ -286,37 +277,13 @@
     color: var(--accent);
   }
   
-  .stat-card {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 1rem;
-    transition: transform 0.2s ease;
-  }
-  
-  .stat-card:hover {
-    transform: translateY(-2px);
-  }
-  
-  [data-theme="light"] .stat-card {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-  }
-  
-  .stat-card-title {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-bottom: 0.25rem;
-    font-weight: 500;
-  }
-  
-  .stat-card-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
+  .metric-value.success { color: var(--success); }
+  .metric-value.warning { color: var(--warning); }
+  .metric-value.error { color: var(--error); }
   
   .score-circle {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -327,8 +294,8 @@
   }
   
   .score-inner {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
     background: var(--card-bg);
     border-radius: 50%;
     display: flex;
@@ -338,13 +305,13 @@
   }
   
   .score-number {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--accent);
   }
   
   .score-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -358,12 +325,49 @@
   }
   
   .hashtag-item {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--info);
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
     padding: 0.25rem 0.5rem;
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 500;
+  }
+  
+  .hashtag-item.trending {
+    background: rgba(217, 70, 239, 0.1);
+    color: var(--accent);
+  }
+  
+  .video-header {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1));
+    border-radius: var(--radius);
+    border: 1px solid var(--accent);
+  }
+  
+  .video-thumbnail {
+    width: 120px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  
+  .video-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: var(--accent);
+  }
+  
+  .video-description {
+    color: var(--muted);
+    font-style: italic;
+    margin: 0.5rem 0;
+    line-height: 1.5;
   }
   
   .author-info {
@@ -372,6 +376,54 @@
     gap: 0.5rem;
     margin-bottom: 1rem;
     font-size: 0.9rem;
+  }
+  
+  .correlation-alert {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warning);
+    color: var(--warning);
+    padding: 1rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+    font-weight: 500;
+  }
+  
+  .correlation-alert.success {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  
+  .ai-recommendations {
+    background: linear-gradient(135deg, rgba(217, 70, 239, 0.05), rgba(59, 130, 246, 0.05));
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+  
+  .ai-recommendations h4 {
+    margin: 0 0 1rem 0;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .recommendations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .recommendations-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--ink);
+  }
+  
+  .recommendations-list li:last-child {
+    border-bottom: none;
   }
   
   .theme-toggle {
@@ -415,16 +467,6 @@
     margin-bottom: 1rem;
   }
   
-  .video-thumbnail {
-    width: 100%;
-    max-width: 200px;
-    height: auto;
-    border-radius: 12px;
-    margin: 1rem auto;
-    display: block;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  }
-  
   .progress-bar {
     width: 100%;
     height: 4px;
@@ -447,105 +489,56 @@
     100% { width: 100%; }
   }
   
-  .analysis-list h3 {
-    font-size: 1rem;
-    margin: 1.5rem 0 0.5rem 0;
-    color: var(--ink);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .seo-suggestions {
+    margin-top: 1rem;
   }
   
-  .analysis-list ul {
-    margin: 0;
-    padding-left: 1.5rem;
+  .seo-suggestions h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--success);
   }
   
-  .analysis-list li {
-    margin-bottom: 0.5rem;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-  
-  .er-excellent { color: var(--success); }
-  .er-good { color: #22c55e; }
-  .er-medium { color: var(--warning); }
-  .er-bad { color: var(--error); }
-  
-  .video-info-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1.5rem;
-    align-items: start;
-    margin-bottom: 2rem;
-  }
-  
-  @media(max-width: 768px) {
-    .video-info-grid {
-      grid-template-columns: 1fr;
-      text-align: center;
-    }
-  }
-  
-  .scores-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  @media(max-width: 768px) {
-    .scores-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  .potentiel-indicator {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .potentiel-text {
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-transform: uppercase;
-  }
-  
-  .empty-state {
-    text-align: center;
-    color: var(--muted);
-    padding: 2rem;
-    font-style: italic;
-  }
-  
-  .copy-url-btn {
-    background: none;
-    border: 1px solid var(--card-border);
-    color: var(--muted);
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor: pointer;
+  .niveau-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
     font-size: 0.8rem;
-    margin-left: 0.5rem;
-    transition: all 0.2s ease;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   
-  .copy-url-btn:hover {
-    color: var(--ink);
-    border-color: var(--accent);
+  .niveau-badge.viral {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--success);
+  }
+  
+  .niveau-badge.performant {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+  }
+  
+  .niveau-badge.correct {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+  }
+  
+  .niveau-badge.debutant {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
   }
 </style>
 </head>
 <body>
   <div class="main-layout">
     <header>
-      <h1>🎵 Analyseur de Vidéos – PRO</h1>
+      <h1>🎵 Analyseur TikTok 2025</h1>
       <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <a href="hooks.html" class="nav-link">Hooks</a>
-        <a href="cta.html" class="nav-link">Appels à l'Action</a>
-        <a href="analyzer.html" class="nav-link active">Analyseur</a>
-        <a href="history.html" class="nav-link">Historique</a>
+        <a href="./hooks.html" class="nav-link">Hooks</a>
+        <a href="./cta.html" class="nav-link">Appels à l'Action</a>
+        <a href="./analyzer.html" class="nav-link active">Analyseur</a>
+        <a href="./history.html" class="nav-link">Historique</a>
         <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">🌓</button>
       </nav>
     </header>
@@ -582,53 +575,23 @@
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
         </svg>
-        <h2>Analyse Framework Intégré</h2>
+        <h2>Analyse TikTok 2025</h2>
       </div>
       
       <div id="results">
-        <div class="empty-state">
-          🎯 Entrez une URL TikTok pour une analyse complète selon le framework à 4 piliers
-          <br><small style="margin-top: 0.5rem; display: block; opacity: 0.7;">⚡ Version optimisée pour une analyse rapide</small>
-        </div>
+        <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
+          🎯 Entrez une URL TikTok pour commencer l'analyse complète<br>
+          <small style="opacity: 0.7;">Stats • SEO • Analysis IA</small>
+        </p>
       </div>
     </div>
   </div>
 
   <script>
-    // Script JavaScript corrigé pour analyzer.html
     // Configuration
     const API_ENDPOINT = '/api/analyze-video';
-    let currentAnalysisId = null;
 
-    // Utilitaires - fonctions sécurisées
-    function formatNumber(num) {
-      if (!num || num === 0) return '0';
-      if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
-      else if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-      else if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-      return num.toString();
-    }
-
-    function safeGet(obj, path, defaultValue) {
-      if (defaultValue === undefined) defaultValue = null;
-      try {
-        if (!obj || !path) return defaultValue;
-        const keys = path.split('.');
-        let current = obj;
-        for (const key of keys) {
-          if (current === null || current === undefined || !(key in current)) {
-            return defaultValue;
-          }
-          current = current[key];
-        }
-        return current !== null && current !== undefined ? current : defaultValue;
-      } catch (error) {
-        console.warn('Erreur safeGet:', error);
-        return defaultValue;
-      }
-    }
-
-    // Gestion du thème
+    // Fonction pour basculer entre thème sombre et clair
     function toggleTheme() {
       const html = document.documentElement;
       const currentTheme = html.getAttribute('data-theme');
@@ -637,372 +600,108 @@
       localStorage.setItem('theme', newTheme);
     }
 
-    // Loader avec étapes (version optimisée)
+    // Fonction pour afficher le loader
     function showLoader() {
       const steps = [
-        'Validation de l\'URL TikTok...',
-        'Récupération des données via oEmbed...',
-        'Extraction des statistiques avancées...',
-        'Calcul des métriques d\'engagement...',
-        'Analyse créative et structurelle...',
-        'Optimisation algorithmique...',
-        'Scoring prédictif et comparatif...',
-        'Génération des recommandations...',
-        'Finalisation du framework rapide...'
+        '🔍 Validation de l\'URL TikTok...',
+        '📡 Récupération via oEmbed...',
+        '🕷️ Extraction données ScrapingBee...',
+        '📊 Calcul des métriques...',
+        '🎯 Analyse SEO TikTok 2025...',
+        '🤖 Génération analyse IA...',
+        '💾 Sauvegarde base de données...',
+        '✅ Finalisation de l\'analyse...'
       ];
       
       let currentStep = 0;
       
-      function updateStep() {
-        const resultsElement = document.getElementById('results');
-        if (!resultsElement) return;
-        
-        resultsElement.innerHTML = 
-          '<div class="loader">' +
-            '<div class="spinner"></div>' +
-            '<p style="margin-top: 1rem; color: var(--muted); font-weight: 500; font-size: 0.95rem;">' +
-              steps[currentStep] +
-            '</p>' +
-            '<div class="progress-bar">' +
-              '<div class="progress-fill" style="width: ' + (((currentStep + 1) / steps.length) * 100) + '%"></div>' +
-            '</div>' +
-            '<p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">' +
-              'Étape ' + (currentStep + 1) + '/' + steps.length + ' - Analyse Framework' +
-            '</p>' +
-          '</div>';
-      }
+      const updateStep = () => {
+        document.getElementById('results').innerHTML = `
+          <div class="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem; color: var(--muted); font-weight: 500; font-size: 0.95rem;">
+              ${steps[currentStep]}
+            </p>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${((currentStep + 1) / steps.length) * 100}%"></div>
+            </div>
+            <p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">
+              Étape ${currentStep + 1}/${steps.length} - Analyseur TikTok 2025
+            </p>
+          </div>
+        `;
+      };
       
       updateStep();
       
-      const interval = setInterval(function() {
+      const interval = setInterval(() => {
         currentStep = (currentStep + 1) % steps.length;
         updateStep();
-      }, 2800); // Ralenti de 1200ms à 2800ms pour une meilleure lisibilité
+      }, 1500);
       
       window.loaderInterval = interval;
     }
 
-    // Affichage des erreurs - corrigé
-    function showError(message, details) {
+    // Fonction pour afficher les erreurs
+    function showError(message) {
       if (window.loaderInterval) {
         clearInterval(window.loaderInterval);
       }
       
-      const resultsElement = document.getElementById('results');
-      if (!resultsElement) return;
-      
-      let errorHTML = '<div class="error-message">' +
-        '<strong>❌ Erreur d\'analyse :</strong> ' + (message || 'Erreur inconnue');
-      
-      if (details) {
-        errorHTML += '<br><small style="opacity: 0.8;">' + details + '</small>';
-      }
-      
-      errorHTML += '<br><br>' +
-        '<div style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 8px; margin-top: 1rem;">' +
-          '<strong>💡 Conseils de dépannage :</strong>' +
-          '<ul style="margin: 0.5rem 0 0 1rem; padding: 0;">' +
-            '<li>Vérifiez que l\'URL TikTok est correcte et complète</li>' +
-            '<li>Assurez-vous que la vidéo est publique (non privée)</li>' +
-            '<li>Réessayez dans quelques instants</li>' +
-            '<li>Utilisez le format : https://www.tiktok.com/@user/video/123456789</li>' +
-          '</ul>' +
-        '</div>' +
-      '</div>';
-      
-      resultsElement.innerHTML = errorHTML;
+      document.getElementById('results').innerHTML = `
+        <div class="error-message">
+          <strong>❌ Erreur :</strong> ${message}
+          <br><br>
+          <small style="opacity: 0.8;">
+            💡 <strong>Conseils :</strong> Vérifiez que l'URL est correcte et que la vidéo est publique.
+          </small>
+        </div>
+      `;
     }
 
-    // Fonction pour calculer le score d'engagement avec seuils
-    function calculateEngagementScore(engagementRate) {
-      let score = 0;
-      let niveau = 'Très faible';
-      let couleur = 'var(--error)';
-      let recommandation = '';
-
-      if (engagementRate < 1) {
-        score = 20;
-        niveau = 'Très faible';
-        couleur = '#ef4444';
-        recommandation = 'Contenu peu engageant - Revoir complètement la stratégie';
-      } else if (engagementRate < 3) {
-        score = 40;
-        niveau = 'Faible';
-        couleur = '#f97316';
-        recommandation = 'Ça ne va pas - Améliorer le hook et le contenu';
-      } else if (engagementRate < 5) {
-        score = 65;
-        niveau = 'Moyen';
-        couleur = '#f59e0b';
-        recommandation = 'Ça devient bien mais il faut encore des améliorations';
-      } else if (engagementRate < 7) {
-        score = 80;
-        niveau = 'Bon';
-        couleur = '#22c55e';
-        recommandation = 'C\'est bien - Continue sur cette voie !';
-      } else {
-        score = 95;
-        niveau = 'Excellent';
-        couleur = '#10b981';
-        recommandation = 'C\'est très bien - Contenu hautement engageant !';
-      }
-
-      return { score, niveau, couleur, recommandation };
-    }
-
-    // Création du cercle de score
+    // Fonction pour créer le cercle de score
     function createScoreCircle(score, label) {
-      const safeScore = Math.max(0, Math.min(100, score || 0));
-      return '<div class="score-circle" style="--score: ' + safeScore + '">' +
-        '<div class="score-inner">' +
-          '<div class="score-number">' + safeScore + '</div>' +
-          '<div class="score-label">' + (label || 'SCORE') + '</div>' +
-        '</div>' +
-      '</div>';
+      return `
+        <div class="score-circle" style="--score: ${score || 0}">
+          <div class="score-inner">
+            <div class="score-number">${score || 'N/A'}</div>
+            <div class="score-label">${label}</div>
+          </div>
+        </div>
+      `;
     }
 
-    // Fonction pour formater les métriques d'engagement
-    function formatEngagementMetrics(stats, metrics) {
+    // Fonction pour déterminer la corrélation ER/Vues
+    function analyzeCorrelation(stats, metrics) {
       if (!stats || !metrics) return null;
-
-      const engagementScore = calculateEngagementScore(metrics.engagementRate);
-
-      return {
-        vues: {
-          valeur: stats.views || 0,
-          formate: formatNumber(stats.views || 0)
-        },
-        likes: {
-          valeur: stats.likes || 0,
-          formate: formatNumber(stats.likes || 0),
-          ratio: metrics.likesRatio || 0
-        },
-        commentaires: {
-          valeur: stats.comments || 0,
-          formate: formatNumber(stats.comments || 0),
-          ratio: metrics.commentsRatio || 0
-        },
-        partages: {
-          valeur: stats.shares || 0,
-          formate: formatNumber(stats.shares || 0),
-          ratio: metrics.sharesRatio || 0
-        },
-        enregistrements: {
-          valeur: 'Non disponible',
-          formate: 'N/A',
-          ratio: 0
-        },
-        abonnes_gagnes: {
-          valeur: 'Non disponible',
-          formate: 'N/A'
-        },
-        taux_engagement: {
-          valeur: metrics.engagementRate || 0,
-          score: engagementScore.score,
-          niveau: engagementScore.niveau,
-          couleur: engagementScore.couleur,
-          recommandation: engagementScore.recommandation
-        },
-        indice_viralite: {
-          valeur: metrics.viralityIndex || 0,
-          niveau: metrics.viralityIndex > 15 ? 'Élevé' : metrics.viralityIndex > 8 ? 'Moyen' : 'Faible'
-        }
-      };
-    }
-
-    // Fonction d'analyse SEO et contenu (même sans stats)
-    function analyzeContentSEO(description, hashtags, thumbnail, author) {
-      const analysis = {
-        seo: {
-          score: 0,
-          points_forts: [],
-          points_faibles: [],
-          mots_cles: [],
-          longueur_optimale: false
-        },
-        hashtags: {
-          score: 0,
-          pertinents: [],
-          tendance: [],
-          recommandations: []
-        },
-        miniature: {
-          disponible: !!thumbnail,
-          qualite: 'Non évaluée',
-          recommandations: []
-        },
-        structure: {
-          hook_present: false,
-          hook_type: null,
-          cta_present: false,
-          cta_type: null,
-          message_clair: false
-        }
-      };
-
-      // Analyse SEO de la description
-      if (description && description.length > 10) {
-        const desc = description.toLowerCase();
-        let seoScore = 30;
-
-        // Longueur optimale (30-150 caractères)
-        if (description.length >= 30 && description.length <= 150) {
-          analysis.seo.longueur_optimale = true;
-          analysis.seo.points_forts.push('Longueur de description optimale (' + description.length + ' caractères)');
-          seoScore += 20;
-        } else if (description.length < 30) {
-          analysis.seo.points_faibles.push('Description trop courte (' + description.length + ' caractères)');
-        } else {
-          analysis.seo.points_faibles.push('Description trop longue (' + description.length + ' caractères)');
-        }
-
-        // Détection de mots-clés populaires
-        const motsClesTikTok = ['viral', 'trending', 'fyp', 'pourtoi', 'france', 'tiktok', 'astuce', 'conseil', 'secret', 'rapide', 'facile'];
-        const motsDetectes = motsClesTikTok.filter(mot => desc.includes(mot));
-        if (motsDetectes.length > 0) {
-          analysis.seo.mots_cles = motsDetectes;
-          analysis.seo.points_forts.push('Mots-clés détectés: ' + motsDetectes.join(', '));
-          seoScore += 15;
-        } else {
-          analysis.seo.points_faibles.push('Aucun mot-clé populaire détecté');
-        }
-
-        // Analyse des émojis
-        const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
-        const emojis = description.match(emojiRegex);
-        if (emojis && emojis.length > 0) {
-          analysis.seo.points_forts.push('Utilisation d\'émojis (' + emojis.length + ') - Bon pour l\'engagement');
-          seoScore += 10;
-        } else {
-          analysis.seo.points_faibles.push('Aucun émoji utilisé - Manque d\'impact visuel');
-        }
-
-        // Détection structure narrative
-        // Hook
-        const hookPatterns = {
-          question: /^(pourquoi|comment|qui|que|quoi|où|quand)/,
-          secret: /(secret|astuce|conseil|truc|technique)/,
-          number: /^\d+/,
-          negation: /(pas|jamais|aucun|stop|arrête)/,
-          exclamation: /^[A-ZÉÈÀÂÔÎÛÄËÏÖÜÇ]/
+      
+      const er = metrics.engagementRate;
+      const views = stats.views;
+      
+      if (er > 5 && views < 10000) {
+        return {
+          type: 'warning',
+          message: '⚠️ Bon taux d\'engagement mais peu de vues - Hook probablement trop faible',
+          recommendation: 'Optimisez votre accroche dans les 3 premières secondes'
         };
-        
-        for (const [type, pattern] of Object.entries(hookPatterns)) {
-          if (pattern.test(desc)) {
-            analysis.structure.hook_present = true;
-            analysis.structure.hook_type = type;
-            analysis.seo.points_forts.push('Hook ' + type + ' détecté - Bonne accroche');
-            seoScore += 15;
-            break;
-          }
-        }
-        
-        if (!analysis.structure.hook_present) {
-          analysis.seo.points_faibles.push('Pas de hook détectable dans les premiers mots');
-        }
-
-        // CTA
-        const ctaPatterns = {
-          subscribe: /(abonne|follow|suit)/,
-          engage: /(like|commente|partage|réagis)/,
-          action: /(clique|va sur|regarde|découvre)/,
-          save: /(sauvegarde|enregistre|garde)/
+      } else if (er > 10 && views > 100000) {
+        return {
+          type: 'success',
+          message: '🚀 Excellente corrélation ER/Vues - Contenu viral !',
+          recommendation: 'Reproduisez cette stratégie sur vos prochaines vidéos'
         };
-        
-        for (const [type, pattern] of Object.entries(ctaPatterns)) {
-          if (pattern.test(desc)) {
-            analysis.structure.cta_present = true;
-            analysis.structure.cta_type = type;
-            analysis.seo.points_forts.push('CTA ' + type + ' détecté - Incite à l\'action');
-            seoScore += 10;
-            break;
-          }
-        }
-
-        if (!analysis.structure.cta_present) {
-          analysis.seo.points_faibles.push('Aucun appel à l\'action explicite');
-        }
-
-        analysis.seo.score = Math.min(100, seoScore);
-      } else {
-        analysis.seo.points_faibles.push('Description manquante ou trop courte');
+      } else if (er < 2 && views > 50000) {
+        return {
+          type: 'warning',
+          message: '📈 Bonnes vues mais faible engagement - Contenu pas assez captivant',
+          recommendation: 'Travaillez sur l\'engagement: questions, CTAs, interaction'
+        };
       }
-
-      // Analyse des hashtags
-      if (hashtags && hashtags.length > 0) {
-        let hashtagScore = 20;
-
-        // Quantité optimale
-        if (hashtags.length >= 3 && hashtags.length <= 5) {
-          analysis.hashtags.recommandations.push('Quantité optimale (' + hashtags.length + ' hashtags)');
-          hashtagScore += 25;
-        } else if (hashtags.length < 3) {
-          analysis.hashtags.recommandations.push('Trop peu d\'hashtags (' + hashtags.length + ') - Ajoutez-en 2-3');
-        } else {
-          analysis.hashtags.recommandations.push('Trop d\'hashtags (' + hashtags.length + ') - Risque de spam');
-        }
-
-        // Hashtags tendance
-        const hashtagsTendance = ['fyp', 'viral', 'trending', 'pourtoi', 'france', 'tiktokfrance', 'reels', 'explore'];
-        const tendanceDetectee = hashtags.filter(tag => 
-          hashtagsTendance.some(trend => tag.toLowerCase().includes(trend))
-        );
-        
-        if (tendanceDetectee.length > 0) {
-          analysis.hashtags.tendance = tendanceDetectee;
-          analysis.hashtags.recommandations.push('Hashtags tendance utilisés: #' + tendanceDetectee.join(', #'));
-          hashtagScore += 25;
-        } else {
-          analysis.hashtags.recommandations.push('Aucun hashtag tendance - Ajoutez #fyp ou #pourtoi');
-        }
-
-        // Hashtags de niche
-        const hashtags_niche = hashtags.filter(tag => 
-          !hashtagsTendance.some(trend => tag.toLowerCase().includes(trend))
-        );
-        
-        if (hashtags_niche.length > 0) {
-          analysis.hashtags.pertinents = hashtags_niche;
-          analysis.hashtags.recommandations.push('Hashtags de niche: #' + hashtags_niche.join(', #'));
-          hashtagScore += 20;
-        }
-
-        analysis.hashtags.score = Math.min(100, hashtagScore);
-      } else {
-        analysis.hashtags.recommandations.push('Aucun hashtag détecté - Ajoutez #fyp #pourtoi + hashtags de niche');
-      }
-
-      // Analyse de la miniature
-      if (thumbnail) {
-        analysis.miniature.qualite = 'Disponible';
-        analysis.miniature.recommandations.push('Miniature détectée - Vérifiez qu\'elle soit attractive');
-        analysis.miniature.recommandations.push('Conseil: Visage visible, contraste élevé, texte lisible');
-      } else {
-        analysis.miniature.recommandations.push('Miniature non disponible pour analyse');
-      }
-
-      return analysis;
+      
+      return null;
     }
 
-    // Fonction pour copier l'URL d'analyse
-    function copyAnalysisUrl() {
-      if (currentAnalysisId) {
-        const url = window.location.origin + window.location.pathname + '?analysis=' + currentAnalysisId;
-        navigator.clipboard.writeText(url).then(function() {
-          // Feedback visuel
-          const btn = event.target;
-          const originalText = btn.textContent;
-          btn.textContent = '✓ Copié';
-          setTimeout(function() {
-            btn.textContent = originalText;
-          }, 2000);
-        }).catch(function(err) {
-          console.warn('Erreur copie:', err);
-        });
-      }
-    }
-
-    // Affichage des résultats - version corrigée
+    // Fonction pour afficher les résultats
     function showResults(data) {
       if (window.loaderInterval) {
         clearInterval(window.loaderInterval);
@@ -1013,964 +712,336 @@
         return;
       }
 
-      // Extraction sécurisée des données
-      const video = safeGet(data, 'video', {});
-      const stats = safeGet(data, 'stats');
-      const metrics = safeGet(data, 'metrics', {});
-      const analysis = safeGet(data, 'analysis', {});
-      const contenuVideo = safeGet(analysis, 'contenu_video');
-      const contenuAudio = safeGet(analysis, 'contenu_audio');
-      const creative = safeGet(analysis, 'creative', {});
-      const metadata = safeGet(data, 'metadata', {});
+      const { video, stats, seo, analysis } = data;
       
-      // Stockage de l'ID d'analyse
-      currentAnalysisId = safeGet(data, 'analysisId');
-
-      const resultsElement = document.getElementById('results');
-      if (!resultsElement) return;
-
-      // Si pas de stats, affichage avec analyse SEO complète
+      // Si pas de stats, afficher seulement les infos de base
       if (!stats) {
-        // Analyse SEO du contenu disponible
-        const contentAnalysis = analyzeContentSEO(video.description, video.hashtags, video.thumbnail, video.author);
-        
-        let basicHTML = '<div class="success-indicator">' +
-          '<span>✅</span> Vidéo trouvée - Analyse SEO et contenu disponible';
-        
-        if (currentAnalysisId) {
-          basicHTML += '<button class="copy-url-btn" onclick="copyAnalysisUrl()" title="Copier le lien de l\'analyse">🔗 Partager</button>';
-        }
-        basicHTML += '</div>';
-        
-        basicHTML += '<div class="video-info-grid">';
-        
-        if (video.thumbnail) {
-          basicHTML += '<img src="' + video.thumbnail + '" alt="Miniature" class="video-thumbnail" style="margin: 0; max-width: 150px;">';
-        } else {
-          basicHTML += '<div></div>';
-        }
-        
-        basicHTML += '<div>';
-        
-        if (video.author) {
-          basicHTML += '<div class="author-info">' +
-            '<span>👤</span>' +
-            '<strong>@' + video.author + '</strong>' +
-          '</div>';
-        }
-        
-        basicHTML += '<div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">' +
-          '<p><strong>📝 Description:</strong></p>' +
-          '<p style="color: var(--muted); font-style: italic;">"' + (video.description || 'Non disponible') + '"</p>' +
-        '</div>';
-        
-        if (video.hashtags && video.hashtags.length > 0) {
-          basicHTML += '<div style="margin-bottom: 1rem;">' +
-            '<p><strong>🏷️ Hashtags:</strong></p>' +
-            '<div class="hashtag-list">';
+        document.getElementById('results').innerHTML = `
+          <div class="success-indicator">
+            <span>✅</span> Vidéo trouvée - Analyse partielle disponible
+          </div>
           
-          for (let i = 0; i < video.hashtags.length; i++) {
-            basicHTML += '<span class="hashtag-item">#' + video.hashtags[i] + '</span>';
-          }
+          <div class="video-header">
+            ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : '<div style="width:120px;height:150px;background:var(--card-border);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);">Pas d\'image</div>'}
+            
+            <div class="video-info">
+              <h3>📹 Informations de base</h3>
+              
+              ${video?.author ? `
+                <div class="author-info">
+                  <span>👤</span>
+                  <strong>@${video.author}</strong>
+                </div>
+              ` : ''}
+              
+              <div class="video-description">
+                "${video?.description || 'Description non disponible'}"
+              </div>
+              
+              ${video?.hashtags?.length ? `
+                <div class="hashtag-list">
+                  ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
           
-          basicHTML += '</div></div>';
-        }
-        
-        if (video.music) {
-          basicHTML += '<p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted);">' +
-            '🎵 <strong>Musique:</strong> ' + video.music +
-          '</p>';
-        }
-        
-        basicHTML += '</div></div>';
-        
-        // Analyse SEO et contenu détaillée
-        basicHTML += '<h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">' +
-          '🔍 Analyse SEO et Contenu' +
-        '</h3>';
-        
-        basicHTML += '<div class="framework-grid">';
-        
-        // Analyse SEO Description
-        basicHTML += '<div class="pillar-card qualitative">' +
-          '<div class="pillar-title"><span>📝</span> SEO Description</div>' +
-          '<div class="pillar-content">' +
-            '<div class="metric-item">' +
-              '<span>Score SEO</span>' +
-              '<span class="metric-value">' + contentAnalysis.seo.score + '/100</span>' +
-            '</div>' +
-            '<div class="metric-item">' +
-              '<span>Longueur optimale</span>' +
-              '<span class="metric-value">' + (contentAnalysis.seo.longueur_optimale ? '✅' : '❌') + '</span>' +
-            '</div>' +
-            '<div class="metric-item">' +
-              '<span>Hook présent</span>' +
-              '<span class="metric-value">' + (contentAnalysis.structure.hook_present ? '✅ ' + contentAnalysis.structure.hook_type : '❌') + '</span>' +
-            '</div>' +
-            '<div class="metric-item">' +
-              '<span>CTA présent</span>' +
-              '<span class="metric-value">' + (contentAnalysis.structure.cta_present ? '✅ ' + contentAnalysis.structure.cta_type : '❌') + '</span>' +
-            '</div>';
-        
-        if (contentAnalysis.seo.mots_cles.length > 0) {
-          basicHTML += '<div style="margin-top: 1rem;">' +
-            '<strong>🎯 Mots-clés détectés:</strong><br>' +
-            '<small style="color: var(--muted);">' + contentAnalysis.seo.mots_cles.join(', ') + '</small>' +
-          '</div>';
-        }
-        
-        basicHTML += '</div></div>';
-        
-        // Analyse Hashtags
-        basicHTML += '<div class="pillar-card algorithmic">' +
-          '<div class="pillar-title"><span>🏷️</span> Stratégie Hashtags</div>' +
-          '<div class="pillar-content">' +
-            '<div class="metric-item">' +
-              '<span>Score Hashtags</span>' +
-              '<span class="metric-value">' + contentAnalysis.hashtags.score + '/100</span>' +
-            '</div>' +
-            '<div class="metric-item">' +
-              '<span>Quantité</span>' +
-              '<span class="metric-value">' + (video.hashtags ? video.hashtags.length : 0) + ' hashtags</span>' +
-            '</div>';
-        
-        if (contentAnalysis.hashtags.tendance.length > 0) {
-          basicHTML += '<div class="metric-item">' +
-            '<span>Hashtags tendance</span>' +
-            '<span class="metric-value">✅ ' + contentAnalysis.hashtags.tendance.length + '</span>' +
-          '</div>';
-        }
-        
-        if (contentAnalysis.hashtags.pertinents.length > 0) {
-          basicHTML += '<div class="metric-item">' +
-            '<span>Hashtags de niche</span>' +
-            '<span class="metric-value">✅ ' + contentAnalysis.hashtags.pertinents.length + '</span>' +
-          '</div>';
-        }
-        
-        basicHTML += '</div></div>';
-        
-        // Analyse Miniature
-        basicHTML += '<div class="pillar-card comparative">' +
-          '<div class="pillar-title"><span>🖼️</span> Miniature</div>' +
-          '<div class="pillar-content">' +
-            '<div class="metric-item">' +
-              '<span>Disponibilité</span>' +
-              '<span class="metric-value">' + (contentAnalysis.miniature.disponible ? '✅ Oui' : '❌ Non') + '</span>' +
-            '</div>' +
-            '<div class="metric-item">' +
-              '<span>Qualité</span>' +
-              '<span class="metric-value">' + contentAnalysis.miniature.qualite + '</span>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-        
-        // Analyse Auteur
-        basicHTML += '<div class="pillar-card quantitative">' +
-          '<div class="pillar-title"><span>👤</span> Profil Auteur</div>' +
-          '<div class="pillar-content">' +
-            '<div class="metric-item">' +
-              '<span>Auteur détecté</span>' +
-              '<span class="metric-value">' + (video.author ? '✅ @' + video.author : '❌ Non') + '</span>' +
-            '</div>' +
-            '<div class="metric-item">' +
-              '<span>Musique</span>' +
-              '<span class="metric-value">' + (video.music ? '✅ Oui' : '❌ Non') + '</span>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-        
-        basicHTML += '</div>'; // fin framework-grid
-        
-        // Recommandations SEO
-        if (contentAnalysis.seo.points_forts.length > 0 || contentAnalysis.seo.points_faibles.length > 0 || contentAnalysis.hashtags.recommandations.length > 0) {
-          basicHTML += '<div class="analysis-list" style="margin-top: 2rem;">' +
-            '<h3 style="text-align: center; margin-bottom: 1.5rem; font-size: 1.2rem;">' +
-              '🎯 Recommandations SEO et Contenu' +
-            '</h3>';
-          
-          if (contentAnalysis.seo.points_forts.length > 0) {
-            basicHTML += '<h3 style="color: var(--success);">✅ Points forts SEO</h3>' +
-              '<ul style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">';
-            for (let i = 0; i < contentAnalysis.seo.points_forts.length; i++) {
-              basicHTML += '<li style="color: var(--ink);">' + contentAnalysis.seo.points_forts[i] + '</li>';
-            }
-            basicHTML += '</ul>';
-          }
-          
-          if (contentAnalysis.seo.points_faibles.length > 0) {
-            basicHTML += '<h3 style="color: var(--warning);">⚠️ Axes d\'amélioration SEO</h3>' +
-              '<ul style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning);">';
-            for (let i = 0; i < contentAnalysis.seo.points_faibles.length; i++) {
-              basicHTML += '<li style="color: var(--ink);">' + contentAnalysis.seo.points_faibles[i] + '</li>';
-            }
-            basicHTML += '</ul>';
-          }
-          
-          if (contentAnalysis.hashtags.recommandations.length > 0) {
-            basicHTML += '<h3 style="color: var(--accent);">🏷️ Optimisation Hashtags</h3>' +
-              '<ul style="background: rgba(217, 70, 239, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">';
-            for (let i = 0; i < contentAnalysis.hashtags.recommandations.length; i++) {
-              basicHTML += '<li style="color: var(--ink);">' + contentAnalysis.hashtags.recommandations[i] + '</li>';
-            }
-            basicHTML += '</ul>';
-          }
-          
-          if (contentAnalysis.miniature.recommandations.length > 0) {
-            basicHTML += '<h3 style="color: var(--info);">🖼️ Conseils Miniature</h3>' +
-              '<ul style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--info);">';
-            for (let i = 0; i < contentAnalysis.miniature.recommandations.length; i++) {
-              basicHTML += '<li style="color: var(--ink);">' + contentAnalysis.miniature.recommandations[i] + '</li>';
-            }
-            basicHTML += '</ul>';
-          }
-          
-          basicHTML += '</div>';
-        }
-        
-        basicHTML += '<div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 1rem; border-radius: 12px; margin-top: 2rem;">' +
-          '<p style="color: var(--info); margin: 0;">' +
-            '🔍 <strong>Analyse SEO complétée</strong> - Version optimisée' +
-            '<br><small>Analyse basée sur la description, hashtags et métadonnées disponibles. Pour les métriques d\'engagement, configurez les clés API.</small>' +
-          '</p>' +
-        '</div>';
-        
-        resultsElement.innerHTML = basicHTML;
+          <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: 12px;">
+            <p style="color: var(--error); margin: 0;">
+              ⚠️ Analyse limitée - Statistiques détaillées non disponibles
+              <br><small>Configurez ScrapingBee pour une analyse complète Stats • SEO • IA</small>
+            </p>
+          </div>
+        `;
         return;
       }
 
-      // Calculs des métriques avec formatting
-      const engagementRate = metrics.engagementRate || 0;
-      const score = analysis.score || 50;
-      const potentiel = analysis.potentiel_viral || 'moyen';
-      const formattedMetrics = formatEngagementMetrics(stats, metrics);
+      // Analyse de corrélation
+      const correlation = analyzeCorrelation(stats, stats.metrics);
       
-      // Classes CSS pour le taux d'engagement
-      let erClass = 'er-bad';
-      if (engagementRate > 15) erClass = 'er-excellent';
-      else if (engagementRate > 10) erClass = 'er-good';
-      else if (engagementRate > 5) erClass = 'er-medium';
+      // Score et niveau
+      const score = analysis?.score || 50;
+      const niveau = analysis?.niveau || 'Inconnu';
+      const potentiel = analysis?.potentiel_viral || 'moyen';
 
-      // Couleurs et icônes pour le potentiel viral
-      const potentielConfig = {
-        'élevé': { color: 'var(--success)', icon: '🚀' },
-        'moyen': { color: 'var(--warning)', icon: '📈' },
-        'faible': { color: 'var(--error)', icon: '🌱' }
-      };
-      const potentielInfo = potentielConfig[potentiel] || potentielConfig['moyen'];
+      document.getElementById('results').innerHTML = `
+        <div class="success-indicator">
+          <span>✅</span> Analyse TikTok 2025 terminée
+        </div>
+        
+        <!-- En-tête vidéo -->
+        <div class="video-header">
+          ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : '<div style="width:120px;height:150px;background:var(--card-border);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);">Pas d\'image</div>'}
+          
+          <div class="video-info">
+            <h3>🎬 ${video?.author ? `@${video.author}` : 'Vidéo TikTok'}</h3>
+            
+            <div class="author-info">
+              ${video?.authorFollowers ? `<span>👥 ${video.formatted?.followers || video.authorFollowers.toLocaleString()} abonnés</span>` : ''}
+              ${video?.music ? `<span>🎵 ${video.music}</span>` : ''}
+            </div>
+            
+            <div class="video-description">
+              "${video?.description || 'Description non disponible'}"
+            </div>
+            
+            ${video?.hashtags?.length ? `
+              <div class="hashtag-list">
+                ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            
+            <div style="margin-top: 1rem;">
+              <span class="niveau-badge ${niveau.toLowerCase().replace(' ', '')}">${niveau}</span>
+              <strong style="margin-left: 1rem; color: var(--accent);">Score: ${score}/100</strong>
+            </div>
+          </div>
+        </div>
 
-      // Construction du HTML complet
-      let fullHTML = '<div class="success-indicator">' +
-        '<span>✅</span> Analyse Framework Intégré terminée';
-      
-      if (currentAnalysisId) {
-        fullHTML += '<button class="copy-url-btn" onclick="copyAnalysisUrl()" title="Copier le lien de l\'analyse">🔗 Partager</button>';
-      }
-      fullHTML += '</div>';
+        <!-- Corrélation ER/Vues -->
+        ${correlation ? `
+          <div class="correlation-alert ${correlation.type}">
+            <strong>${correlation.message}</strong><br>
+            💡 <strong>Recommandation:</strong> ${correlation.recommendation}
+          </div>
+        ` : ''}
 
-      // Guide des seuils d'engagement
-      fullHTML += '<div style="background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; margin: 2rem 0;">' +
-        '<h4 style="margin: 0 0 1rem 0; color: var(--accent); text-align: center;">📊 Guide des Seuils d\'Engagement TikTok</h4>' +
-        '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">' +
-          '<div style="padding: 0.75rem; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444;">' +
-            '<div style="font-weight: 600; color: #ef4444;">< 3%</div>' +
-            '<div style="font-size: 0.8rem; color: var(--muted);">Ça ne va pas</div>' +
-          '</div>' +
-          '<div style="padding: 0.75rem; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b;">' +
-            '<div style="font-weight: 600; color: #f59e0b;">3-5%</div>' +
-            '<div style="font-size: 0.8rem; color: var(--muted);">Bien mais à améliorer</div>' +
-          '</div>' +
-          '<div style="padding: 0.75rem; border-radius: 8px; background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e;">' +
-            '<div style="font-weight: 600; color: #22c55e;">5-7%</div>' +
-            '<div style="font-size: 0.8rem; color: var(--muted);">C\'est bien !</div>' +
-          '</div>' +
-          '<div style="padding: 0.75rem; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981;">' +
-            '<div style="font-weight: 600; color: #10b981;">7%+</div>' +
-            '<div style="font-size: 0.8rem; color: var(--muted);">Très bien !</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-      
-      // En-tête avec infos vidéo
-      fullHTML += '<div class="video-info-grid">';
-      
-      if (video.thumbnail) {
-        fullHTML += '<img src="' + video.thumbnail + '" alt="Miniature" class="video-thumbnail" style="margin: 0; max-width: 150px;">';
-      } else {
-        fullHTML += '<div></div>';
-      }
-      
-      fullHTML += '<div>';
-      
-      if (video.author) {
-        fullHTML += '<div class="author-info">' +
-          '<span>👤</span>' +
-          '<strong>@' + video.author + '</strong>' +
-        '</div>';
-      }
-      
-      fullHTML += '<p style="color: var(--muted); font-style: italic; margin: 0.5rem 0; line-height: 1.5;">' +
-        '"' + (video.description || 'Description non disponible') + '"' +
-      '</p>';
-      
-      if (video.hashtags && video.hashtags.length > 0) {
-        fullHTML += '<div class="hashtag-list" style="margin: 1rem 0;">';
-        for (let i = 0; i < video.hashtags.length; i++) {
-          fullHTML += '<span class="hashtag-item">#' + video.hashtags[i] + '</span>';
-        }
-        fullHTML += '</div>';
-      }
-      
-      if (video.music) {
-        fullHTML += '<p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted);">' +
-          '🎵 <strong>Musique:</strong> ' + video.music +
-        '</p>';
-      }
-      
-      if (video.createTime) {
-        const createDate = new Date(video.createTime);
-        fullHTML += '<p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted);">' +
-          '📅 <strong>Publié le:</strong> ' + createDate.toLocaleDateString('fr-FR') +
-        '</p>';
-      }
-      
-      fullHTML += '</div></div>';
-      
-      // Scores principaux
-      fullHTML += '<div class="scores-grid">' +
-        '<div>' +
-          createScoreCircle(score, 'SCORE') +
-          '<p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Score Framework Global</p>' +
-        '</div>' +
-        '<div>' +
-          '<div class="potentiel-indicator">' + potentielInfo.icon + '</div>' +
-          '<div class="potentiel-text" style="color: ' + potentielInfo.color + ';">' +
-            potentiel.toUpperCase() +
-          '</div>' +
-          '<p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Potentiel Viral</p>' +
-        '</div>' +
-      '</div>';
-      
-      // Métriques d'engagement détaillées
-      fullHTML += '<h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">' +
-        '📊 Métriques d\'Engagement Détaillées' +
-      '</h3>';
-      
-      fullHTML += '<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">' +
-        '<div class="stat-card">' +
-          '<div class="stat-card-title">👁️ Vues</div>' +
-          '<div class="stat-card-value">' + formattedMetrics.vues.formate + '</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">Base de calcul</div>' +
-        '</div>' +
-        '<div class="stat-card">' +
-          '<div class="stat-card-title">❤️ Likes</div>' +
-          '<div class="stat-card-value">' + formattedMetrics.likes.formate + '</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">' + formattedMetrics.likes.ratio.toFixed(1) + '% des vues</div>' +
-        '</div>' +
-        '<div class="stat-card">' +
-          '<div class="stat-card-title">💬 Commentaires</div>' +
-          '<div class="stat-card-value">' + formattedMetrics.commentaires.formate + '</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">' + formattedMetrics.commentaires.ratio.toFixed(1) + '% des vues</div>' +
-        '</div>' +
-        '<div class="stat-card">' +
-          '<div class="stat-card-title">📤 Partages</div>' +
-          '<div class="stat-card-value">' + formattedMetrics.partages.formate + '</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">' + formattedMetrics.partages.ratio.toFixed(1) + '% des vues</div>' +
-        '</div>' +
-        '<div class="stat-card">' +
-          '<div class="stat-card-title">💾 Enregistrements</div>' +
-          '<div class="stat-card-value" style="font-size: 1rem;">N/A</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">Non disponible via API</div>' +
-        '</div>' +
-        '<div class="stat-card">' +
-          '<div class="stat-card-title">➕ Abonnés gagnés</div>' +
-          '<div class="stat-card-value" style="font-size: 1rem;">N/A</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">Données creator uniquement</div>' +
-        '</div>' +
-      '</div>';
+        <!-- Sections principales -->
+        <div class="results-grid">
+          <!-- SECTION STATS -->
+          <div class="section-card stats">
+            <div class="section-title">
+              <span>📊</span> Stats
+            </div>
+            <div class="section-content">
+              <div class="metric-item">
+                <span>Vues</span>
+                <span class="metric-value">${stats.formatted?.views || stats.views.toLocaleString()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Taux d'engagement</span>
+                <span class="metric-value ${stats.metrics.engagementRate > 10 ? 'success' : stats.metrics.engagementRate > 5 ? 'warning' : 'error'}">${stats.metrics.engagementRate.toFixed(1)}%</span>
+              </div>
+              <div class="metric-item">
+                <span>Likes</span>
+                <span class="metric-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Commentaires</span>
+                <span class="metric-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Partages</span>
+                <span class="metric-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</span>
+              </div>
+              <div class="metric-item">
+                <span>Ratio partages</span>
+                <span class="metric-value ${stats.metrics.sharesRatio > 0.5 ? 'success' : 'warning'}">${stats.metrics.sharesRatio.toFixed(2)}%</span>
+              </div>
+            </div>
+          </div>
 
-      // Taux d'engagement avec scoring
-      fullHTML += '<div style="background: linear-gradient(135deg, ' + formattedMetrics.taux_engagement.couleur + '20, ' + formattedMetrics.taux_engagement.couleur + '10); border: 2px solid ' + formattedMetrics.taux_engagement.couleur + '; border-radius: 16px; padding: 1.5rem; margin: 2rem 0; text-align: center;">' +
-        '<h3 style="margin: 0 0 1rem 0; color: ' + formattedMetrics.taux_engagement.couleur + ';">📈 Taux d\'Engagement Global</h3>' +
-        '<div style="font-size: 3rem; font-weight: 800; color: ' + formattedMetrics.taux_engagement.couleur + '; margin-bottom: 0.5rem;">' +
-          formattedMetrics.taux_engagement.valeur.toFixed(1) + '%' +
-        '</div>' +
-        '<div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: ' + formattedMetrics.taux_engagement.couleur + ';">' +
-          formattedMetrics.taux_engagement.niveau + ' (' + formattedMetrics.taux_engagement.score + '/100)' +
-        '</div>' +
-        '<div style="font-size: 0.9rem; color: var(--ink); background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px;">' +
-          '💡 ' + formattedMetrics.taux_engagement.recommandation +
-        '</div>' +
-        '<div style="margin-top: 1rem; font-size: 0.8rem; color: var(--muted);">' +
-          'Calculé : (Likes + Commentaires + Partages) / Vues × 100' +
-        '</div>' +
-      '</div>';
+          <!-- SECTION SEO -->
+          <div class="section-card seo">
+            <div class="section-title">
+              <span>🎯</span> SEO TikTok
+            </div>
+            <div class="section-content">
+              <div class="metric-item">
+                <span>Score SEO</span>
+                <span class="metric-value ${seo.score > 70 ? 'success' : seo.score > 50 ? 'warning' : 'error'}">${seo.score}/100</span>
+              </div>
+              <div class="metric-item">
+                <span>Hashtags utilisés</span>
+                <span class="metric-value">${seo.hashtags.nombre}</span>
+              </div>
+              <div class="metric-item">
+                <span>Hashtags 2025</span>
+                <span class="metric-value success">${seo.hashtags.tendance2025.length}</span>
+              </div>
+              <div class="metric-item">
+                <span>Description</span>
+                <span class="metric-value ${seo.description.longueurOptimale ? 'success' : 'warning'}">${seo.description.longueur} car.</span>
+              </div>
+              
+              ${seo.recommandations_hashtags_2025 ? `
+                <div class="seo-suggestions">
+                  <h5>💡 Hashtags 2025 suggérés:</h5>
+                  <div class="hashtag-list">
+                    ${seo.recommandations_hashtags_2025.tendance?.map(tag => `<span class="hashtag-item trending">#${tag}</span>`).join('') || ''}
+                    ${seo.recommandations_hashtags_2025.generaux?.slice(0,2).map(tag => `<span class="hashtag-item">#${tag}</span>`).join('') || ''}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
 
-      // Indice de viralité
-      fullHTML += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">' +
-        '<div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; text-align: center;">' +
-          '<div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem;">🔥 Indice de Viralité</div>' +
-          '<div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">' + formattedMetrics.indice_viralite.valeur.toFixed(1) + '</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">' + formattedMetrics.indice_viralite.niveau + '</div>' +
-        '</div>' +
-        '<div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; text-align: center;">' +
-          '<div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem;">📈 Courbe de fidélisation</div>' +
-          '<div style="font-size: 1rem; font-weight: 700; color: var(--warning);">N/A</div>' +
-          '<div style="font-size: 0.8rem; color: var(--muted);">Données creator uniquement</div>' +
-        '</div>' +
-      '</div>';
+          <!-- SECTION ANALYSIS -->
+          <div class="section-card analysis">
+            <div class="section-title">
+              <span>🤖</span> Analysis IA
+            </div>
+            <div class="section-content">
+              ${createScoreCircle(score, 'SCORE')}
+              
+              <div style="text-align: center; margin-bottom: 1rem;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">
+                  ${potentiel.toUpperCase()}
+                </div>
+                <div style="font-size: 0.9rem; color: var(--muted);">Potentiel Viral</div>
+              </div>
+              
+              ${analysis.diagnostic_ia ? `
+                <div class="ai-recommendations">
+                  <h4>
+                    <span>🧠</span> Diagnostic IA
+                  </h4>
+                  <p style="margin: 0 0 1rem 0; font-style: italic; color: var(--muted);">
+                    ${analysis.diagnostic_ia}
+                  </p>
+                  
+                  ${analysis.recommandations_ia?.length ? `
+                    <ul class="recommendations-list">
+                      ${analysis.recommandations_ia.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
 
-      // Framework 4 Piliers - simplifié pour éviter les erreurs
-      fullHTML += '<h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">' +
-        '🏛️ Framework d\'Analyse à 4 Piliers' +
-      '</h3>';
-      
-      fullHTML += '<div class="framework-grid">';
-      
-      // Pilier 1: Quantitatif
-      fullHTML += '<div class="pillar-card quantitative">' +
-        '<div class="pillar-title"><span>📊</span> Pilier Quantitatif</div>' +
-        '<div class="pillar-content">' +
-          '<div class="metric-item">' +
-            '<span>Vues totales</span>' +
-            '<span class="metric-value">' + formatNumber(stats.views || 0) + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Taux d\'engagement</span>' +
-            '<span class="metric-value ' + erClass + '">' + engagementRate.toFixed(1) + '%</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Ratio Likes/Vues</span>' +
-            '<span class="metric-value">' + ((metrics.likesRatio || 0).toFixed(1)) + '%</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Ratio Partages/Vues</span>' +
-            '<span class="metric-value">' + ((metrics.sharesRatio || 0).toFixed(1)) + '%</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Engagements totaux</span>' +
-            '<span class="metric-value">' + formatNumber(metrics.totalEngagements || 0) + '</span>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-      
-      // Pilier 2: Qualitatif
-      fullHTML += '<div class="pillar-card qualitative">' +
-        '<div class="pillar-title"><span>🎨</span> Pilier Qualitatif</div>' +
-        '<div class="pillar-content">' +
-          '<div class="metric-item">' +
-            '<span>Hook présent</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'structureNarrative.hookPresent') ? '✅' : '❌') + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Message clair</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'structureNarrative.messageClaire') ? '✅' : '❌') + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>CTA présent</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'structureNarrative.ctaPresent') ? '✅' : '❌') + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Description engageante</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'optimisationPlateforme.descriptionEngageante') ? '✅' : '❌') + '</span>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-      
-      // Pilier 3: Algorithmique
-      fullHTML += '<div class="pillar-card algorithmic">' +
-        '<div class="pillar-title"><span>⚙️</span> Pilier Algorithmique</div>' +
-        '<div class="pillar-content">' +
-          '<div class="metric-item">' +
-            '<span>Hashtags optimaux</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'optimisationPlateforme.hashtagsPertinents') ? '✅' : '❌') + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Nombre hashtags</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'optimisationPlateforme.hashtagsCount', 0)) + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Tendance utilisée</span>' +
-            '<span class="metric-value">' + (safeGet(creative, 'tendances.utiliseTendance') ? '✅' : '❌') + '</span>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-      
-      // Pilier 4: Comparatif
-      fullHTML += '<div class="pillar-card comparative">' +
-        '<div class="pillar-title"><span>📈</span> Pilier Comparatif</div>' +
-        '<div class="pillar-content">' +
-          '<div class="metric-item">' +
-            '<span>Score vs Moyenne</span>' +
-            '<span class="metric-value">' + (score > 70 ? 'Au-dessus' : score > 50 ? 'Moyenne' : 'En-dessous') + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Potentiel viral</span>' +
-            '<span class="metric-value" style="color: ' + potentielInfo.color + ';">' + potentiel.toUpperCase() + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Benchmark ER</span>' +
-            '<span class="metric-value">' + (engagementRate > 5 ? 'Bon' : engagementRate > 2 ? 'Moyen' : 'Faible') + '</span>' +
-          '</div>' +
-          '<div class="metric-item">' +
-            '<span>Position industrie</span>' +
-            '<span class="metric-value">' + ((stats.views || 0) > 100000 ? 'Top 10%' : (stats.views || 0) > 10000 ? 'Top 30%' : 'Standard') + '</span>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-      
-      // Analyse IA si disponible
-      const iaAnalysis = safeGet(analysis, 'ia_analysis');
-      if (iaAnalysis && iaAnalysis.contenu) {
-        fullHTML += '<h3 style="text-align: center; margin: 2rem 0 1.5rem; font-size: 1.3rem;">' +
-          '🤖 Analyse IA Personnalisée' +
-        '</h3>';
-        
-        fullHTML += '<div class="framework-grid">';
-        
-        // Analyse du contenu par l'IA
-        if (iaAnalysis.contenu) {
-          fullHTML += '<div class="pillar-card" style="border-left: 4px solid #8B5CF6; grid-column: 1 / -1;">' +
-            '<div class="pillar-title"><span>🧠</span> Diagnostic IA du Contenu</div>' +
-            '<div class="pillar-content">';
-          
-          if (iaAnalysis.contenu.niche_detectee) {
-            fullHTML += '<div class="metric-item">' +
-              '<span>Niche détectée</span>' +
-              '<span class="metric-value">' + iaAnalysis.contenu.niche_detectee + '</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.contenu.type_contenu) {
-            fullHTML += '<div class="metric-item">' +
-              '<span>Type de contenu</span>' +
-              '<span class="metric-value">' + iaAnalysis.contenu.type_contenu + '</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.contenu.qualite_narrative) {
-            fullHTML += '<div class="metric-item">' +
-              '<span>Qualité narrative</span>' +
-              '<span class="metric-value">' + iaAnalysis.contenu.qualite_narrative + '</span>' +
-            '</div>';
-          }
-          
-          fullHTML += '</div></div>';
-        }
-        
-        // Scores IA
-        if (iaAnalysis.scores_ia) {
-          fullHTML += '<div class="pillar-card" style="border-left: 4px solid #10b981;">' +
-            '<div class="pillar-title"><span>📊</span> Scores IA</div>' +
-            '<div class="pillar-content">';
-          
-          if (iaAnalysis.scores_ia.potentiel_viral) {
-            fullHTML += '<div class="metric-item">' +
-              '<span>Potentiel viral IA</span>' +
-              '<span class="metric-value">' + iaAnalysis.scores_ia.potentiel_viral + '/100</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.scores_ia.qualite_contenu) {
-            fullHTML += '<div class="metric-item">' +
-              '<span>Qualité contenu</span>' +
-              '<span class="metric-value">' + iaAnalysis.scores_ia.qualite_contenu + '/100</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.scores_ia.optimisation_seo) {
-            fullHTML += '<div class="metric-item">' +
-              '<span>Optimisation SEO</span>' +
-              '<span class="metric-value">' + iaAnalysis.scores_ia.optimisation_seo + '/100</span>' +
-            '</div>';
-          }
-          
-          fullHTML += '</div></div>';
-        }
-        
-        // Recommandations IA
-        if (iaAnalysis.recommandations) {
-          fullHTML += '<div class="pillar-card" style="border-left: 4px solid #f59e0b; grid-column: 1 / -1;">' +
-            '<div class="pillar-title"><span>💡</span> Recommandations IA Personnalisées</div>' +
-            '<div class="pillar-content">';
-          
-          if (iaAnalysis.recommandations.hook_amelioration) {
-            fullHTML += '<div style="margin-bottom: 1rem;">' +
-              '<strong>🎯 Hook à améliorer:</strong><br>' +
-              '<span style="color: var(--muted); font-size: 0.9rem;">' + iaAnalysis.recommandations.hook_amelioration + '</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.recommandations.engagement_boost) {
-            fullHTML += '<div style="margin-bottom: 1rem;">' +
-              '<strong>🚀 Boost d\'engagement:</strong><br>' +
-              '<span style="color: var(--muted); font-size: 0.9rem;">' + iaAnalysis.recommandations.engagement_boost + '</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.recommandations.cta_suggestion) {
-            fullHTML += '<div style="margin-bottom: 1rem;">' +
-              '<strong>📢 CTA suggéré:</strong><br>' +
-              '<span style="color: var(--muted); font-size: 0.9rem;">' + iaAnalysis.recommandations.cta_suggestion + '</span>' +
-            '</div>';
-          }
-          
-          if (iaAnalysis.recommandations.hashtags_optimises && iaAnalysis.recommandations.hashtags_optimises.length > 0) {
-            fullHTML += '<div style="margin-bottom: 1rem;">' +
-              '<strong>🏷️ Hashtags IA recommandés:</strong><br>' +
-              '<div style="margin-top: 0.5rem;">';
-            for (let i = 0; i < iaAnalysis.recommandations.hashtags_optimises.length; i++) {
-              fullHTML += '<span class="hashtag-item" style="margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">' + iaAnalysis.recommandations.hashtags_optimises[i] + '</span>';
-            }
-            fullHTML += '</div></div>';
-          }
-          
-          if (iaAnalysis.recommandations.format_ideal) {
-            fullHTML += '<div>' +
-              '<strong>🎪 Format idéal:</strong><br>' +
-              '<span style="color: var(--muted); font-size: 0.9rem;">' + iaAnalysis.recommandations.format_ideal + '</span>' +
-            '</div>';
-          }
-          
-          fullHTML += '</div></div>';
-        }
-        
-        fullHTML += '</div>'; // fin framework-grid IA
-        
-        // Points forts et faiblesses détectés par l'IA
-        if (iaAnalysis.contenu && (iaAnalysis.contenu.points_forts_detectes?.length > 0 || iaAnalysis.contenu.faiblesses_detectes?.length > 0)) {
-          fullHTML += '<div class="analysis-list" style="margin-top: 1rem;">';
-          
-          if (iaAnalysis.contenu.points_forts_detectes?.length > 0) {
-            fullHTML += '<h3 style="color: var(--success);">🤖 Points forts détectés par l\'IA</h3>' +
-              '<ul style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">';
-            for (let i = 0; i < iaAnalysis.contenu.points_forts_detectes.length; i++) {
-              fullHTML += '<li style="color: var(--ink);">' + iaAnalysis.contenu.points_forts_detectes[i] + '</li>';
-            }
-            fullHTML += '</ul>';
-          }
-          
-          if (iaAnalysis.contenu.faiblesses_detectes?.length > 0) {
-            fullHTML += '<h3 style="color: var(--warning);">🤖 Faiblesses détectées par l\'IA</h3>' +
-              '<ul style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning);">';
-            for (let i = 0; i < iaAnalysis.contenu.faiblesses_detectes.length; i++) {
-              fullHTML += '<li style="color: var(--ink);">' + iaAnalysis.contenu.faiblesses_detectes[i] + '</li>';
-            }
-            fullHTML += '</ul>';
-          }
-          
-          fullHTML += '</div>';
-        }
-        
-        // Conseils prioritaires de l'IA
-        if (iaAnalysis.conseils_prioritaires?.length > 0) {
-          fullHTML += '<div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 2px solid #8B5CF6; border-radius: 16px; padding: 1.5rem; margin: 1.5rem 0;">' +
-            '<h4 style="margin: 0 0 1rem 0; color: #8B5CF6; text-align: center;">🎯 Top Conseils Prioritaires IA</h4>' +
-            '<ul style="margin: 0; padding-left: 1.5rem;">';
-          for (let i = 0; i < iaAnalysis.conseils_prioritaires.length; i++) {
-            fullHTML += '<li style="color: var(--ink); margin-bottom: 0.5rem; font-weight: 500;">' + iaAnalysis.conseils_prioritaires[i] + '</li>';
-          }
-          fullHTML += '</ul></div>';
-        }
-      }
-      
-      // Recommandations basées sur le taux d'engagement
-      fullHTML += '<div class="analysis-list" style="margin-top: 2rem;">' +
-        '<h3 style="text-align: center; margin-bottom: 1.5rem; font-size: 1.2rem;">' +
-          '🎯 Recommandations basées sur l\'Engagement (' + formattedMetrics.taux_engagement.valeur.toFixed(1) + '%)' +
-        '</h3>';
-      
-      // Recommandations spécifiques selon le taux d'engagement
-      if (formattedMetrics.taux_engagement.valeur < 3) {
-        fullHTML += '<h3 style="color: var(--error);">🚨 Actions Urgentes (Taux < 3%)</h3>' +
-          '<ul style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--error);">' +
-            '<li style="color: var(--ink);">🎯 Revoir complètement le hook des 3 premières secondes</li>' +
-            '<li style="color: var(--ink);">📝 Analyser les vidéos virales de votre niche</li>' +
-            '<li style="color: var(--ink);">💡 Tester de nouveaux formats de contenu</li>' +
-            '<li style="color: var(--ink);">🎵 Utiliser des sons tendance</li>' +
-            '<li style="color: var(--ink);">📱 Optimiser pour le mobile (texte lisible, contrastes)</li>' +
-          '</ul>';
-      } else if (formattedMetrics.taux_engagement.valeur < 5) {
-        fullHTML += '<h3 style="color: var(--warning);">⚠️ Améliorations Nécessaires (3-5%)</h3>' +
-          '<ul style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning);">' +
-            '<li style="color: var(--ink);">🎪 Renforcer l\'émotion dans vos vidéos</li>' +
-            '<li style="color: var(--ink);">💬 Inciter davantage aux commentaires (poser des questions)</li>' +
-            '<li style="color: var(--ink);">🔥 Ajouter des éléments surprenants ou controversés</li>' +
-            '<li style="color: var(--ink);">⏰ Optimiser la durée (15-30 secondes optimal)</li>' +
-            '<li style="color: var(--ink);">📢 Améliorer les appels à l\'action</li>' +
-          '</ul>';
-      } else if (formattedMetrics.taux_engagement.valeur < 7) {
-        fullHTML += '<h3 style="color: var(--success);">✅ Bon Engagement - Optimisations (5-7%)</h3>' +
-          '<ul style="background: rgba(34, 197, 94, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">' +
-            '<li style="color: var(--ink);">🚀 Reproduire ce format qui fonctionne bien</li>' +
-            '<li style="color: var(--ink);">📈 Tester des variations sur ce thème</li>' +
-            '<li style="color: var(--ink);">🎯 Affiner le ciblage avec des hashtags de niche</li>' +
-            '<li style="color: var(--ink);">⏰ Publier aux heures d\'activité de votre audience</li>' +
-            '<li style="color: var(--ink);">🔗 Créer une série autour de ce contenu</li>' +
-          '</ul>';
-      } else {
-        fullHTML += '<h3 style="color: var(--success);">🏆 Excellent Engagement (7%+)</h3>' +
-          '<ul style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">' +
-            '<li style="color: var(--ink);">🎯 Contenu de référence - Analysez pourquoi ça marche</li>' +
-            '<li style="color: var(--ink);">📊 Dupliquer cette stratégie sur d\'autres vidéos</li>' +
-            '<li style="color: var(--ink);">🚀 Surfer sur cette performance avec du contenu similaire</li>' +
-            '<li style="color: var(--ink);">📈 Capitaliser sur cet engagement pour grandir</li>' +
-            '<li style="color: var(--ink);">🎪 Expérimenter des variations pour maintenir le niveau</li>' +
-          '</ul>';
-      }
-      
-      // Recommandations générales
-      fullHTML += '<h3 style="color: var(--accent);">💡 Optimisations Générales</h3>' +
-        '<ul style="background: rgba(217, 70, 239, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent);">';
-      
-      if (formattedMetrics.likes.ratio < 5) {
-        fullHTML += '<li style="color: var(--ink);">❤️ Améliorer le ratio de likes : créer du contenu plus "likeable"</li>';
-      }
-      
-      if (formattedMetrics.commentaires.ratio < 1) {
-        fullHTML += '<li style="color: var(--ink);">💬 Stimuler les commentaires : poser des questions, créer du débat</li>';
-      }
-      
-      if (formattedMetrics.partages.ratio < 0.5) {
-        fullHTML += '<li style="color: var(--ink);">📤 Encourager le partage : contenu utile, drôle ou surprenant</li>';
-      }
-      
-      fullHTML += '<li style="color: var(--ink);">📊 Analyser cette vidéo comme référence pour les prochaines</li>' +
-        '<li style="color: var(--ink);">🎯 Tester des variations du format qui fonctionne</li>' +
-      '</ul>' +
-      '</div>';
-      
-      // Footer analyse
-      fullHTML += '<div style="margin-top: 3rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; text-align: center; border: 1px solid var(--accent);">' +
-        '<h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse Framework Complète</h4>' +
-        '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">' +
-          '<div>' +
-            '<div style="font-weight: bold; color: var(--accent);">Score Global</div>' +
-            '<div style="font-size: 1.5rem; font-weight: 800;">' + score + '/100</div>' +
-          '</div>' +
-          '<div>' +
-            '<div style="font-weight: bold; color: var(--accent);">Potentiel Viral</div>' +
-            '<div style="font-size: 1.2rem; font-weight: 700; color: ' + potentielInfo.color + ';">' + potentiel.toUpperCase() + '</div>' +
-          '</div>' +
-          '<div>' +
-            '<div style="font-weight: bold; color: var(--accent);">Piliers Analysés</div>' +
-            '<div style="font-size: 1.2rem; font-weight: 700;">4/4 ✅</div>' +
-          '</div>';
-      
-      if (currentAnalysisId) {
-        fullHTML += '<div>' +
-          '<div style="font-weight: bold; color: var(--accent);">ID Analyse</div>' +
-          '<div style="font-size: 0.9rem; font-weight: 700; font-family: monospace;">' + currentAnalysisId.slice(0, 8) + '</div>' +
-        '</div>';
-      }
-      
-      fullHTML += '</div>';
-      
-      const now = new Date();
-      fullHTML += '<small style="color: var(--muted);">' +
-        '📅 Analyse générée le ' + now.toLocaleString('fr-FR') +
-        '<br>Framework d\'analyse avancé - Tous droits réservés' +
-      '</small>' +
-      '</div>';
-      
-      resultsElement.innerHTML = fullHTML;
+        <!-- Footer analyse -->
+        <div style="margin-top: 3rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; text-align: center; border: 1px solid var(--accent);">
+          <h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse TikTok 2025 Complète</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Score Global</div>
+              <div style="font-size: 1.2rem; font-weight: 700;">${score}/100</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">Niveau</div>
+              <div style="font-size: 1rem; font-weight: 700;">${niveau}</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">SEO Score</div>
+              <div style="font-size: 1rem; font-weight: 700;">${seo.score}/100</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">IA Analysis</div>
+              <div style="font-size: 1rem; font-weight: 700;">✅ Activé</div>
+            </div>
+          </div>
+          <small style="color: var(--muted);">
+            📅 Analyse générée le ${new Date(data.metadata?.analysisTimestamp || Date.now()).toLocaleString('fr-FR')}
+            <br>Analyseur TikTok 2025 - Framework avancé
+            ${data.metadata?.analysisId ? `<br>ID: ${data.metadata.analysisId}` : ''}
+          </small>
+        </div>
+      `;
     }
 
-    // Fonction principale d'analyse - version corrigée
+    // Fonction principale d'analyse
     async function analyzeVideo(event) {
       event.preventDefault();
       
-      const urlInput = document.getElementById('videoUrl');
+      const url = document.getElementById('videoUrl').value.trim();
       const btn = document.getElementById('analyzeBtn');
       const btnText = document.getElementById('btnText');
       
-      if (!urlInput || !btn || !btnText) {
-        console.error('Éléments manquants dans le DOM');
-        return;
-      }
-      
-      const url = urlInput.value.trim();
-      
-      // Validation URL TikTok plus stricte
-      const tiktokPatterns = [
-        /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/,
-        /^https?:\/\/vm\.tiktok\.com\/[\w]+/,
-        /^https?:\/\/www\.tiktok\.com\/t\/[\w]+/
-      ];
-      
-      const isValidTikTokUrl = tiktokPatterns.some(function(pattern) {
-        return pattern.test(url);
-      });
-      
-      if (!isValidTikTokUrl) {
-        showError(
-          'URL TikTok invalide', 
-          'Utilisez le format : https://www.tiktok.com/@username/video/123456789 ou un lien court vm.tiktok.com'
-        );
+      // Validation URL TikTok
+      if (!url.includes('tiktok.com')) {
+        showError('Veuillez entrer une URL TikTok valide (ex: https://www.tiktok.com/@user/video/...)');
         return;
       }
       
       btn.disabled = true;
-      btnText.textContent = 'Analyse en cours...';
+      btnText.textContent = 'Analyse...';
       showLoader();
       
       try {
-        console.log('🚀 Démarrage analyse Framework...');
-        console.log('📍 URL analysée:', url);
-        console.log('⚡ Mode rapide activé');
+        console.log('🚀 Démarrage analyse TikTok 2025...');
         
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ url: url })
+          body: JSON.stringify({ url })
         });
         
-        console.log('📡 Réponse API reçue:', response.status, response.statusText);
-        
         if (!response.ok) {
-          let errorData;
-          try {
-            errorData = await response.json();
-          } catch (parseError) {
-            errorData = { error: 'Erreur HTTP ' + response.status };
-          }
-          
-          // Messages d'erreur personnalisés
-          let userMessage = errorData.error || 'Erreur inconnue';
-          let userDetails = null;
-          
-          switch (response.status) {
-            case 400:
-              userMessage = 'URL TikTok invalide ou incorrecte';
-              userDetails = 'Vérifiez le format de l\'URL et réessayez';
-              break;
-            case 404:
-              userMessage = 'Vidéo TikTok introuvable';
-              userDetails = 'Cette vidéo a peut-être été supprimée ou est privée';
-              break;
-            case 403:
-              userMessage = 'Accès interdit à cette vidéo';
-              userDetails = 'La vidéo est peut-être géo-restreinte ou privée';
-              break;
-            case 429:
-              userMessage = 'Limite de requêtes atteinte';
-              userDetails = 'Attendez quelques minutes avant de réessayer';
-              break;
-            case 500:
-              userMessage = 'Erreur interne du serveur';
-              userDetails = 'Nos serveurs rencontrent des difficultés, réessayez plus tard';
-              break;
-            case 504:
-              userMessage = 'Analyse interrompue pour éviter les timeouts';
-              userDetails = 'Réessayez - la version optimisée devrait être plus rapide';
-              break;
-          }
-          
-          throw new Error(userMessage + (userDetails ? ' - ' + userDetails : ''));
+          const errorData = await response.json().catch(() => ({ error: 'Erreur réseau' }));
+          throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('✅ Données reçues:', {
-          success: data.success,
-          analysisType: data.analysisType,
-          hasStats: !!data.stats,
-          hasAnalysis: !!data.analysis,
-          frameworkVersion: safeGet(data, 'metadata.frameworkVersion')
-        });
+        console.log('✅ Analyse TikTok 2025 reçue:', data);
         
         if (!data.success) {
-          throw new Error(data.error || 'Échec de l\'analyse framework');
+          throw new Error(data.error || 'Échec de l\'analyse');
         }
         
         showResults(data);
         
       } catch (error) {
-        console.error('❌ Erreur lors de l\'analyse:', error);
+        console.error('❌ Erreur analyse:', error);
         
         let errorMessage = error.message;
-        let errorDetails = null;
-        
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-          errorMessage = 'Impossible de contacter le serveur d\'analyse';
-          errorDetails = 'Vérifiez votre connexion internet et réessayez';
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Impossible de contacter le serveur d\'analyse. Vérifiez votre connexion.';
+        } else if (error.message.includes('404')) {
+          errorMessage = 'Vidéo TikTok introuvable. Vérifiez l\'URL ou les permissions de la vidéo.';
+        } else if (error.message.includes('403')) {
+          errorMessage = 'Accès interdit. Cette vidéo est peut-être géo-restreinte ou privée.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Erreur serveur d\'analyse. Réessayez dans quelques instants.';
         }
         
-        showError(errorMessage, errorDetails);
+        showError(errorMessage);
       } finally {
         btn.disabled = false;
         btnText.textContent = 'Analyser';
       }
     }
 
-    // Initialisation et gestion des événements
+    // Initialisation
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ Analyseur de Vidéos PRO initialisé');
-      console.log('⚡ Mode rapide activé');
+      console.log('✅ Analyseur TikTok 2025 initialisé');
       
-      // Restauration du thème
+      // Restaurer le thème
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
       }
       
-      // Auto-focus sur le champ URL
-      const urlInput = document.getElementById('videoUrl');
-      if (urlInput) {
-        urlInput.focus();
-        
-        // Gestion du collage d'URL
-        urlInput.addEventListener('paste', function(e) {
-          setTimeout(function() {
-            const url = e.target.value;
-            if (url && url.includes('tiktok.com')) {
-              console.log('📋 URL TikTok détectée automatiquement');
-              // Validation visuelle
-              e.target.style.borderColor = 'var(--success)';
-              setTimeout(function() {
-                e.target.style.borderColor = '';
-              }, 2000);
-            }
-          }, 100);
-        });
-      }
+      // Auto-focus
+      document.getElementById('videoUrl').focus();
       
-      // Raccourci clavier Ctrl+Enter
+      // Gestion du collage
+      document.getElementById('videoUrl').addEventListener('paste', function(e) {
+        setTimeout(() => {
+          const url = e.target.value;
+          if (url && url.includes('tiktok.com')) {
+            console.log('📋 URL TikTok détectée - Prêt pour analyse 2025');
+          }
+        }, 100);
+      });
+      
+      // Raccourci clavier
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
+        if (e.key === 'Enter' && e.ctrlKey) {
           const form = document.querySelector('form');
           if (form) {
-            analyzeVideo(e);
+            form.dispatchEvent(new Event('submit'));
           }
         }
       });
-      
-      // Gestion des paramètres URL pour les analyses partagées
-      const urlParams = new URLSearchParams(window.location.search);
-      const analysisId = urlParams.get('analysis');
-      if (analysisId) {
-        console.log('🔗 Analyse partagée détectée:', analysisId);
-      }
     });
 
     // Gestion des erreurs globales
     window.addEventListener('error', function(e) {
-      console.error('❌ Erreur JavaScript globale:', e.error);
-      if (e.error && e.error.message) {
-        showError('Erreur inattendue', e.error.message);
-      }
-    });
-
-    // Gestion des erreurs de réseau
-    window.addEventListener('online', function() {
-      console.log('🌐 Connexion rétablie');
-    });
-
-    window.addEventListener('offline', function() {
-      console.log('🔌 Connexion perdue');
-      showError('Connexion internet perdue', 'Vérifiez votre connexion et réessayez');
+      console.error('❌ Erreur JavaScript:', e.error);
     });
   </script>
 </body>
