@@ -714,59 +714,17 @@
 
       const { video, stats, seo, analysis } = data;
       
-      // Si pas de stats, afficher seulement les infos de base
-      if (!stats) {
-        document.getElementById('results').innerHTML = `
-          <div class="success-indicator">
-            <span>✅</span> Vidéo trouvée - Analyse partielle disponible
-          </div>
-          
-          <div class="video-header">
-            ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : '<div style="width:120px;height:150px;background:var(--card-border);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);">Pas d\'image</div>'}
-            
-            <div class="video-info">
-              <h3>📹 Informations de base</h3>
-              
-              ${video?.author ? `
-                <div class="author-info">
-                  <span>👤</span>
-                  <strong>@${video.author}</strong>
-                </div>
-              ` : ''}
-              
-              <div class="video-description">
-                "${video?.description || 'Description non disponible'}"
-              </div>
-              
-              ${video?.hashtags?.length ? `
-                <div class="hashtag-list">
-                  ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
-                </div>
-              ` : ''}
-            </div>
-          </div>
-          
-          <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: 12px;">
-            <p style="color: var(--error); margin: 0;">
-              ⚠️ Analyse limitée - Statistiques détaillées non disponibles
-              <br><small>Configurez ScrapingBee pour une analyse complète Stats • SEO • IA</small>
-            </p>
-          </div>
-        `;
-        return;
-      }
-
-      // Analyse de corrélation
-      const correlation = analyzeCorrelation(stats, stats.metrics);
+      console.log('📊 Données reçues:', data); // DEBUG
       
-      // Score et niveau
-      const score = analysis?.score || 50;
-      const niveau = analysis?.niveau || 'Inconnu';
-      const potentiel = analysis?.potentiel_viral || 'moyen';
+      // TOUJOURS afficher quelque chose, même sans stats détaillées
+      const hasStats = stats && stats.views > 0;
+      const score = analysis?.score || 30;
+      const niveau = analysis?.niveau || 'Analyse partielle';
+      const potentiel = analysis?.potentiel_viral || 'Non déterminé';
 
       document.getElementById('results').innerHTML = `
         <div class="success-indicator">
-          <span>✅</span> Analyse TikTok 2025 terminée
+          <span>✅</span> Analyse TikTok 2025 terminée ${hasStats ? '(Complète)' : '(Partielle)'}
         </div>
         
         <!-- En-tête vidéo -->
@@ -798,11 +756,11 @@
           </div>
         </div>
 
-        <!-- Corrélation ER/Vues -->
-        ${correlation ? `
-          <div class="correlation-alert ${correlation.type}">
-            <strong>${correlation.message}</strong><br>
-            💡 <strong>Recommandation:</strong> ${correlation.recommendation}
+        ${!hasStats ? `
+          <!-- Alerte pas de stats détaillées -->
+          <div class="correlation-alert warning">
+            <strong>⚠️ Analyse partielle</strong><br>
+            Stats détaillées non disponibles (ScrapingBee timeout). Analyse basée sur les données publiques uniquement.
           </div>
         ` : ''}
 
@@ -814,30 +772,37 @@
               <span>📊</span> Stats
             </div>
             <div class="section-content">
-              <div class="metric-item">
-                <span>Vues</span>
-                <span class="metric-value">${stats.formatted?.views || stats.views.toLocaleString()}</span>
-              </div>
-              <div class="metric-item">
-                <span>Taux d'engagement</span>
-                <span class="metric-value ${stats.metrics.engagementRate > 10 ? 'success' : stats.metrics.engagementRate > 5 ? 'warning' : 'error'}">${stats.metrics.engagementRate.toFixed(1)}%</span>
-              </div>
-              <div class="metric-item">
-                <span>Likes</span>
-                <span class="metric-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</span>
-              </div>
-              <div class="metric-item">
-                <span>Commentaires</span>
-                <span class="metric-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</span>
-              </div>
-              <div class="metric-item">
-                <span>Partages</span>
-                <span class="metric-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</span>
-              </div>
-              <div class="metric-item">
-                <span>Ratio partages</span>
-                <span class="metric-value ${stats.metrics.sharesRatio > 0.5 ? 'success' : 'warning'}">${stats.metrics.sharesRatio.toFixed(2)}%</span>
-              </div>
+              ${hasStats ? `
+                <div class="metric-item">
+                  <span>Vues</span>
+                  <span class="metric-value">${stats.formatted?.views || stats.views.toLocaleString()}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Taux d'engagement</span>
+                  <span class="metric-value ${stats.metrics.engagementRate > 10 ? 'success' : stats.metrics.engagementRate > 5 ? 'warning' : 'error'}">${stats.metrics.engagementRate.toFixed(1)}%</span>
+                </div>
+                <div class="metric-item">
+                  <span>Likes</span>
+                  <span class="metric-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Commentaires</span>
+                  <span class="metric-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Partages</span>
+                  <span class="metric-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</span>
+                </div>
+                <div class="metric-item">
+                  <span>Ratio partages</span>
+                  <span class="metric-value ${stats.metrics.sharesRatio > 0.5 ? 'success' : 'warning'}">${stats.metrics.sharesRatio.toFixed(2)}%</span>
+                </div>
+              ` : `
+                <div style="text-align: center; color: var(--muted); padding: 2rem;">
+                  <p>📊 Stats détaillées non disponibles</p>
+                  <small>Les données publiques de base sont utilisées pour l'analyse</small>
+                </div>
+              `}
             </div>
           </div>
 
@@ -913,7 +878,7 @@
 
         <!-- Footer analyse -->
         <div style="margin-top: 3rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; text-align: center; border: 1px solid var(--accent);">
-          <h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse TikTok 2025 Complète</h4>
+          <h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse TikTok 2025 ${hasStats ? 'Complète' : 'Partielle'}</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
             <div>
               <div style="font-weight: bold; color: var(--accent);">Score Global</div>
@@ -936,6 +901,7 @@
             📅 Analyse générée le ${new Date(data.metadata?.analysisTimestamp || Date.now()).toLocaleString('fr-FR')}
             <br>Analyseur TikTok 2025 - Framework avancé
             ${data.metadata?.analysisId ? `<br>ID: ${data.metadata.analysisId}` : ''}
+            ${!hasStats ? '<br>⚠️ Stats détaillées non disponibles (timeout ScrapingBee)' : ''}
           </small>
         </div>
       `;
