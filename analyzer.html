@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="color-scheme" content="dark light"/>
-<title>Analyseur TikTok – PRO</title>
+<title>Analyseur de Vidéos – PRO</title>
 <style>
   :root {
     --bg: #111111;
@@ -540,7 +540,7 @@
 <body>
   <div class="main-layout">
     <header>
-      <h1>🎵 Analyseur TikTok – PRO</h1>
+      <h1>🎵 Analyseur de Vidéos – PRO</h1>
       <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
         <a href="hooks.html" class="nav-link">Hooks</a>
         <a href="cta.html" class="nav-link">Appels à l'Action</a>
@@ -587,7 +587,8 @@
       
       <div id="results">
         <div class="empty-state">
-          🎯 Entrez une URL TikTok pour commencer l'analyse complète selon le framework à 4 piliers
+          🎯 Entrez une URL TikTok pour une analyse complète selon le framework à 4 piliers
+          <br><small style="margin-top: 0.5rem; display: block; opacity: 0.7;">⚡ Version optimisée pour une analyse rapide</small>
         </div>
       </div>
     </div>
@@ -636,20 +637,18 @@
       localStorage.setItem('theme', newTheme);
     }
 
-    // Loader avec étapes
+    // Loader avec étapes (version optimisée)
     function showLoader() {
       const steps = [
         'Validation de l\'URL TikTok...',
         'Récupération des données via oEmbed...',
-        'Extraction des statistiques avec ScrapingBee...',
-        'Analyse du contenu avec OpenAI GPT-4 Vision...',
-        'Transcription audio avec Whisper...',
+        'Extraction des statistiques avancées...',
         'Calcul des métriques d\'engagement...',
         'Analyse créative et structurelle...',
         'Optimisation algorithmique...',
         'Scoring prédictif et comparatif...',
-        'Génération des recommandations IA...',
-        'Finalisation du framework intégré...'
+        'Génération des recommandations...',
+        'Finalisation du framework rapide...'
       ];
       
       let currentStep = 0;
@@ -668,7 +667,7 @@
               '<div class="progress-fill" style="width: ' + (((currentStep + 1) / steps.length) * 100) + '%"></div>' +
             '</div>' +
             '<p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">' +
-              'Étape ' + (currentStep + 1) + '/' + steps.length + ' - Framework d\'analyse TikTok PRO v5.0' +
+              'Étape ' + (currentStep + 1) + '/' + steps.length + ' - Analyse Framework' +
             '</p>' +
           '</div>';
       }
@@ -678,7 +677,7 @@
       const interval = setInterval(function() {
         currentStep = (currentStep + 1) % steps.length;
         updateStep();
-      }, 1200);
+      }, 2800); // Ralenti de 1200ms à 2800ms pour une meilleure lisibilité
       
       window.loaderInterval = interval;
     }
@@ -822,10 +821,10 @@
         
         basicHTML += '</div></div>';
         
-        basicHTML += '<div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 1rem; border-radius: 12px;">' +
-          '<p style="color: var(--warning); margin: 0;">' +
-            '⚠️ <strong>Analyse limitée</strong> - Statistiques détaillées non disponibles' +
-            '<br><small>Cette vidéo ne permet pas l\'extraction complète des métriques. Seules les informations de base sont affichées.</small>' +
+        basicHTML += '<div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 1rem; border-radius: 12px;">' +
+          '<p style="color: var(--info); margin: 0;">' +
+            '⚡ <strong>Analyse rapide complétée</strong> - Version optimisée' +
+            '<br><small>Les statistiques détaillées ne sont pas disponibles pour cette vidéo, mais l\'analyse de base est fonctionnelle.</small>' +
           '</p>' +
         '</div>';
         
@@ -1071,7 +1070,7 @@
       const now = new Date();
       fullHTML += '<small style="color: var(--muted);">' +
         '📅 Analyse générée le ' + now.toLocaleString('fr-FR') +
-        '<br>Framework TikTok PRO v5.0 - Tous droits réservés' +
+        '<br>Framework d\'analyse avancé - Tous droits réservés' +
       '</small>' +
       '</div>';
       
@@ -1117,8 +1116,9 @@
       showLoader();
       
       try {
-        console.log('🚀 Démarrage analyse Framework TikTok PRO v5.0...');
+        console.log('🚀 Démarrage analyse Framework...');
         console.log('📍 URL analysée:', url);
+        console.log('⚡ Mode rapide activé');
         
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
@@ -1163,6 +1163,10 @@
               userMessage = 'Erreur interne du serveur';
               userDetails = 'Nos serveurs rencontrent des difficultés, réessayez plus tard';
               break;
+            case 504:
+              userMessage = 'Analyse interrompue pour éviter les timeouts';
+              userDetails = 'Réessayez - la version optimisée devrait être plus rapide';
+              break;
           }
           
           throw new Error(userMessage + (userDetails ? ' - ' + userDetails : ''));
@@ -1203,7 +1207,8 @@
 
     // Initialisation et gestion des événements
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ Analyseur TikTok Framework PRO v5.0 initialisé');
+      console.log('✅ Analyseur de Vidéos PRO initialisé');
+      console.log('⚡ Mode rapide activé');
       
       // Restauration du thème
       const savedTheme = localStorage.getItem('theme');
