@@ -107,8 +107,8 @@
     }
 
     function showResults(data) {
-        const { video, stats, metrics, analysis, transcription } = data;
-
+        const { video, stats, metrics, analysis, audioAnalysis } = data;
+        
         const tab1_synthesis = `
             <div class="grid-2">
                 <div class="info-card"><h3>✅ Points Forts</h3><ul>${analysis.points_forts.map(i => `<li>${i}</li>`).join('')}</ul></div>
@@ -116,7 +116,7 @@
                 <div class="info-card" style="grid-column: 1 / -1;"><h3>💡 Suggestions</h3><ul>${analysis.suggestions.map(o => `<li>${o}</li>`).join('')}</ul></div>
             </div>`;
         
-        const segments = transcription?.segments?.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('') || '<p class="muted">Transcription non disponible.</p>';
+        const segments = audioAnalysis?.segments?.map(seg => `<div class="transcription-segment"><p class="timestamp">${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s</p><p>${seg.text}</p></div>`).join('') || '<p class="muted">Transcription non disponible.</p>';
         const tab2_transcription = `<div>${segments}</div>`;
         
         const tab3_framework = `
