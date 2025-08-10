@@ -520,6 +520,48 @@
       try {
         console.log('📡 Envoi de la requête à l\'API...');
         
+        // 🚨 MODE DEBUG: Décommentez cette section pour tester avec des données mockées
+        /*
+        console.log('⚠️ Mode debug activé - utilisation de données mockées');
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulation délai
+        const mockData = {
+          success: true,
+          video: {
+            url: url,
+            description: "Vidéo TikTok de test analysée avec succès",
+            thumbnail: "https://via.placeholder.com/300x300"
+          },
+          stats: {
+            views: 2500000,
+            likes: 156200,
+            comments: 8900,
+            shares: 12300,
+            duration: 58,
+            formatted: {
+              views: "2.5M",
+              likes: "156.2K", 
+              comments: "8.9K",
+              shares: "12.3K"
+            }
+          },
+          metrics: {
+            engagementRate: 12.4,
+            likesRatio: 6.2
+          },
+          analysis: {
+            score: 85,
+            potentiel_viral: "élevé",
+            points_forts: ["Excellent taux d'engagement", "Contenu viral", "Timing parfait"],
+            points_faibles: ["Pourrait améliorer les hashtags"],
+            suggestions: ["Poster à 19h-21h", "Utiliser plus de trending sounds", "Ajouter des call-to-action"]
+          },
+          timestamp: new Date().toISOString()
+        };
+        showResults(mockData);
+        return;
+        */
+        // 🚨 FIN MODE DEBUG
+        
         // Appel à votre API réelle
         const response = await fetch('/api/analyze-tiktok', {
           method: 'POST',
