@@ -7,9 +7,9 @@
 <title>Analyseur de Vidéo – PRO</title>
 <style>
   :root {
-    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(217,70,239,0.2),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #d946ef; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%); --accent-strong: #c026d3; --option-bg: #1E1E22; --radius: 16px; --font-sans: 'Inter', system-ui, sans-serif;
+    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(217,70,239,0.2),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #d946ef; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%); --accent-strong: #c026d3; --radius: 16px; --font-sans: 'Inter', system-ui, sans-serif;
   }
-  [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%); --option-bg: #FFFFFF; }
+  [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%); }
   * { box-sizing: border-box; } body { margin: 0; background-color: var(--bg); background-image: var(--bg-glow); background-attachment: fixed; color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; }
   .main-layout { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
   @media(min-width: 960px) { .main-layout { grid-template-columns: 450px 1fr; } }
@@ -33,10 +33,15 @@
   .loader { text-align: center; padding: 2rem; }
   .spinner { width: 32px; height: 32px; border: 4px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .analysis-grid { display: grid; gap: 1rem; }
-  .analysis-score { text-align: center; }
-  .score-value { font-size: 3rem; font-weight: 800; color: var(--accent); line-height: 1; }
-  .analysis-list h3 { font-size: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; }
+  [data-theme="light"] .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; }
+  .stat-card-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .stat-card-value { font-size: 1.5rem; font-weight: 700; }
+  .er-card { grid-column: 1 / -1; text-align: center; }
+  .er-value { font-size: 2rem; font-weight: 800; }
+  .er-value.good { color: #22c55e; } .er-value.medium { color: #f59e0b; } .er-value.bad { color: #ef4444; }
+  .analysis-list h3 { font-size: 1rem; margin-top:1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; }
   .analysis-list ul { margin: 0; padding: 0; list-style: none; }
   .analysis-list li { margin-bottom: 0.5rem; font-size: 14px; }
 </style>
@@ -80,7 +85,94 @@
   </div>
 
 <script>
-  // Script complet pour l'analyseur (inchangé par rapport aux versions précédentes)
+  const $ = id => document.getElementById(id);
+
+  function displayLoading() {
+    $('results').innerHTML = `<div class="loader"><div class="spinner"></div><p class="muted">Analyse en cours... (peut prendre jusqu'à 30 secondes)</p></div>`;
+  }
+
+  function displayError(message) {
+    $('results').innerHTML = `<p style="color: #f87171;">${message}</p>`;
+  }
+
+  function getErClass(er) {
+    const rate = parseFloat(er);
+    if (rate >= 5) return 'good';
+    if (rate >= 2) return 'medium';
+    return 'bad';
+  }
+
+  function formatNumber(num) {
+      return new Intl.NumberFormat('fr-FR').format(num);
+  }
+
+  function displayResults(data) {
+    const { stats, engagementRate, analysis } = data;
+    const { score, points_forts, points_faibles, suggestions } = analysis;
+    $('results').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card er-card">
+          <div class="stat-card-title">Taux d'engagement</div>
+          <div class="stat-card-value er-value ${getErClass(engagementRate)}">${engagementRate}%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Vues</div>
+          <div class="stat-card-value">${formatNumber(stats.views)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">J'aime</div>
+          <div class="stat-card-value">${formatNumber(stats.likes)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Commentaires</div>
+          <div class="stat-card-value">${formatNumber(stats.comments)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Partages</div>
+          <div class="stat-card-value">${formatNumber(stats.shares)}</div>
+        </div>
+      </div>
+      <div class="analysis-list">
+        <h3>Analyse IA (Score: ${score || '?'}/100)</h3>
+        <ul>${points_forts.map(item => `<li><b>[+]</b> ${item}</li>`).join('')}</ul>
+        <ul>${points_faibles.map(item => `<li><b>[-]</b> ${item}</li>`).join('')}</ul>
+        <h3>Suggestions 💡</h3>
+        <ul>${suggestions.map(item => `<li>${item}</li>`).join('')}</ul>
+      </div>
+    `;
+  }
+
+  $('analyzeBtn').onclick = async () => {
+    const url = $('tiktok_url').value.trim();
+    if (!url.includes('tiktok.com')) {
+      displayError("Veuillez entrer une URL TikTok valide.");
+      return;
+    }
+
+    displayLoading();
+    $('analyzeBtn').disabled = true;
+
+    try {
+      const res = await fetch('/api/analyze-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Une erreur inconnue est survenue.");
+      }
+
+      const fullAnalysis = await res.json();
+      displayResults(fullAnalysis);
+
+    } catch (err) {
+      displayError(`Erreur: ${err.message}`);
+    } finally {
+      $('analyzeBtn').disabled = false;
+    }
+  };
 </script>
 </body>
 </html>
