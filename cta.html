@@ -7,10 +7,10 @@
 <title>Générateur d'Appels à l'Action – PRO</title>
 <style>
   :root {
-    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(34,197,94,0.3),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #22c55e; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(34, 197, 94, 0.15), transparent 80%); --accent-strong: #16a34a; --option-bg: #1E1E22; --radius: 16px; --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(34,197,94,0.3),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent: #22c55e; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(34, 197, 94, 0.15), transparent 80%); --accent-strong: #16a34a; --option-bg: #1E1E22; --radius: 16px; --font-sans: 'Inter', system-ui, sans-serif;
   }
   [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(34, 197, 94, 0.06), transparent 80%); --option-bg: #FFFFFF; }
-  * { box-sizing: border-box; } body { margin: 0; background-color: var(--bg); background-image: var(--bg-glow); background-attachment: fixed; color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
+  * { box-sizing: border-box; } body { margin: 0; background-color: var(--bg); background-image: var(--bg-glow); background-attachment: fixed; color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; }
   .main-layout { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
   @media(min-width: 960px) { .main-layout { grid-template-columns: 420px 1fr; } }
   header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -19,7 +19,7 @@
   [data-theme="light"] .nav-link { background: var(--card-bg); }
   .nav-link.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .nav-link:not(.active):hover { background: rgba(255,255,255,0.1); }
-  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; position: relative; overflow: hidden; backdrop-filter: blur(20px); }
+  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; }
   .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
   .card-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
   .icon { width: 24px; height: 24px; color: var(--muted); }
@@ -49,7 +49,6 @@
 </style>
 </head>
 <body>
-
   <div class="main-layout">
     <header>
       <h1>Générateur d'Appels à l'Action 📣</h1>
@@ -60,22 +59,20 @@
         <a href="history.html" class="nav-link">Historique</a>
       </nav>
     </header>
-
     <div class="card" id="settings-card">
       <div class="card-header">
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         <h2>Paramètres du CTA</h2>
       </div>
-
       <div class="form-grid">
         <div class="full-width">
             <label for="cta_goal">Objectif principal du CTA</label>
             <select id="cta_goal">
               <option value="s'abonner">Inciter à s'abonner</option>
               <option value="commenter">Inciter à commenter</option>
-              <option value="aimer">Inciter à aimer la vidéo</option>
+              <option value="aimer">Inciter à aimer</option>
               <option value="partager">Inciter à partager</option>
-              <option value="lien_bio">Promouvoir un lien (en bio, etc.)</option>
+              <option value="lien_bio">Promouvoir un lien (bio, etc.)</option>
               <option value="acheter">Promouvoir un produit/service</option>
               <option value="newsletter">Inscription à une newsletter</option>
             </select>
@@ -83,13 +80,13 @@
         <div class="form-grid cols-2 full-width">
             <div>
               <label for="niche">Niche / Domaine</label>
-              <input id="niche" type="text" placeholder="ex: Fitness, Business en ligne..."/>
+              <input id="niche" type="text" placeholder="ex: Fitness, Business..."/>
             </div>
             <div>
               <label for="tone">Ton</label>
               <select id="tone">
                 <option value="enthousiaste" selected>Enthousiaste</option>
-                <option value="bienveillant">Bienveillant / Doux</option>
+                <option value="bienveillant">Doux / Bienveillant</option>
                 <option value="directif">Directif / Cash</option>
                 <option value="humour">Humour</option>
                 <option value="urgent">Urgent / FOMO</option>
@@ -98,16 +95,14 @@
         </div>
         <div class="full-width">
           <label for="benefit">Bénéfice / Contexte (optionnel)</label>
-          <textarea id="benefit" placeholder="ex: Pour ne pas rater la partie 2, pour recevoir le guide PDF, car le produit est à -50%..."></textarea>
+          <textarea id="benefit" placeholder="ex: Pour ne pas rater la partie 2..."></textarea>
         </div>
-        
-        <div class="full-width" style="margin-top: 1rem; display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+        <div class="full-width" style="margin-top: 1rem;">
           <button id="boost" class="btn primary">Générer les CTA</button>
           <div id="loader"><div class="spinner"></div></div>
         </div>
       </div>
     </div>
-
     <div class="card" id="results-card">
        <div class="card-header">
         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -118,9 +113,50 @@
       </div>
     </div>
   </div>
-
 <script>
-  // Script complet pour le générateur de CTA (inchangé par rapport aux versions précédentes)
+  const $ = id => document.getElementById(id);
+  const KEY = 'hgpp_cta_history_v1';
+  function payload(){
+    return {
+      niche: $('niche').value.trim(), tone: $('tone').value,
+      cta_goal: $('cta_goal').value, benefit: $('benefit').value.trim(),
+      count: 10
+    };
+  }
+  function loadHistory(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return[];} }
+  function saveHistory(l){ try{localStorage.setItem(KEY,JSON.stringify(l));}catch{} }
+  function addHistory(e){ const l=loadHistory(); l.unshift(e); if(l.length>200) l.pop(); saveHistory(l); }
+  function renderResults(ctas){
+    const box = $('list'); box.innerHTML = '';
+    if (!ctas || !ctas.length) { box.innerHTML = '<p class="muted">Aucun CTA généré.</p>'; return; }
+    ctas.forEach(c=>{
+      const row = document.createElement('div'); row.className = 'result-item';
+      const textEl = document.createElement('span'); textEl.className = 'text'; textEl.textContent = c;
+      const copyBtn = document.createElement('button'); copyBtn.className = 'copy-btn';
+      copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+      copyBtn.title = "Copier";
+      copyBtn.onclick = () => { navigator.clipboard.writeText(c).then(()=> { copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>`; setTimeout(()=>{ copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`; }, 1400); })};
+      row.appendChild(textEl); row.appendChild(copyBtn); box.appendChild(row);
+    });
+  }
+  function saveSession(ctx, ctas){ const id = (Date.now().toString(36) + Math.random().toString(36).slice(2,7)).toUpperCase(); addHistory({ id, ts: new Date().toISOString(), ...ctx, ctas }); }
+  async function generate() {
+    const p = payload();
+    if(!p.niche || !p.cta_goal){ alert('Niche et Objectif sont obligatoires.'); return; }
+    const boostBtn = $('boost'), loader = $('loader');
+    boostBtn.disabled = true; loader.style.display = 'block'; $('list').innerHTML = '';
+    try {
+      const r = await fetch('/api/generate-ctas',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(p) });
+      if(!r.ok){ $('list').innerHTML = `<p class="muted">Erreur API: ${await r.text()}</p>`; return; }
+      const { ctas = [] } = await r.json();
+      saveSession(p, ctas); renderResults(ctas);
+    } catch (err) {
+      $('list').innerHTML = `<p class="muted">Erreur de connexion.</p>`;
+    } finally {
+      boostBtn.disabled = false; loader.style.display = 'none';
+    }
+  }
+  $('boost').onclick = generate;
 </script>
 </body>
 </html>
