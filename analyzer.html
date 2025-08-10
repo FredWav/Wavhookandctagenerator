@@ -4,105 +4,44 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="color-scheme" content="dark light"/>
-<title>Analyseur TikTok 2025 – PRO</title>
+<title>Analyseur TikTok – DEBUG</title>
 <style>
   :root {
     --bg: #111111;
-    --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0));
     --card-bg: rgba(24, 24, 27, 0.7);
     --card-border: rgba(255, 255, 255, 0.1);
     --ink: #E4E4E7;
     --muted: #A1A1AA;
     --accent: #d946ef;
-    --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.15), transparent 80%);
     --accent-strong: #c026d3;
-    --success: #22c55e;
+    --success: #10b981;
     --warning: #f59e0b;
     --error: #ef4444;
     --radius: 16px;
-    --font-sans: 'Inter', system-ui, sans-serif;
-  }
-  
-  [data-theme="light"] {
-    --bg: #F7F8FA;
-    --bg-glow: none;
-    --card-bg: #FFFFFF;
-    --card-border: #E5E7EB;
-    --ink: #111827;
-    --muted: #6B7280;
-    --accent-glow: radial-gradient(400px at var(--x) var(--y), rgba(217, 70, 239, 0.06), transparent 80%);
   }
   
   * { box-sizing: border-box; }
   
   body {
     margin: 0;
-    background-color: var(--bg);
-    background-image: var(--bg-glow);
-    background-attachment: fixed;
+    background: var(--bg);
     color: var(--ink);
-    font-family: var(--font-sans);
+    font-family: system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.6;
   }
   
-  .main-layout {
-    max-width: 1400px;
+  .container {
+    max-width: 800px;
     margin: 0 auto;
     padding: 2rem 1rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  
-  @media(min-width: 960px) {
-    .main-layout {
-      grid-template-columns: 450px 1fr;
-    }
-  }
-  
-  header {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
   }
   
   h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .nav-link {
-    color: var(--ink);
-    text-decoration: none;
-    border: 1px solid var(--card-border);
-    padding: 8px 16px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.05);
-    transition: all 0.2s ease;
-  }
-  
-  [data-theme="light"] .nav-link {
-    background: var(--card-bg);
-  }
-  
-  .nav-link.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-  }
-  
-  .nav-link:not(.active):hover {
-    background: rgba(255,255,255,0.1);
-    transform: translateY(-1px);
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 700;
   }
   
   .card {
@@ -110,33 +49,36 @@
     border: 1px solid var(--card-border);
     border-radius: var(--radius);
     padding: 24px;
-    backdrop-filter: blur(10px);
+    margin-bottom: 1.5rem;
   }
   
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
+  .debug-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
   }
   
-  .card-header h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
+  .debug-log {
+    margin: 2px 0;
+    padding: 2px 4px;
+    border-radius: 3px;
   }
   
-  .icon {
-    width: 24px;
-    height: 24px;
-    color: var(--muted);
-  }
+  .debug-log.info { background: rgba(59, 130, 246, 0.2); }
+  .debug-log.success { background: rgba(16, 185, 129, 0.2); }
+  .debug-log.warning { background: rgba(245, 158, 11, 0.2); }
+  .debug-log.error { background: rgba(239, 68, 68, 0.2); }
   
   label {
-    font-weight: 500;
     display: block;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-weight: 500;
     color: var(--muted);
   }
   
@@ -148,11 +90,6 @@
     background: rgba(0,0,0,0.2);
     color: var(--ink);
     font-size: 15px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  [data-theme="light"] input[type="url"] {
-    background: rgba(255,255,255,0.8);
   }
   
   input[type="url"]:focus {
@@ -162,427 +99,149 @@
   }
   
   .btn {
-    border: 0;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    transition: all 0.2s ease;
-    min-width: 120px;
-  }
-  
-  .btn.primary {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
     background: var(--accent);
-    color: #fff;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
   }
   
-  .btn.primary:hover:not(:disabled) {
+  .btn:hover:not(:disabled) {
     background: var(--accent-strong);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
   }
   
   .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none !important;
   }
   
-  #results {
-    min-height: 200px;
-  }
-  
-  .loader {
-    text-align: center;
-    padding: 2rem;
+  .btn.clear {
+    background: var(--warning);
+    margin-left: 8px;
   }
   
   .spinner {
-    width: 32px;
-    height: 32px;
-    border: 4px solid var(--card-border);
-    border-top-color: var(--accent);
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto 16px auto;
   }
   
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
   
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    margin-top: 2rem;
+  .status {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    margin: 8px 0;
   }
   
-  @media(min-width: 960px) {
-    .results-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .status.info {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
   }
   
-  .section-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius);
-    padding: 24px;
-    transition: all 0.3s ease;
+  .status.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
   }
   
-  .section-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  .status.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
   }
   
-  .section-card.stats { border-left: 4px solid #3b82f6; }
-  .section-card.seo { border-left: 4px solid var(--success); }
-  .section-card.analysis { border-left: 4px solid var(--accent); }
-  
-  .section-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .results {
+    min-height: 100px;
   }
   
-  .section-content {
-    font-size: 0.9rem;
-    line-height: 1.6;
-  }
-  
-  .metric-item {
+  .metric {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--card-border);
   }
   
-  .metric-item:last-child {
-    border-bottom: none;
-  }
+  .metric:last-child { border-bottom: none; }
   
   .metric-value {
     font-weight: 600;
     color: var(--accent);
   }
   
-  .metric-value.success { color: var(--success); }
-  .metric-value.warning { color: var(--warning); }
-  .metric-value.error { color: var(--error); }
-  
-  .score-circle {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    position: relative;
-    background: conic-gradient(var(--accent) 0deg, var(--accent) calc(var(--score) * 3.6deg), rgba(255,255,255,0.1) calc(var(--score) * 3.6deg));
-  }
-  
-  .score-inner {
-    width: 80px;
-    height: 80px;
-    background: var(--card-bg);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-  
-  .score-number {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--accent);
-  }
-  
-  .score-label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  
-  .hashtag-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-  }
-  
-  .hashtag-item {
-    background: rgba(34, 197, 94, 0.1);
-    color: var(--success);
-    padding: 0.25rem 0.5rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-  
-  .hashtag-item.trending {
-    background: rgba(217, 70, 239, 0.1);
-    color: var(--accent);
-  }
-  
-  .video-header {
+  .grid {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1.5rem;
-    align-items: start;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1));
-    border-radius: var(--radius);
-    border: 1px solid var(--accent);
-  }
-  
-  .video-thumbnail {
-    width: 120px;
-    height: auto;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  }
-  
-  .video-info h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
-    color: var(--accent);
-  }
-  
-  .video-description {
-    color: var(--muted);
-    font-style: italic;
-    margin: 0.5rem 0;
-    line-height: 1.5;
-  }
-  
-  .author-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-  }
-  
-  .correlation-alert {
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid var(--warning);
-    color: var(--warning);
-    padding: 1rem;
-    border-radius: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
     margin: 1rem 0;
-    font-weight: 500;
   }
   
-  .correlation-alert.success {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: var(--success);
-    color: var(--success);
-  }
-  
-  .ai-recommendations {
-    background: linear-gradient(135deg, rgba(217, 70, 239, 0.05), rgba(59, 130, 246, 0.05));
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-top: 1rem;
-  }
-  
-  .ai-recommendations h4 {
-    margin: 0 0 1rem 0;
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .recommendations-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .recommendations-list li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    color: var(--ink);
-  }
-  
-  .recommendations-list li:last-child {
-    border-bottom: none;
-  }
-  
-  .theme-toggle {
-    background: none;
-    border: 1px solid var(--card-border);
-    color: var(--ink);
-    padding: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 1.2rem;
-  }
-  
-  .theme-toggle:hover {
-    background: rgba(255,255,255,0.1);
-    transform: scale(1.1);
-  }
-  
-  .error-message {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: var(--error);
+  .stat-card {
+    background: rgba(255,255,255,0.05);
     padding: 1rem;
-    border-radius: 12px;
-    margin-top: 1rem;
-    animation: shake 0.5s ease-in-out;
+    border-radius: 8px;
+    text-align: center;
   }
   
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
   }
   
-  .success-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--success);
-    font-weight: 500;
-    margin-bottom: 1rem;
-  }
-  
-  .progress-bar {
-    width: 100%;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-top: 1rem;
-  }
-  
-  .progress-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    animation: loading 2s ease-in-out infinite;
-  }
-  
-  @keyframes loading {
-    0% { width: 0%; }
-    50% { width: 70%; }
-    100% { width: 100%; }
-  }
-  
-  .seo-suggestions {
-    margin-top: 1rem;
-  }
-  
-  .seo-suggestions h5 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    color: var(--success);
-  }
-  
-  .niveau-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
+  .stat-label {
     font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .niveau-badge.viral {
-    background: rgba(34, 197, 94, 0.2);
-    color: var(--success);
-  }
-  
-  .niveau-badge.performant {
-    background: rgba(59, 130, 246, 0.2);
-    color: #3b82f6;
-  }
-  
-  .niveau-badge.correct {
-    background: rgba(245, 158, 11, 0.2);
-    color: var(--warning);
-  }
-  
-  .niveau-badge.debutant {
-    background: rgba(239, 68, 68, 0.2);
-    color: var(--error);
+    color: var(--muted);
+    margin-top: 4px;
   }
 </style>
 </head>
 <body>
-  <div class="main-layout">
-    <header>
-      <h1>🎵 Analyseur TikTok 2025</h1>
-      <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <a href="./hooks.html" class="nav-link">Hooks</a>
-        <a href="./cta.html" class="nav-link">Appels à l'Action</a>
-        <a href="./analyzer.html" class="nav-link active">Analyseur</a>
-        <a href="./history.html" class="nav-link">Historique</a>
-        <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">🌓</button>
-      </nav>
-    </header>
+  <div class="container">
+    <h1>🔍 Analyseur TikTok - Mode DEBUG</h1>
     
     <div class="card">
-      <div class="card-header">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-        </svg>
-        <h2>Analyser une vidéo TikTok</h2>
+      <h2>Analyse de vidéo TikTok</h2>
+      
+      <label for="videoUrl">URL de la vidéo TikTok</label>
+      <input 
+        type="url" 
+        id="videoUrl" 
+        placeholder="https://www.tiktok.com/@username/video/..."
+      />
+      
+      <div style="margin-top: 1rem;">
+        <button id="analyzeBtn" class="btn" onclick="analyzeVideo()">
+          <span id="spinner" class="spinner" style="display: none;"></span>
+          <span id="btnText">🚀 Analyser</span>
+        </button>
+        <button class="btn clear" onclick="clearDebug()">🗑️ Clear Debug</button>
       </div>
       
-      <form onsubmit="analyzeVideo(event)">
-        <label for="videoUrl">URL de la vidéo TikTok</label>
-        <input 
-          type="url" 
-          id="videoUrl" 
-          placeholder="https://www.tiktok.com/@username/video/..." 
-          required
-        />
-        <br><br>
-        <button type="submit" class="btn primary" id="analyzeBtn">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-            <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 10.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
-          </svg>
-          <span id="btnText">Analyser</span>
-        </button>
-      </form>
+      <div id="status"></div>
     </div>
     
     <div class="card">
-      <div class="card-header">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-        <h2>Analyse TikTok 2025</h2>
+      <h2>🐛 Console de Debug</h2>
+      <div id="debugPanel" class="debug-panel">
+        <div class="debug-log info">🔧 Analyseur en mode debug - Prêt pour les tests</div>
       </div>
-      
-      <div id="results">
-        <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          🎯 Entrez une URL TikTok pour commencer l'analyse complète<br>
-          <small style="opacity: 0.7;">Stats • SEO • Analysis IA</small>
-        </p>
+    </div>
+    
+    <div class="card">
+      <h2>📊 Résultats</h2>
+      <div id="results" class="results">
+        <p style="color: var(--muted); text-align: center;">Les résultats apparaîtront ici...</p>
       </div>
     </div>
   </div>
@@ -590,443 +249,259 @@
   <script>
     // Configuration
     const API_ENDPOINT = '/api/analyze-video';
-
-    // Fonction pour basculer entre thème sombre et clair
-    function toggleTheme() {
-      const html = document.documentElement;
-      const currentTheme = html.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-    }
-
-    // Fonction pour afficher le loader
-    function showLoader() {
-      const steps = [
-        '🔍 Validation de l\'URL TikTok...',
-        '📡 Récupération via oEmbed...',
-        '🕷️ Extraction données ScrapingBee...',
-        '📊 Calcul des métriques...',
-        '🎯 Analyse SEO TikTok 2025...',
-        '🤖 Génération analyse IA...',
-        '💾 Sauvegarde base de données...',
-        '✅ Finalisation de l\'analyse...'
-      ];
+    let requestTimeout;
+    
+    // Fonction de debug avec timestamps
+    function debugLog(type, message, data = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      const debugPanel = document.getElementById('debugPanel');
       
-      let currentStep = 0;
+      const logDiv = document.createElement('div');
+      logDiv.className = `debug-log ${type}`;
+      logDiv.innerHTML = `[${timestamp}] ${message}`;
       
-      const updateStep = () => {
-        document.getElementById('results').innerHTML = `
-          <div class="loader">
-            <div class="spinner"></div>
-            <p style="margin-top: 1rem; color: var(--muted); font-weight: 500; font-size: 0.95rem;">
-              ${steps[currentStep]}
-            </p>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: ${((currentStep + 1) / steps.length) * 100}%"></div>
-            </div>
-            <p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">
-              Étape ${currentStep + 1}/${steps.length} - Analyseur TikTok 2025
-            </p>
-          </div>
-        `;
-      };
-      
-      updateStep();
-      
-      const interval = setInterval(() => {
-        currentStep = (currentStep + 1) % steps.length;
-        updateStep();
-      }, 1500);
-      
-      window.loaderInterval = interval;
-    }
-
-    // Fonction pour afficher les erreurs
-    function showError(message) {
-      if (window.loaderInterval) {
-        clearInterval(window.loaderInterval);
+      if (data) {
+        logDiv.innerHTML += `<br>📊 ${JSON.stringify(data, null, 2)}`;
       }
       
-      document.getElementById('results').innerHTML = `
-        <div class="error-message">
-          <strong>❌ Erreur :</strong> ${message}
-          <br><br>
-          <small style="opacity: 0.8;">
-            💡 <strong>Conseils :</strong> Vérifiez que l'URL est correcte et que la vidéo est publique.
-          </small>
-        </div>
-      `;
+      debugPanel.appendChild(logDiv);
+      debugPanel.scrollTop = debugPanel.scrollHeight;
+      
+      // Log aussi dans la console du navigateur
+      console.log(`[TikTok Analyzer] ${type.toUpperCase()}: ${message}`, data || '');
     }
-
-    // Fonction pour créer le cercle de score
-    function createScoreCircle(score, label) {
-      return `
-        <div class="score-circle" style="--score: ${score || 0}">
-          <div class="score-inner">
-            <div class="score-number">${score || 'N/A'}</div>
-            <div class="score-label">${label}</div>
-          </div>
-        </div>
-      `;
+    
+    // Fonction pour afficher le statut
+    function setStatus(type, message) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
     }
-
-    // Fonction pour déterminer la corrélation ER/Vues
-    function analyzeCorrelation(stats, metrics) {
-      if (!stats || !metrics) return null;
-      
-      const er = metrics.engagementRate;
-      const views = stats.views;
-      
-      if (er > 5 && views < 10000) {
-        return {
-          type: 'warning',
-          message: '⚠️ Bon taux d\'engagement mais peu de vues - Hook probablement trop faible',
-          recommendation: 'Optimisez votre accroche dans les 3 premières secondes'
-        };
-      } else if (er > 10 && views > 100000) {
-        return {
-          type: 'success',
-          message: '🚀 Excellente corrélation ER/Vues - Contenu viral !',
-          recommendation: 'Reproduisez cette stratégie sur vos prochaines vidéos'
-        };
-      } else if (er < 2 && views > 50000) {
-        return {
-          type: 'warning',
-          message: '📈 Bonnes vues mais faible engagement - Contenu pas assez captivant',
-          recommendation: 'Travaillez sur l\'engagement: questions, CTAs, interaction'
-        };
-      }
-      
-      return null;
+    
+    // Fonction pour clear le debug
+    function clearDebug() {
+      const debugPanel = document.getElementById('debugPanel');
+      debugPanel.innerHTML = '<div class="debug-log info">🔧 Debug panel cleared</div>';
+      document.getElementById('results').innerHTML = '<p style="color: var(--muted); text-align: center;">Les résultats apparaîtront ici...</p>';
+      setStatus('info', '🔄 Debug panel et résultats effacés');
     }
-
-    // Fonction pour afficher les résultats
-    function showResults(data) {
-      if (window.loaderInterval) {
-        clearInterval(window.loaderInterval);
-      }
-      
-      if (!data || !data.success) {
-        showError('Données invalides reçues de l\'API');
-        return;
-      }
-
-      const { video, stats, seo, analysis } = data;
-      
-      console.log('📊 Données reçues:', data); // DEBUG
-      
-      // TOUJOURS afficher quelque chose, même sans stats détaillées
-      const hasStats = stats && stats.views > 0;
-      const score = analysis?.score || 30;
-      const niveau = analysis?.niveau || 'Analyse partielle';
-      const potentiel = analysis?.potentiel_viral || 'Non déterminé';
-
-      document.getElementById('results').innerHTML = `
-        <div class="success-indicator">
-          <span>✅</span> Analyse TikTok 2025 terminée ${hasStats ? '(Complète)' : '(Partielle)'}
-        </div>
-        
-        <!-- En-tête vidéo -->
-        <div class="video-header">
-          ${video?.thumbnail ? `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">` : '<div style="width:120px;height:150px;background:var(--card-border);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);">Pas d\'image</div>'}
-          
-          <div class="video-info">
-            <h3>🎬 ${video?.author ? `@${video.author}` : 'Vidéo TikTok'}</h3>
-            
-            <div class="author-info">
-              ${video?.authorFollowers ? `<span>👥 ${video.formatted?.followers || video.authorFollowers.toLocaleString()} abonnés</span>` : ''}
-              ${video?.music ? `<span>🎵 ${video.music}</span>` : ''}
-            </div>
-            
-            <div class="video-description">
-              "${video?.description || 'Description non disponible'}"
-            </div>
-            
-            ${video?.hashtags?.length ? `
-              <div class="hashtag-list">
-                ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
-              </div>
-            ` : ''}
-            
-            <div style="margin-top: 1rem;">
-              <span class="niveau-badge ${niveau.toLowerCase().replace(' ', '')}">${niveau}</span>
-              <strong style="margin-left: 1rem; color: var(--accent);">Score: ${score}/100</strong>
-            </div>
-          </div>
-        </div>
-
-        ${!hasStats ? `
-          <!-- Alerte pas de stats détaillées -->
-          <div class="correlation-alert warning">
-            <strong>⚠️ Analyse partielle</strong><br>
-            Stats détaillées non disponibles (ScrapingBee timeout). Analyse basée sur les données publiques uniquement.
-          </div>
-        ` : ''}
-
-        <!-- Sections principales -->
-        <div class="results-grid">
-          <!-- SECTION STATS -->
-          <div class="section-card stats">
-            <div class="section-title">
-              <span>📊</span> Stats
-            </div>
-            <div class="section-content">
-              ${hasStats ? `
-                <div class="metric-item">
-                  <span>Vues</span>
-                  <span class="metric-value">${stats.formatted?.views || stats.views.toLocaleString()}</span>
-                </div>
-                <div class="metric-item">
-                  <span>Taux d'engagement</span>
-                  <span class="metric-value ${stats.metrics.engagementRate > 10 ? 'success' : stats.metrics.engagementRate > 5 ? 'warning' : 'error'}">${stats.metrics.engagementRate.toFixed(1)}%</span>
-                </div>
-                <div class="metric-item">
-                  <span>Likes</span>
-                  <span class="metric-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</span>
-                </div>
-                <div class="metric-item">
-                  <span>Commentaires</span>
-                  <span class="metric-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</span>
-                </div>
-                <div class="metric-item">
-                  <span>Partages</span>
-                  <span class="metric-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</span>
-                </div>
-                <div class="metric-item">
-                  <span>Ratio partages</span>
-                  <span class="metric-value ${stats.metrics.sharesRatio > 0.5 ? 'success' : 'warning'}">${stats.metrics.sharesRatio.toFixed(2)}%</span>
-                </div>
-              ` : `
-                <div style="text-align: center; color: var(--muted); padding: 2rem;">
-                  <p>📊 Stats détaillées non disponibles</p>
-                  <small>Les données publiques de base sont utilisées pour l'analyse</small>
-                </div>
-              `}
-            </div>
-          </div>
-
-          <!-- SECTION SEO -->
-          <div class="section-card seo">
-            <div class="section-title">
-              <span>🎯</span> SEO TikTok
-            </div>
-            <div class="section-content">
-              <div class="metric-item">
-                <span>Score SEO</span>
-                <span class="metric-value ${seo.score > 70 ? 'success' : seo.score > 50 ? 'warning' : 'error'}">${seo.score}/100</span>
-              </div>
-              <div class="metric-item">
-                <span>Hashtags utilisés</span>
-                <span class="metric-value">${seo.hashtags.nombre}</span>
-              </div>
-              <div class="metric-item">
-                <span>Hashtags 2025</span>
-                <span class="metric-value success">${seo.hashtags.tendance2025.length}</span>
-              </div>
-              <div class="metric-item">
-                <span>Description</span>
-                <span class="metric-value ${seo.description.longueurOptimale ? 'success' : 'warning'}">${seo.description.longueur} car.</span>
-              </div>
-              
-              ${seo.recommandations_hashtags_2025 ? `
-                <div class="seo-suggestions">
-                  <h5>💡 Hashtags 2025 suggérés:</h5>
-                  <div class="hashtag-list">
-                    ${seo.recommandations_hashtags_2025.tendance?.map(tag => `<span class="hashtag-item trending">#${tag}</span>`).join('') || ''}
-                    ${seo.recommandations_hashtags_2025.generaux?.slice(0,2).map(tag => `<span class="hashtag-item">#${tag}</span>`).join('') || ''}
-                  </div>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-
-          <!-- SECTION ANALYSIS -->
-          <div class="section-card analysis">
-            <div class="section-title">
-              <span>🤖</span> Analysis IA
-            </div>
-            <div class="section-content">
-              ${createScoreCircle(score, 'SCORE')}
-              
-              <div style="text-align: center; margin-bottom: 1rem;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">
-                  ${potentiel.toUpperCase()}
-                </div>
-                <div style="font-size: 0.9rem; color: var(--muted);">Potentiel Viral</div>
-              </div>
-              
-              ${analysis.diagnostic_ia ? `
-                <div class="ai-recommendations">
-                  <h4>
-                    <span>🧠</span> Diagnostic IA
-                  </h4>
-                  <p style="margin: 0 0 1rem 0; font-style: italic; color: var(--muted);">
-                    ${analysis.diagnostic_ia}
-                  </p>
-                  
-                  ${analysis.recommandations_ia?.length ? `
-                    <ul class="recommendations-list">
-                      ${analysis.recommandations_ia.map(rec => `<li>${rec}</li>`).join('')}
-                    </ul>
-                  ` : ''}
-                </div>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer analyse -->
-        <div style="margin-top: 3rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; text-align: center; border: 1px solid var(--accent);">
-          <h4 style="margin: 0 0 1rem 0; color: var(--accent);">🏆 Analyse TikTok 2025 ${hasStats ? 'Complète' : 'Partielle'}</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-            <div>
-              <div style="font-weight: bold; color: var(--accent);">Score Global</div>
-              <div style="font-size: 1.2rem; font-weight: 700;">${score}/100</div>
-            </div>
-            <div>
-              <div style="font-weight: bold; color: var(--accent);">Niveau</div>
-              <div style="font-size: 1rem; font-weight: 700;">${niveau}</div>
-            </div>
-            <div>
-              <div style="font-weight: bold; color: var(--accent);">SEO Score</div>
-              <div style="font-size: 1rem; font-weight: 700;">${seo.score}/100</div>
-            </div>
-            <div>
-              <div style="font-weight: bold; color: var(--accent);">IA Analysis</div>
-              <div style="font-size: 1rem; font-weight: 700;">✅ Activé</div>
-            </div>
-          </div>
-          <small style="color: var(--muted);">
-            📅 Analyse générée le ${new Date(data.metadata?.analysisTimestamp || Date.now()).toLocaleString('fr-FR')}
-            <br>Analyseur TikTok 2025 - Framework avancé
-            ${data.metadata?.analysisId ? `<br>ID: ${data.metadata.analysisId}` : ''}
-            ${!hasStats ? '<br>⚠️ Stats détaillées non disponibles (timeout ScrapingBee)' : ''}
-          </small>
-        </div>
-      `;
-    }
-
+    
     // Fonction principale d'analyse
-    async function analyzeVideo(event) {
-      event.preventDefault();
-      
+    async function analyzeVideo() {
+      const startTime = Date.now();
       const url = document.getElementById('videoUrl').value.trim();
       const btn = document.getElementById('analyzeBtn');
       const btnText = document.getElementById('btnText');
+      const spinner = document.getElementById('spinner');
       
-      // Validation URL TikTok
-      if (!url.includes('tiktok.com')) {
-        showError('Veuillez entrer une URL TikTok valide (ex: https://www.tiktok.com/@user/video/...)');
+      debugLog('info', '🚀 === DÉBUT ANALYSE ===');
+      
+      // Validation URL
+      if (!url) {
+        debugLog('error', '❌ URL manquante');
+        setStatus('error', 'Veuillez entrer une URL TikTok');
         return;
       }
       
+      if (!url.includes('tiktok.com')) {
+        debugLog('error', `❌ URL invalide: ${url}`);
+        setStatus('error', 'URL TikTok invalide');
+        return;
+      }
+      
+      debugLog('success', `✅ URL validée: ${url}`);
+      
+      // Interface en mode loading
       btn.disabled = true;
-      btnText.textContent = 'Analyse...';
-      showLoader();
+      spinner.style.display = 'inline-block';
+      btnText.textContent = 'Analyse en cours...';
+      setStatus('info', '🔄 Analyse en cours...');
+      
+      // Timeout de sécurité
+      requestTimeout = setTimeout(() => {
+        debugLog('error', '⏰ TIMEOUT - La requête a pris plus de 30 secondes');
+        setStatus('error', 'Timeout - La requête a pris trop de temps');
+        resetUI();
+      }, 30000);
       
       try {
-        console.log('🚀 Démarrage analyse TikTok 2025...');
-        console.log('📍 URL à analyser:', url);
-        console.log('📡 Endpoint:', API_ENDPOINT);
+        debugLog('info', '📡 Envoi de la requête vers l\'API');
+        
+        // Test de connectivité basique
+        debugLog('info', '🌐 Test de connectivité...');
+        
+        const requestPayload = { url };
+        debugLog('info', '📦 Payload de la requête', requestPayload);
         
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ url })
+          body: JSON.stringify(requestPayload)
         });
         
-        console.log('📨 Réponse reçue:', response.status, response.statusText);
-        console.log('🔍 Headers réponse:', [...response.headers.entries()]);
+        const duration = Date.now() - startTime;
+        debugLog('info', `📬 Réponse reçue en ${duration}ms - Status: ${response.status}`);
         
+        // Vérification du status HTTP
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Erreur réponse:', errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
+          debugLog('error', `❌ Erreur HTTP ${response.status}: ${response.statusText}`);
+          
+          let errorData;
+          try {
+            errorData = await response.json();
+            debugLog('error', '📄 Détails de l\'erreur', errorData);
+          } catch (e) {
+            const errorText = await response.text();
+            debugLog('error', `📄 Réponse brute: ${errorText}`);
+          }
+          
+          throw new Error(`Erreur ${response.status}: ${errorData?.error || response.statusText}`);
         }
         
-        const contentType = response.headers.get('content-type');
-        console.log('📄 Content-Type:', contentType);
-        
-        if (!contentType || !contentType.includes('application/json')) {
-          const responseText = await response.text();
-          console.error('❌ Réponse non-JSON:', responseText);
-          throw new Error('Réponse du serveur non-JSON: ' + responseText.substring(0, 200));
-        }
-        
+        // Parsing de la réponse
+        debugLog('info', '📋 Parsing de la réponse JSON...');
         const data = await response.json();
-        console.log('✅ Données JSON reçues:', data);
+        
+        debugLog('success', '✅ Réponse parsée avec succès', {
+          success: data.success,
+          hasStats: !!data.stats,
+          hasVideo: !!data.video,
+          analysisId: data.analysisId
+        });
         
         if (!data.success) {
-          console.error('❌ API retourne success=false:', data);
-          throw new Error(data.error || 'Échec de l\'analyse');
+          throw new Error(data.error || 'L\'analyse a échoué');
         }
         
-        console.log('🎯 Appel showResults avec:', data);
-        showResults(data);
+        // Affichage des résultats
+        displayResults(data);
+        setStatus('success', `✅ Analyse terminée en ${duration}ms`);
         
       } catch (error) {
-        console.error('❌ Erreur complète:', error);
-        console.error('📊 Stack trace:', error.stack);
+        const duration = Date.now() - startTime;
+        debugLog('error', `❌ ERREUR après ${duration}ms: ${error.message}`);
         
+        // Gestion des erreurs spécifiques
         let errorMessage = error.message;
         if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Impossible de contacter le serveur d\'analyse. Vérifiez votre connexion.';
+          errorMessage = '🌐 Impossible de contacter l\'API - Vérifiez votre connexion';
+          debugLog('error', '🌐 Problème de connectivité réseau détecté');
         } else if (error.message.includes('404')) {
-          errorMessage = 'Vidéo TikTok introuvable. Vérifiez l\'URL ou les permissions de la vidéo.';
+          errorMessage = '🔍 Vidéo TikTok introuvable - Vérifiez l\'URL';
         } else if (error.message.includes('403')) {
-          errorMessage = 'Accès interdit. Cette vidéo est peut-être géo-restreinte ou privée.';
+          errorMessage = '🚫 Accès interdit - Vidéo privée ou géo-restreinte';
         } else if (error.message.includes('500')) {
-          errorMessage = 'Erreur serveur d\'analyse. Réessayez dans quelques instants.';
+          errorMessage = '⚙️ Erreur serveur - Réessayez dans quelques instants';
         }
         
-        showError(errorMessage + '<br><br><strong>Debug:</strong> ' + error.message);
+        setStatus('error', errorMessage);
+        document.getElementById('results').innerHTML = `
+          <div class="status error">
+            <strong>❌ Erreur d'analyse</strong><br>
+            ${errorMessage}<br><br>
+            <small>💡 Consultez la console de debug pour plus de détails</small>
+          </div>
+        `;
+        
       } finally {
-        btn.disabled = false;
-        btnText.textContent = 'Analyser';
-        console.log('🏁 Analyse terminée (finally)');
+        clearTimeout(requestTimeout);
+        resetUI();
+        
+        const totalDuration = Date.now() - startTime;
+        debugLog('info', `🏁 Analyse terminée - Durée totale: ${totalDuration}ms`);
       }
     }
-
-    // Initialisation
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ Analyseur TikTok 2025 initialisé');
+    
+    // Fonction pour reset l'interface
+    function resetUI() {
+      const btn = document.getElementById('analyzeBtn');
+      const btnText = document.getElementById('btnText');
+      const spinner = document.getElementById('spinner');
       
-      // Restaurer le thème
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      btnText.textContent = '🚀 Analyser';
+    }
+    
+    // Fonction pour afficher les résultats
+    function displayResults(data) {
+      debugLog('info', '🎨 Génération de l\'affichage des résultats');
+      
+      const { video, stats, metrics, analysis, debug } = data;
+      
+      let html = '<div>';
+      
+      // Infos debug de l'API
+      if (debug) {
+        html += `
+          <div class="status info">
+            📊 <strong>Infos Debug API:</strong><br>
+            ⏱️ Durée: ${debug.duration}<br>
+            📡 oEmbed: ${debug.hasOembedData ? '✅' : '❌'}<br>
+            🕷️ ScrapingBee: ${debug.hasScrapingData ? '✅' : '❌'}<br>
+            📈 Stats: ${debug.hasStats ? '✅' : '❌'}
+          </div>
+        `;
       }
       
-      // Auto-focus
-      document.getElementById('videoUrl').focus();
+      // Infos vidéo
+      html += '<h3>📹 Informations Vidéo</h3>';
+      html += `<div class="metric"><span>URL:</span><span style="font-size: 0.8em; word-break: break-all;">${video.url}</span></div>`;
+      html += `<div class="metric"><span>Description:</span><span>"${video.description || 'N/A'}"</span></div>`;
+      if (video.author) html += `<div class="metric"><span>Auteur:</span><span>@${video.author}</span></div>`;
+      if (video.thumbnail) html += `<div style="text-align: center; margin: 1rem 0;"><img src="${video.thumbnail}" alt="Miniature" style="max-width: 200px; border-radius: 8px;"></div>`;
       
-      // Gestion du collage
-      document.getElementById('videoUrl').addEventListener('paste', function(e) {
-        setTimeout(() => {
-          const url = e.target.value;
-          if (url && url.includes('tiktok.com')) {
-            console.log('📋 URL TikTok détectée - Prêt pour analyse 2025');
-          }
-        }, 100);
-      });
+      // Stats et métriques
+      if (stats) {
+        html += '<h3>📊 Statistiques</h3>';
+        html += '<div class="grid">';
+        html += `<div class="stat-card"><div class="stat-value">${stats.formatted?.views || stats.views.toLocaleString()}</div><div class="stat-label">Vues</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</div><div class="stat-label">J'aime</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</div><div class="stat-label">Commentaires</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</div><div class="stat-label">Partages</div></div>`;
+        html += '</div>';
+        
+        html += '<h3>📈 Métriques</h3>';
+        html += `<div class="metric"><span>Taux d'engagement:</span><span class="metric-value">${metrics.engagementRate.toFixed(2)}%</span></div>`;
+        html += `<div class="metric"><span>Engagements totaux:</span><span class="metric-value">${metrics.totalEngagements.toLocaleString()}</span></div>`;
+        html += `<div class="metric"><span>Score viral:</span><span class="metric-value">${metrics.viralityScore}/100</span></div>`;
+      }
       
-      // Raccourci clavier
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && e.ctrlKey) {
-          const form = document.querySelector('form');
-          if (form) {
-            form.dispatchEvent(new Event('submit'));
-          }
-        }
-      });
+      // Analyse
+      if (analysis) {
+        html += '<h3>🎯 Analyse</h3>';
+        html += `<div class="metric"><span>Score global:</span><span class="metric-value">${analysis.score}/100</span></div>`;
+        html += `<div class="metric"><span>Potentiel viral:</span><span class="metric-value">${analysis.potentiel_viral.toUpperCase()}</span></div>`;
+      }
+      
+      html += '</div>';
+      
+      document.getElementById('results').innerHTML = html;
+      debugLog('success', '✅ Résultats affichés avec succès');
+    }
+    
+    // Événements
+    document.getElementById('videoUrl').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        analyzeVideo();
+      }
     });
-
-    // Gestion des erreurs globales
-    window.addEventListener('error', function(e) {
-      console.error('❌ Erreur JavaScript:', e.error);
+    
+    // Log d'initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+      debugLog('success', '🚀 Analyseur TikTok DEBUG initialisé');
+      debugLog('info', `📡 API Endpoint: ${API_ENDPOINT}`);
+      
+      // Test de base de l'API
+      debugLog('info', '🔍 Test de connectivité API...');
+      fetch('/api/analyze-video', { method: 'OPTIONS' })
+        .then(response => {
+          debugLog('success', `✅ API accessible - Status: ${response.status}`);
+        })
+        .catch(error => {
+          debugLog('error', `❌ API non accessible: ${error.message}`);
+        });
     });
   </script>
 </body>
