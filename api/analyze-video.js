@@ -1,4 +1,4 @@
-// analyze-video.js - Version complète Node.js CORRIGÉE
+// api/analyze-video.js - Version finale production avec toutes les fonctionnalités
 
 // --- GESTION DES LOGS ---
 let analysisLogs = [];
@@ -452,10 +452,10 @@ function generateRecommendations(stats, metrics, aiAnalysis) {
 // --- HANDLER PRINCIPAL POUR NODE.JS ---
 export default async function handler(req, res) {
   const startTime = Date.now();
-  console.log("🚀 === DÉBUT ANALYSE TIKTOK MODERNE NODE.JS ===");
+  console.log("🚀 === DÉBUT ANALYSE TIKTOK FRAMEWORK AI ===");
 
   const allowedOrigin = process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://votre-domaine.com'
+    ? process.env.FRONTEND_URL || '*'
     : '*';
     
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
@@ -483,7 +483,7 @@ export default async function handler(req, res) {
         }
       };
       
-      const response = { success: true, version: "4.1-nodejs", stats };
+      const response = { success: true, version: "4.1-nodejs-production", stats };
       
       if (logs === 'true') {
         response.recent_analyses = analysisLogs.slice(-20);
@@ -630,7 +630,7 @@ export default async function handler(req, res) {
         openai: aiAnalysis
       },
       metadata: {
-        frameworkVersion: "4.1-nodejs-complete",
+        frameworkVersion: "4.1-nodejs-production",
         processingTime: `${processingTime}ms`,
         userInfo: {
           country: userInfo.country,
