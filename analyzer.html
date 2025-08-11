@@ -6,1053 +6,456 @@
 <meta name="color-scheme" content="dark light"/>
 <title>Analyseur TikTok – PRO Framework AI</title>
 <style>
-  :root {
-    --bg: #111111;
-    --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0));
-    --card-bg: rgba(24, 24, 27, 0.7);
-    --card-border: rgba(255, 255, 255, 0.1);
-    --ink: #E4E4E7;
-    --muted: #A1A1AA;
-    --accent: #d946ef;
-    --accent-strong: #c026d3;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --error: #ef4444;
-    --radius: 16px;
-    --font-sans: 'Inter', system-ui, sans-serif;
-  }
-  
-  [data-theme="light"] {
-    --bg: #F7F8FA;
-    --bg-glow: none;
-    --card-bg: #FFFFFF;
-    --card-border: #E5E7EB;
-    --ink: #111827;
-    --muted: #6B7280;
-  }
-  
-  * { box-sizing: border-box; }
-  
-  body {
-    margin: 0;
-    background-color: var(--bg);
-    background-image: var(--bg-glow);
-    background-attachment: fixed;
-    color: var(--ink);
-    font-family: var(--font-sans);
-    font-size: 15px;
-    line-height: 1.6;
-  }
-  
-  .main-layout {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  
-  @media(min-width: 960px) {
-    .main-layout { grid-template-columns: 450px 1fr; }
-  }
-  
-  header {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  
-  h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--accent), #60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  .nav-link {
-    color: var(--ink);
-    text-decoration: none;
-    border: 1px solid var(--card-border);
-    padding: 8px 16px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.05);
-    transition: all 0.2s ease;
-  }
-  
-  [data-theme="light"] .nav-link { background: var(--card-bg); }
-  
-  .nav-link.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
-  }
-  
-  .nav-link:not(.active):hover { 
-    background: rgba(255,255,255,0.1);
-    transform: translateY(-2px);
-  }
-  
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius);
-    padding: 24px;
-    backdrop-filter: blur(20px);
-    transition: transform 0.2s ease;
-  }
-  
-  .card:hover { transform: translateY(-2px); }
-  
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  
-  .card-header h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .icon {
-    width: 24px;
-    height: 24px;
-    color: var(--muted);
-  }
-  
-  label {
-    font-weight: 500;
-    display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: var(--muted);
-  }
-  
-  input[type="url"] {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--card-border);
-    border-radius: 10px;
-    background: rgba(0,0,0,0.2);
-    color: var(--ink);
-    font-size: 15px;
-    transition: all 0.2s ease;
-  }
-  
-  [data-theme="light"] input[type="url"] { background: rgba(255,255,255,0.8); }
-  
-  input[type="url"]:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2);
-    transform: scale(1.02);
-  }
-  
-  .btn {
-    border: 0;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    min-width: 140px;
-  }
-  
-  .btn.primary {
-    background: linear-gradient(135deg, var(--accent), #c026d3);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
-  }
-  
-  .btn.primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-strong), #a21caf);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(217, 70, 239, 0.4);
-  }
-  
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-  
-  #results { min-height: 200px; }
-  
-  .loader {
-    text-align: center;
-    padding: 3rem 2rem;
-  }
-  
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--card-border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px auto;
-  }
-  
-  @keyframes spin { to { transform: rotate(360deg); } }
-  
-  .analysis-mode {
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    text-align: center;
-    border: 2px solid;
-    background: rgba(255,255,255,0.05);
-  }
-  
-  .analysis-mode.basic {
-    border-color: var(--warning);
-    background: rgba(245, 158, 11, 0.1);
-  }
-  
-  .analysis-mode.complete {
-    border-color: var(--success);
-    background: rgba(16, 185, 129, 0.1);
-  }
-  
-  .analysis-mode.ai-enhanced {
-    border-color: var(--accent);
-    background: rgba(217, 70, 239, 0.1);
-  }
-  
-  .analysis-mode h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-  }
-  
-  .analysis-mode.basic h3 { color: var(--warning); }
-  .analysis-mode.complete h3 { color: var(--success); }
-  .analysis-mode.ai-enhanced h3 { color: var(--accent); }
-  
-  .ai-analysis-section {
-    background: rgba(217, 70, 239, 0.05);
-    border: 1px solid rgba(217, 70, 239, 0.2);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin: 2rem 0;
-  }
-  
-  .ai-analysis-section h3 {
-    color: var(--accent);
-    margin: 0 0 1rem 0;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .ai-insight {
-    background: rgba(255,255,255,0.05);
-    border-left: 4px solid var(--accent);
-    padding: 1rem;
-    margin: 1rem 0;
-    border-radius: 8px;
-  }
-  
-  .ai-insight h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-    color: var(--accent);
-  }
-  
-  .ai-insight p {
-    margin: 0;
-    line-height: 1.6;
-  }
-  
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin: 1.5rem 0;
-  }
-  
-  .stat-card {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 1.2rem;
-    text-align: center;
-    transition: all 0.2s ease;
-    border: 1px solid var(--card-border);
-  }
-  
-  .stat-card:hover { 
-    transform: translateY(-2px);
-    border-color: var(--accent);
-  }
-  
-  [data-theme="light"] .stat-card {
-    background: #f9fafb;
-    border-color: #e5e7eb;
-  }
-  
-  .stat-card-title {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .stat-card-value {
-    font-size: 1.8rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  .video-info {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1.5rem;
-    align-items: start;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: rgba(255,255,255,0.03);
-    border-radius: 12px;
-    border: 1px solid var(--card-border);
-  }
-  
-  .video-thumbnail {
-    width: 120px;
-    height: auto;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-  }
-  
-  .video-details h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
-  }
-  
-  .author-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-    color: var(--accent);
-    font-weight: 500;
-  }
-  
-  .video-description {
-    color: var(--muted);
-    font-style: italic;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-  }
-  
-  .hashtag-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  .hashtag-item {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    padding: 0.3rem 0.7rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-  }
-  
-  .score-display {
-    text-align: center;
-    margin: 2rem 0;
-    padding: 2rem;
-    background: rgba(255,255,255,0.02);
-    border-radius: 16px;
-    border: 1px solid var(--card-border);
-  }
-  
-  .score-circle {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    position: relative;
-    background: conic-gradient(var(--accent) 0deg, var(--accent) calc(var(--score) * 3.6deg), rgba(255,255,255,0.1) calc(var(--score) * 3.6deg));
-  }
-  
-  .score-inner {
-    width: 90px;
-    height: 90px;
-    background: var(--card-bg);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    box-shadow: 0 0 20px rgba(217, 70, 239, 0.3);
-  }
-  
-  .score-number {
-    font-size: 2rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--accent), #60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  .score-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-  }
-  
-  .potentiel-display {
-    margin-top: 1rem;
-  }
-  
-  .potentiel-value {
-    font-size: 1.3rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  
-  .potentiel-value.faible { color: var(--error); }
-  .potentiel-value.moyen { color: var(--warning); }
-  .potentiel-value.élevé { color: var(--success); }
-  
-  .analysis-section {
-    margin: 2rem 0;
-  }
-  
-  .analysis-section h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .analysis-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .analysis-list li {
-    background: rgba(255,255,255,0.05);
-    padding: 1rem 1.2rem;
-    margin-bottom: 0.8rem;
-    border-radius: 12px;
-    border-left: 4px solid;
-    transition: all 0.2s ease;
-  }
-  
-  .analysis-list li:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateX(4px);
-  }
-  
-  .analysis-list.success li { border-left-color: var(--success); }
-  .analysis-list.warning li { border-left-color: var(--warning); }
-  .analysis-list.info li { border-left-color: #60a5fa; }
-  
-  .error-message {
-    background: rgba(239, 68, 68, 0.1);
-    border: 2px solid rgba(239, 68, 68, 0.3);
-    color: var(--error);
-    padding: 1.5rem;
-    border-radius: 12px;
-    animation: shake 0.5s ease-in-out;
-    text-align: center;
-  }
-  
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-  }
-  
-  .theme-toggle {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--card-border);
-    color: var(--ink);
-    padding: 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 1.2rem;
-  }
-  
-  .theme-toggle:hover {
-    background: rgba(255,255,255,0.1);
-    transform: scale(1.1);
-  }
-  
-  .footer-info {
-    margin-top: 3rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(59, 130, 246, 0.1));
-    border-radius: 16px;
-    border: 1px solid var(--accent);
-    text-align: center;
-  }
-  
-  .footer-info h4 {
-    margin: 0 0 1rem 0;
-    color: var(--accent);
-    font-size: 1.1rem;
-  }
-  
-  .footer-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .footer-stat {
-    text-align: center;
-  }
-  
-  .footer-stat-value {
-    font-size: 1.4rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  .footer-stat-label {
-    font-size: 0.8rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .feature-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin: 0.25rem;
-  }
-  
-  .feature-badge.active {
-    background: rgba(16, 185, 129, 0.2);
-    color: var(--success);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-  
-  .feature-badge.inactive {
-    background: rgba(239, 68, 68, 0.2);
-    color: var(--error);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-  
-  @media (max-width: 768px) {
-    .main-layout { padding: 1rem 0.5rem; }
-    .video-info { grid-template-columns: 1fr; text-align: center; }
-    .video-thumbnail { margin: 0 auto; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    h1 { font-size: 1.3rem; }
-  }
+/* ======== CSS ORIGINAL ======== */
+:root {
+  --bg: #111111;
+  --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217,70,239,0.2), hsla(0,0%,100%,0));
+  --card-bg: rgba(24, 24, 27, 0.7);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --ink: #E4E4E7;
+  --muted: #A1A1AA;
+  --accent: #d946ef;
+  --accent-strong: #c026d3;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --radius: 16px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+[data-theme="light"] {
+  --bg: #F7F8FA;
+  --bg-glow: none;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
+  --ink: #111827;
+  --muted: #6B7280;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image: var(--bg-glow);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.main-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media(min-width: 960px) {
+  .main-layout { grid-template-columns: 450px 1fr; }
+}
+header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.nav-link {
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--card-border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  transition: all 0.2s ease;
+}
+[data-theme="light"] .nav-link { background: var(--card-bg); }
+.nav-link.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
+}
+.nav-link:not(.active):hover { 
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  backdrop-filter: blur(20px);
+  transition: transform 0.2s ease;
+}
+.card:hover { transform: translateY(-2px); }
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+.icon { width: 24px; height: 24px; color: var(--muted); }
+label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+input[type="url"] {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: rgba(0,0,0,0.2);
+  color: var(--ink);
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+[data-theme="light"] input[type="url"] { background: rgba(255,255,255,0.8); }
+input[type="url"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2);
+  transform: scale(1.02);
+}
+.btn {
+  border: 0;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  min-width: 140px;
+}
+.btn.primary {
+  background: linear-gradient(135deg, var(--accent), #c026d3);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
+}
+.btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-strong), #a21caf);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(217, 70, 239, 0.4);
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+#results { min-height: 200px; }
+.loader { text-align: center; padding: 3rem 2rem; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid var(--card-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  color: var(--error);
+  padding: 1.5rem;
+  border-radius: 12px;
+  animation: shake 0.5s ease-in-out;
+  text-align: center;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.theme-toggle {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--card-border);
+  color: var(--ink);
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+}
+.theme-toggle:hover {
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.1);
+}
 </style>
 </head>
 <body>
-  <div class="main-layout">
-    <header>
-      <h1>🤖 Analyseur TikTok – PRO Framework AI</h1>
-      <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <a href="./hooks.html" class="nav-link">Hooks</a>
-        <a href="./cta.html" class="nav-link">Appels à l'Action</a>
-        <a href="./analyzer.html" class="nav-link active">Analyseur</a>
-        <a href="./history.html" class="nav-link">Historique</a>
-        <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">🌓</button>
-      </nav>
-    </header>
-    
-    <div class="card">
-      <div class="card-header">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-        </svg>
-        <h2>Analyser une vidéo TikTok</h2>
-      </div>
-      
-      <form onsubmit="analyzeVideo(event)">
-        <label for="videoUrl">URL de la vidéo TikTok</label>
-        <input 
-          type="url" 
-          id="videoUrl" 
-          placeholder="https://www.tiktok.com/@username/video/..." 
-          required
-        />
-        <br><br>
-        <button type="submit" class="btn primary" id="analyzeBtn">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-            <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 10.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
-          </svg>
-          <span id="btnText">Analyser avec IA</span>
-        </button>
-      </form>
-    </div>
-    
-    <div class="card">
-      <div class="card-header">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-        <h2>Résultats d'analyse</h2>
-      </div>
-      
-      <div id="results">
-        <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
-          🎯 Entrez une URL TikTok pour commencer l'analyse complète avec IA
-        </p>
-      </div>
-    </div>
+<div class="main-layout">
+<header>
+  <h1>🤖 Analyseur TikTok – PRO Framework AI</h1>
+  <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+    <a href="./hooks.html" class="nav-link">Hooks</a>
+    <a href="./cta.html" class="nav-link">Appels à l'Action</a>
+    <a href="./analyzer.html" class="nav-link active">Analyseur</a>
+    <a href="./history.html" class="nav-link">Historique</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">🌓</button>
+  </nav>
+</header>
+
+<div class="card">
+  <div class="card-header">
+    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+    </svg>
+    <h2>Analyser une vidéo TikTok</h2>
   </div>
+  <form onsubmit="analyzeVideo(event)">
+    <label for="videoUrl">URL de la vidéo TikTok</label>
+    <input type="url" id="videoUrl" placeholder="https://www.tiktok.com/@username/video/..." required />
+    <br><br>
+    <button type="submit" class="btn primary" id="analyzeBtn">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 10.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
+      </svg>
+      <span id="btnText">Analyser avec IA</span>
+    </button>
+  </form>
+</div>
 
-  <script>
-    const API_ENDPOINT = '/api/analyze-video';
+<div class="card">
+  <div class="card-header">
+    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+    </svg>
+    <h2>Résultats d'analyse</h2>
+  </div>
+  <div id="results">
+    <p style="text-align: center; color: var(--muted); margin-top: 2rem;">
+      🎯 Entrez une URL TikTok pour commencer l'analyse complète avec IA
+    </p>
+  </div>
+</div>
+</div>
 
-    function toggleTheme() {
-      const html = document.documentElement;
-      const currentTheme = html.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-    }
+<script>
+// CORRECTION 1: Définir l'endpoint
+const API_ENDPOINT = '/api/analyze-video';
 
-    function showLoader() {
-      document.getElementById('results').innerHTML = `
-        <div class="loader">
-          <div class="spinner"></div>
-          <p style="margin-top: 1rem; color: var(--muted); font-weight: 500;">
-            🤖 Analyse IA de la vidéo TikTok en cours...
-          </p>
-          <p style="color: var(--muted); font-size: 0.9rem;">
-            Extraction des stats + Analyse sémantique OpenAI + Scoring prédictif
-          </p>
-        </div>
-      `;
-    }
+// CORRECTION 2: Fonctions manquantes
+function showError(message) {
+  document.getElementById('results').innerHTML = `
+    <div class="error-message">
+      <strong>❌ Erreur :</strong> ${message}
+      <br><br>
+      <small style="opacity: 0.8;">
+        💡 <strong>Conseils :</strong> Vérifiez que l'URL est correcte et que la vidéo est publique.
+      </small>
+    </div>
+  `;
+}
 
-    function showError(message) {
+function showLoader() {
+  document.getElementById('results').innerHTML = `
+    <div class="loader">
+      <div class="spinner"></div>
+      <p style="margin-top: 1rem; color: var(--muted); font-weight: 500;">
+        🤖 Analyse IA en cours...
+      </p>
+      <p style="color: var(--muted); font-size: 0.9rem;">
+        Extraction des données TikTok et analyse avec l'IA
+      </p>
+    </div>
+  `;
+}
+
+// CORRECTION 3: Fonction toggleTheme manquante
+function toggleTheme() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+}
+
+// Fonction principale (votre code original avec corrections mineures)
+async function analyzeVideo(event) {
+  event.preventDefault();
+  
+  const url = document.getElementById('videoUrl').value.trim();
+  const btn = document.getElementById('analyzeBtn');
+  const btnText = document.getElementById('btnText');
+  
+  console.log("🐛 DEBUG - URL entrée:", url);
+  
+  // Validation URL TikTok
+  if (!url.includes('tiktok.com')) {
+    showError('Veuillez entrer une URL TikTok valide (ex: https://www.tiktok.com/@user/video/...)');
+    return;
+  }
+  
+  btn.disabled = true;
+  btnText.textContent = 'Debug en cours...';
+  showLoader();
+  
+  try {
+    console.log('🚀 Démarrage analyse Framework TikTok...');
+    console.log('📡 Endpoint:', API_ENDPOINT);
+    console.log('📝 Payload:', JSON.stringify({ url }));
+    
+    // Test de connectivité
+    console.log('🔗 Test de connectivité à l\'API...');
+    
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url })
+    });
+    
+    console.log('📊 Status Response:', response.status);
+    console.log('📋 Headers Response:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erreur Response:', errorText);
+      
       document.getElementById('results').innerHTML = `
         <div class="error-message">
-          <strong>❌ Erreur d'analyse</strong><br>
-          ${message}<br><br>
-          <small style="opacity: 0.8;">
-            💡 <strong>Conseils :</strong> Vérifiez que l'URL est correcte et que la vidéo est publique.
-          </small>
+          <strong>❌ Erreur HTTP ${response.status}</strong>
+          <br><br>
+          <strong>Détails:</strong><br>
+          <pre style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; white-space: pre-wrap; font-size: 0.9rem;">${errorText}</pre>
+          <br>
+          <strong>🔍 Vérifications:</strong>
+          <ul style="text-align: left; margin-top: 1rem;">
+            <li>✅ URL TikTok: ${url}</li>
+            <li>❓ Variables d'environnement configurées ?</li>
+            <li>❓ API accessible ?</li>
+            <li>❓ Logs serveur ?</li>
+          </ul>
         </div>
       `;
+      return;
     }
-
-    function getAnalysisMode(data) {
-      const { stats, analysis } = data;
-      const hasStats = !!stats;
-      const hasAI = !!analysis?.openai;
-      
-      if (hasStats && hasAI) {
-        return {
-          mode: 'ai-enhanced',
-          title: '🤖 Analyse IA Complète',
-          description: 'Statistiques détaillées + Analyse OpenAI GPT-4'
-        };
-      } else if (hasStats) {
-        return {
-          mode: 'complete',
-          title: '📊 Analyse Complète',
-          description: 'Statistiques détaillées extraites'
-        };
-      } else if (hasAI) {
-        return {
-          mode: 'ai-enhanced',
-          title: '🤖 Analyse IA de Base',
-          description: 'Métadonnées + Analyse OpenAI GPT-4'
-        };
-      } else {
-        return {
-          mode: 'basic',
-          title: '📝 Analyse de Base',
-          description: 'Métadonnées publiques uniquement'
-        };
-      }
+    
+    const data = await response.json();
+    console.log('✅ Data reçue:', data);
+    
+    console.log('🔍 DIAGNOSTIC DÉTAILLÉ:');
+    console.log('- Success:', data.success);
+    console.log('- Analysis ID:', data.analysisId);
+    console.log('- Features:', data.metadata?.features);
+    console.log('- Processing Time:', data.metadata?.processingTime);
+    console.log('- oEmbed Data:', !!data.video?.thumbnail);
+    console.log('- Stats Data:', !!data.stats);
+    console.log('- OpenAI Analysis:', !!data.analysis?.openai);
+    
+    if (!data.success) {
+      console.error('❌ API Success = false');
+      showError(data.error || 'Échec de l\'analyse sans détails');
+      return;
     }
-
-    function renderFeatureBadges(features) {
-      let html = '<div style="margin: 1rem 0;">';
-      
-      const featureList = [
-        { key: 'oembed', label: '📡 oEmbed', active: features.oembed },
-        { key: 'stats_extraction', label: '📊 Stats TikTok', active: features.stats_extraction },
-        { key: 'openai_analysis', label: '🤖 Analyse IA', active: features.openai_analysis },
-        { key: 'predictive_scoring', label: '🎯 Score Prédictif', active: features.predictive_scoring }
-      ];
-      
-      featureList.forEach(feature => {
-        const badgeClass = feature.active ? 'active' : 'inactive';
-        const icon = feature.active ? '✅' : '❌';
-        html += `<span class="feature-badge ${badgeClass}">${icon} ${feature.label}</span>`;
-      });
-      
-      html += '</div>';
-      return html;
-    }
-
-    function renderAIAnalysis(openaiData) {
-      if (!openaiData) return '';
-      
-      let html = `
-        <div class="ai-analysis-section">
-          <h3>🤖 Analyse IA OpenAI GPT-4</h3>
-      `;
-      
-      if (openaiData.NICHE_DETECTEE) {
-        html += `
-          <div class="ai-insight">
-            <h4>🎯 Niche Détectée</h4>
-            <p><strong>${openaiData.NICHE_DETECTEE}</strong></p>
+    
+    document.getElementById('results').innerHTML = `
+      <div style="background: rgba(0,255,0,0.1); border: 1px solid rgba(0,255,0,0.3); padding: 1.5rem; border-radius: 12px;">
+        <h3 style="color: #10b981; margin-top: 0;">🐛 DEBUG - Analyse réussie !</h3>
+        
+        <div style="display: grid; gap: 1rem; margin: 1rem 0;">
+          <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <h4>📊 État des fonctionnalités</h4>
+            <ul style="margin: 0; text-align: left;">
+              <li>${data.metadata?.features?.hasOembedData ? '✅' : '❌'} oEmbed Data</li>
+              <li>${data.metadata?.features?.hasScrapingData ? '✅' : '❌'} Stats TikTok</li>
+              <li>${data.metadata?.features?.hasOpenAIAnalysis ? '✅' : '❌'} Analyse IA</li>
+              <li>${data.metadata?.features?.scrapingbee_configured ? '✅' : '❌'} ScrapingBee configuré</li>
+              <li>${data.metadata?.features?.openai_configured ? '✅' : '❌'} OpenAI configuré</li>
+            </ul>
           </div>
-        `;
-      }
-      
-      if (openaiData.TYPE_CONTENU) {
-        html += `
-          <div class="ai-insight">
-            <h4>📋 Type de Contenu</h4>
-            <p>${openaiData.TYPE_CONTENU}</p>
+          
+          <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <h4>📈 Données extraites</h4>
+            <ul style="margin: 0; text-align: left;">
+              <li><strong>Auteur:</strong> ${data.video?.author || 'Non disponible'}</li>
+              <li><strong>Description:</strong> ${data.video?.description?.substring(0, 100) || 'Non disponible'}...</li>
+              <li><strong>Vues:</strong> ${data.stats?.formatted?.views || 'Non disponible'}</li>
+              <li><strong>Score:</strong> ${data.analysis?.score || 'Non calculé'}/100</li>
+              <li><strong>Potentiel:</strong> ${data.analysis?.potentiel_viral || 'Non évalué'}</li>
+            </ul>
           </div>
-        `;
-      }
-      
-      if (openaiData.HOOK_ANALYSE) {
-        html += `
-          <div class="ai-insight">
-            <h4>🎣 Analyse du Hook</h4>
-            <p>${openaiData.HOOK_ANALYSE}</p>
+          
+          <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <h4>⚡ Performance</h4>
+            <ul style="margin: 0; text-align: left;">
+              <li><strong>Temps de traitement:</strong> ${data.metadata?.processingTime || 'Non mesuré'}</li>
+              <li><strong>Analysis ID:</strong> ${data.analysisId || 'Non généré'}</li>
+              <li><strong>Framework Version:</strong> ${data.metadata?.frameworkVersion || 'Non spécifiée'}</li>
+            </ul>
           </div>
-        `;
-      }
-      
-      if (openaiData.CTA_ANALYSE) {
-        html += `
-          <div class="ai-insight">
-            <h4>📢 Appel à l'Action</h4>
-            <p>${openaiData.CTA_ANALYSE}</p>
-          </div>
-        `;
-      }
-      
-      if (openaiData.OPTIMISATION_HASHTAGS) {
-        html += `
-          <div class="ai-insight">
-            <h4>🏷️ Optimisation Hashtags</h4>
-            <p>${openaiData.OPTIMISATION_HASHTAGS}</p>
-          </div>
-        `;
-      }
-      
-      if (openaiData.POTENTIEL_VIRAL) {
-        html += `
-          <div class="ai-insight">
-            <h4>🚀 Potentiel Viral</h4>
-            <p>${openaiData.POTENTIEL_VIRAL}</p>
-          </div>
-        `;
-      }
-      
-      if (openaiData.AUDIENCE_CIBLE) {
-        html += `
-          <div class="ai-insight">
-            <h4>👥 Audience Cible</h4>
-            <p>${openaiData.AUDIENCE_CIBLE}</p>
-          </div>
-        `;
-      }
-      
-      if (openaiData.SCORE_CONTENU) {
-        html += `
-          <div class="ai-insight">
-            <h4>⭐ Score de Contenu IA</h4>
-            <p><strong>${openaiData.SCORE_CONTENU}/100</strong> - Évaluation par GPT-4</p>
-          </div>
-        `;
-      }
-      
-      html += '</div>';
-      return html;
-    }
-
-    function showResults(data) {
-      const { video, stats, metrics, analysis, debug, metadata } = data;
-      
-      const analysisMode = getAnalysisMode(data);
-      
-      let html = `
-        <div class="analysis-mode ${analysisMode.mode}">
-          <h3>${analysisMode.title}</h3>
-          <small>${analysisMode.description}</small>
         </div>
-      `;
-
-      // Feature badges
-      if (metadata?.features) {
-        html += renderFeatureBadges(metadata.features);
-      }
-
-      // Infos vidéo de base
-      html += '<div class="video-info">';
-      
-      if (video?.thumbnail) {
-        html += `<img src="${video.thumbnail}" alt="Miniature" class="video-thumbnail">`;
-      }
-      
-      html += '<div class="video-details">';
-      html += '<h3>📹 Informations Vidéo</h3>';
-      
-      if (video?.author) {
-        html += `
-          <div class="author-info">
-            <span>👤</span>
-            <strong>@${video.author}</strong>
-          </div>
-        `;
-      }
-      
-      html += `
-        <div class="video-description">
-          "${video?.description || 'Description non disponible'}"
+        
+        <details style="margin-top: 1rem;">
+          <summary style="cursor: pointer; color: var(--accent);">🔍 Voir la réponse complète</summary>
+          <pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; white-space: pre-wrap; font-size: 0.8rem; margin-top: 1rem; max-height: 400px; overflow-y: auto;">${JSON.stringify(data, null, 2)}</pre>
+        </details>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('❌ Erreur catch:', error);
+    
+    document.getElementById('results').innerHTML = `
+      <div class="error-message">
+        <strong>❌ Erreur de connexion</strong>
+        <br><br>
+        <strong>Type:</strong> ${error.name}<br>
+        <strong>Message:</strong> ${error.message}<br>
+        <br>
+        <strong>🔍 Causes possibles:</strong>
+        <ul style="text-align: left; margin-top: 1rem;">
+          <li>❓ Serveur non démarré</li>
+          <li>❓ Port incorrect</li>
+          <li>❓ CORS bloqué</li>
+          <li>❓ Endpoint inexistant</li>
+        </ul>
+        
+        <div style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+          <strong>💡 Actions à vérifier:</strong><br>
+          1. Ouvrez la console navigateur (F12)<br>
+          2. Vérifiez l'onglet Network<br>
+          3. Regardez les logs serveur<br>
+          4. Testez l'endpoint manuellement
         </div>
-      `;
-      
-      if (video?.hashtags?.length) {
-        html += `
-          <div class="hashtag-list">
-            ${video.hashtags.map(tag => `<span class="hashtag-item">#${tag}</span>`).join('')}
-          </div>
-        `;
-      }
-      
-      if (video?.music) {
-        html += `
-          <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--muted);">
-            🎵 <strong>Musique:</strong> ${video.music}
-          </p>
-        `;
-      }
-      
-      html += '</div></div>';
+      </div>
+    `;
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Analyser avec IA';
+  }
+}
 
-      // Score si disponible
-      if (analysis?.score) {
-        html += `
-          <div class="score-display">
-            <div class="score-circle" style="--score: ${analysis.score}">
-              <div class="score-inner">
-                <div class="score-number">${analysis.score}</div>
-                <div class="score-label">SCORE</div>
-              </div>
-            </div>
-            <div class="potentiel-display">
-              <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Potentiel viral :</p>
-              <div class="potentiel-value ${analysis.potentiel_viral}">
-                ${analysis.potentiel_viral?.toUpperCase() || 'MOYEN'}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      // Stats détaillées si disponibles
-      if (stats) {
-        html += '<h3>📊 Statistiques TikTok</h3>';
-        html += '<div class="stats-grid">';
-        html += `<div class="stat-card"><div class="stat-card-title">👁️ Vues</div><div class="stat-card-value">${stats.formatted?.views || stats.views.toLocaleString()}</div></div>`;
-        html += `<div class="stat-card"><div class="stat-card-title">❤️ J'aime</div><div class="stat-card-value">${stats.formatted?.likes || stats.likes.toLocaleString()}</div></div>`;
-        html += `<div class="stat-card"><div class="stat-card-title">💬 Commentaires</div><div class="stat-card-value">${stats.formatted?.comments || stats.comments.toLocaleString()}</div></div>`;
-        html += `<div class="stat-card"><div class="stat-card-title">📤 Partages</div><div class="stat-card-value">${stats.formatted?.shares || stats.shares.toLocaleString()}</div></div>`;
-        html += '</div>';
-
-        if (metrics.engagementRate > 0) {
-          html += '<h3>📈 Métriques d\'engagement</h3>';
-          html += '<div class="stats-grid">';
-          html += `<div class="stat-card"><div class="stat-card-title">📊 Taux d'engagement</div><div class="stat-card-value">${metrics.engagementRate.toFixed(1)}%</div></div>`;
-          html += `<div class="stat-card"><div class="stat-card-title">💯 Score viral</div><div class="stat-card-value">${Math.round(metrics.viralityIndex)}</div></div>`;
-          html += `<div class="stat-card"><div class="stat-card-title">🎯 Ratio likes</div><div class="stat-card-value">${metrics.likesRatio.toFixed(1)}%</div></div>`;
-          html += `<div class="stat-card"><div class="stat-card-title">🔄 Ratio partages</div><div class="stat-card-value">${metrics.sharesRatio.toFixed(1)}%</div></div>`;
-          html += '</div>';
-        }
-      }
-
-      // Analyse IA OpenAI
-      if (analysis?.openai) {
-        html += renderAIAnalysis(analysis.openai);
-      }
-
-      // Recommandations
-      if (analysis?.points_forts?.length || analysis?.suggestions?.length || analysis?.points_faibles?.length) {
-        html += '<div class="analysis-section">';
-        
-        if (analysis.points_forts?.length) {
-          html += '<h3>✅ Points forts détectés</h3>';
-          html += '<ul class="analysis-list success">';
-          analysis.points_forts.forEach(point => {
-            html += `<li>${point}</li>`;
-          });
-          html += '</ul>';
-        }
-        
-        if (analysis.points_faibles?.length) {
-          html += '<h3>⚠️ Points d\'amélioration</h3>';
-          html += '<ul class="analysis-list warning">';
-          analysis.points_faibles.forEach(point => {
-            html += `<li>${point}</li>`;
-          });
-          html += '</ul>';
-        }
-        
-        if (analysis.suggestions?.length) {
-          html += '<h3>💡 Recommandations d\'optimisation</h3>';
-          html += '<ul class="analysis-list info">';
-          analysis.suggestions.forEach(point => {
-            html += `<li>${point}</li>`;
-          });
-          html += '</ul>';
-        }
-        
-        html += '</div>';
-      }
-
-      // Footer avec infos complètes
-      html += `
-        <div class="footer-info">
-          <h4>🏆 Analyse Framework IA Complète</h4>
-          <div class="footer-stats">
-            <div class="footer-stat">
-              <div class="footer-stat-value">${analysis?.score || 'N/A'}</div>
-              <div class="footer-stat-label">Score Global</div>
-            </div>
-            <div class="footer-stat">
-              <div class="footer-stat-value">${analysis?.potentiel_viral?.toUpperCase() || 'MOYEN'}</div>
-              <div class="footer-stat-label">Potentiel Viral</div>
-            </div>
-            <div class="footer-stat">
-              <div class="footer-stat-value">${debug?.hasOpenAIAnalysis ? 'AI' : 'Stats'}</div>
-              <div class="footer-stat-label">Mode Analyse</div>
-            </div>
-            <div class="footer-stat">
-              <div class="footer-stat-value">${debug?.duration || 'N/A'}</div>
-              <div class="footer-stat-label">Durée</div>
-            </div>
-          </div>
-          <small style="color: var(--muted);">
-            📅 Analysé le ${new Date(data.timestamp).toLocaleString('fr-FR')}<br>
-            🔧 Sources : ${debug?.hasScrapingData ? 'ScrapingBee' : '❌'} | ${debug?.hasOpenAIAnalysis ? 'OpenAI GPT-4' : '❌'}<br>
-            Framework d'analyse TikTok PRO AI v${debug?.frameworkVersion || '3.0'}
-          </small>
-        </div>
-      `;
-
-      document.getElementById('results').innerHTML = html;
-    }
-
-    async function analyzeVideo(event) {
-      event.preventDefault();
-      
-      const url = document.getElementById('videoUrl').value.trim();
-      const btn = document.getElementById('analyzeBtn');
-      const btnText = document.getElementById('btnText');
-      
-      if (!url.includes('tiktok.com')) {
-        showError('Veuillez entrer une URL TikTok valide');
-        return;
-      }
-      
-      btn.disabled = true;
-      btnText.textContent = 'Analyse IA...';
-      showLoader();
-      
-      try {
-        const response = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Erreur réseau' }));
-          throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Échec de l\'analyse');
-        }
-        
-        showResults(data);
-        
-      } catch (error) {
-        console.error('Erreur analyse:', error);
-        
-        let errorMessage = error.message;
-        if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion.';
-        } else if (error.message.includes('404')) {
-          errorMessage = 'Vidéo TikTok introuvable. Vérifiez l\'URL.';
-        } else if (error.message.includes('403')) {
-          errorMessage = 'Accès interdit. Cette vidéo est peut-être privée.';
-        }
-        
-        showError(errorMessage);
-      } finally {
-        btn.disabled = false;
-        btnText.textContent = 'Analyser avec IA';
-      }
-    }
-
-    // Initialisation
-    document.addEventListener('DOMContentLoaded', function() {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-      }
-      
-      document.getElementById('videoUrl').focus();
-      
-      // Message d'intro avec infos config
-      console.log('🤖 Analyseur TikTok PRO AI initialisé');
-      console.log('🔧 Configurez SCRAPINGBEE_API_KEY et OPENAI_API_KEY pour l\'analyse complète');
-    });
-  </script>
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+  // Restaurer le thème
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }
+  
+  // Auto-focus
+  document.getElementById('videoUrl').focus();
+});
+</script>
 </body>
 </html>
