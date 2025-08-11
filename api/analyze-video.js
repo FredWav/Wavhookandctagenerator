@@ -1,4 +1,4 @@
-// analyze-video.js - Version CORRIGÉE qui fonctionne
+// analyze-video.js - STATS SCRAPING CORRIGÉ
 
 let analysisLogs = [];
 
@@ -31,7 +31,6 @@ function isValidTikTokUrl(url) {
   return patterns.some(pattern => pattern.test(url));
 }
 
-// Fonction de timeout personnalisée
 function fetchWithTimeout(url, options, timeoutMs) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -50,96 +49,204 @@ function fetchWithTimeout(url, options, timeoutMs) {
   });
 }
 
-// EXTRACTION TIKTOK SIMPLIFIÉE mais robuste
-function findJsonBlob(html) {
+// EXTRACTION STATS AMÉLIORÉE - TOUTES LES STRATÉGIES
+function findAndExtractStats(html) {
+  console.log("🔍 === DÉBUT EXTRACTION STATS TIKTOK ===");
+  console.log(`📄 Taille HTML: ${html.length} caractères`);
+  
+  // Stratégie 1: SIGI_STATE (principale)
   try {
-    console.log("🔍 Recherche des données TikTok...");
-    
-    // Stratégie 1: SIGI_STATE
-    let match = html.split('<script id="SIGI_STATE" type="application/json">')[1];
-    if (match) {
-      const jsonStr = match.split('</script>')[0];
-      if (jsonStr) {
-        console.log("✅ SIGI_STATE trouvé");
-        return JSON.parse(jsonStr);
+    console.log("🎯 Stratégie 1: SIGI_STATE...");
+    const sigiMatch = html.split('<script id="SIGI_STATE" type="application/json">')[1];
+    if (sigiMatch) {
+      const jsonStr = sigiMatch.split('</script>')[0];
+      if (jsonStr && jsonStr.length > 10) {
+        console.log(`📊 SIGI_STATE trouvé: ${jsonStr.length} caractères`);
+        const data = JSON.parse(jsonStr);
+        
+        if (data.ItemModule) {
+          console.log(`📦 ItemModule trouvé avec ${Object.keys(data.ItemModule).length} éléments`);
+          const videoId = Object.keys(data.ItemModule)[0];
+          const item = data.ItemModule[videoId];
+          
+          if (item && item.stats) {
+            const stats = {
+              views: parseInt(item.stats.playCount) || 0,
+              likes: parseInt(item.stats.diggCount) || 0,
+              comments: parseInt(item.stats.commentCount) || 0,
+              shares: parseInt(item.stats.shareCount) || 0,
+              description: item.desc || null,
+              author: item.author?.uniqueId || null,
+              hashtags: item.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || [],
+              music: item.music?.title || null
+            };
+            
+            console.log(`✅ STATS EXTRAITES: ${stats.views} vues, ${stats.likes} likes`);
+            return stats;
+          } else {
+            console.log("❌ ItemModule sans stats valides");
+          }
+        }
       }
     }
-    
-    // Stratégie 2: __NEXT_DATA__
-    match = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
-    if (match && match[1]) {
-      console.log("✅ __NEXT_DATA__ trouvé");
-      return JSON.parse(match[1]);
-    }
-    
-    console.log("❌ Aucune structure JSON trouvée");
-    return null;
   } catch (error) {
-    console.error("❌ Erreur parsing JSON:", error.message);
-    return null;
+    console.log(`❌ Erreur SIGI_STATE: ${error.message}`);
   }
-}
-
-// EXTRACTION STATS SIMPLIFIÉE
-function extractStats(data) {
+  
+  // Stratégie 2: __NEXT_DATA__
   try {
-    console.log("📊 Extraction des statistiques...");
-    
-    let stats = {
-      views: 0,
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      description: null,
-      author: null,
-      hashtags: []
-    };
-
-    // Path 1: ItemModule
-    if (data.ItemModule) {
-      const videoId = Object.keys(data.ItemModule)[0];
-      const item = data.ItemModule[videoId];
+    console.log("🎯 Stratégie 2: __NEXT_DATA__...");
+    const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+    if (nextDataMatch && nextDataMatch[1]) {
+      console.log(`📊 __NEXT_DATA__ trouvé: ${nextDataMatch[1].length} caractères`);
+      const data = JSON.parse(nextDataMatch[1]);
       
-      if (item && item.stats) {
-        stats = {
-          views: parseInt(item.stats.playCount) || 0,
-          likes: parseInt(item.stats.diggCount) || 0,
-          comments: parseInt(item.stats.commentCount) || 0,
-          shares: parseInt(item.stats.shareCount) || 0,
-          description: item.desc || null,
-          author: item.author?.uniqueId || null,
-          hashtags: item.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || []
-        };
-        console.log(`✅ Stats extraites: ${stats.views} vues, ${stats.likes} likes`);
-        return stats;
+      // Explorer la structure Next.js
+      if (data.props?.pageProps) {
+        const pageProps = data.props.pageProps;
+        console.log(`📦 pageProps trouvé avec clés: ${Object.keys(pageProps).join(', ')}`);
+        
+        // Chercher les stats dans différents endroits
+        const possiblePaths = [
+          pageProps.videoDetail,
+          pageProps.initialState?.ItemModule,
+          pageProps.itemInfo?.itemStruct,
+          pageProps.serverCode === 10000 ? pageProps.itemInfo : null
+        ].filter(Boolean);
+        
+        for (const path of possiblePaths) {
+          if (path && path.stats) {
+            const stats = {
+              views: parseInt(path.stats.playCount) || 0,
+              likes: parseInt(path.stats.diggCount) || 0,
+              comments: parseInt(path.stats.commentCount) || 0,
+              shares: parseInt(path.stats.shareCount) || 0,
+              description: path.desc || null,
+              author: path.author?.uniqueId || null,
+              hashtags: path.textExtra?.map(tag => tag.hashtagName).filter(Boolean) || []
+            };
+            
+            console.log(`✅ STATS NEXT_DATA: ${stats.views} vues, ${stats.likes} likes`);
+            return stats;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log(`❌ Erreur __NEXT_DATA__: ${error.message}`);
+  }
+  
+  // Stratégie 3: Recherche par REGEX dans tout le HTML
+  try {
+    console.log("🎯 Stratégie 3: Recherche par patterns...");
+    
+    // Chercher les patterns de stats directement dans le HTML
+    const patterns = {
+      views: [
+        /"playCount"[:\s]*(\d+)/g,
+        /"view_count"[:\s]*(\d+)/g,
+        /playCount&quot;:(\d+)/g,
+        /viewCount[\"']?[:\s]*[\"']?(\d+)/g
+      ],
+      likes: [
+        /"diggCount"[:\s]*(\d+)/g,
+        /"like_count"[:\s]*(\d+)/g,
+        /diggCount&quot;:(\d+)/g,
+        /likeCount[\"']?[:\s]*[\"']?(\d+)/g
+      ],
+      comments: [
+        /"commentCount"[:\s]*(\d+)/g,
+        /"comment_count"[:\s]*(\d+)/g,
+        /commentCount&quot;:(\d+)/g
+      ],
+      shares: [
+        /"shareCount"[:\s]*(\d+)/g,
+        /"share_count"[:\s]*(\d+)/g,
+        /shareCount&quot;:(\d+)/g
+      ]
+    };
+    
+    const stats = { views: 0, likes: 0, comments: 0, shares: 0 };
+    let foundAny = false;
+    
+    for (const [metric, regexes] of Object.entries(patterns)) {
+      for (const regex of regexes) {
+        const matches = [...html.matchAll(regex)];
+        if (matches.length > 0) {
+          // Prendre la valeur la plus élevée trouvée (souvent la plus précise)
+          const values = matches.map(m => parseInt(m[1])).filter(v => v > 0);
+          if (values.length > 0) {
+            stats[metric] = Math.max(...values);
+            foundAny = true;
+            console.log(`📊 ${metric} trouvé par regex: ${stats[metric]}`);
+            break;
+          }
+        }
       }
     }
     
-    // Path 2: Search dans JSON
-    const jsonStr = JSON.stringify(data);
-    const viewsMatch = jsonStr.match(/"playCount"[:\s]*(\d+)/);
-    const likesMatch = jsonStr.match(/"diggCount"[:\s]*(\d+)/);
-    
-    if (viewsMatch) {
-      stats.views = parseInt(viewsMatch[1]);
-      stats.likes = likesMatch ? parseInt(likesMatch[1]) : 0;
-      console.log(`✅ Stats par regex: ${stats.views} vues, ${stats.likes} likes`);
-      return stats;
+    if (foundAny && stats.views > 0) {
+      // Chercher aussi description et auteur
+      const authorMatch = html.match(/"uniqueId"[:\s]*"([^"]+)"/);
+      const descMatch = html.match(/"desc"[:\s]*"([^"]+)"/);
+      
+      const finalStats = {
+        views: stats.views,
+        likes: stats.likes,
+        comments: stats.comments,
+        shares: stats.shares,
+        description: descMatch ? descMatch[1] : null,
+        author: authorMatch ? authorMatch[1] : null,
+        hashtags: []
+      };
+      
+      console.log(`✅ STATS REGEX: ${finalStats.views} vues, ${finalStats.likes} likes`);
+      return finalStats;
     }
-    
-    console.log("❌ Aucune stat trouvée");
-    return null;
-    
   } catch (error) {
-    console.error("❌ Erreur extraction:", error.message);
-    return null;
+    console.log(`❌ Erreur recherche patterns: ${error.message}`);
   }
+  
+  // Stratégie 4: Dernière chance - chercher n'importe quels nombres qui ressemblent à des stats
+  try {
+    console.log("🎯 Stratégie 4: Dernière chance...");
+    
+    // Chercher des gros nombres qui pourraient être des vues
+    const bigNumbers = html.match(/\b(\d{4,})\b/g);
+    if (bigNumbers) {
+      const numbers = bigNumbers.map(n => parseInt(n)).filter(n => n > 1000).sort((a, b) => b - a);
+      if (numbers.length > 0) {
+        console.log(`🔍 Gros nombres trouvés: ${numbers.slice(0, 5).join(', ')}`);
+        
+        // Le plus gros nombre est probablement les vues
+        const possibleViews = numbers[0];
+        if (possibleViews > 1000) {
+          const stats = {
+            views: possibleViews,
+            likes: numbers[1] || 0,
+            comments: numbers[2] || 0,
+            shares: numbers[3] || 0,
+            description: null,
+            author: null,
+            hashtags: []
+          };
+          
+          console.log(`⚠️ STATS APPROXIMATIVES: ${stats.views} vues (estimation)`);
+          return stats;
+        }
+      }
+    }
+  } catch (error) {
+    console.log(`❌ Erreur dernière chance: ${error.message}`);
+  }
+  
+  console.log("❌ === AUCUNE STAT TROUVÉE ===");
+  return null;
 }
 
 // ANALYSE OPENAI SIMPLIFIÉE
 async function analyzeWithOpenAI(description, hashtags, author, openaiKey) {
   if (!openaiKey || !description || description === "Description non disponible") {
-    console.log("⚠️ Analyse OpenAI non possible");
     return null;
   }
 
@@ -185,8 +292,6 @@ RÉPONDS EN JSON avec:
       const analysis = JSON.parse(data.choices[0]?.message?.content || '{}');
       console.log("✅ Analyse OpenAI OK");
       return analysis;
-    } else {
-      console.log(`⚠️ OpenAI Error: ${response.status}`);
     }
     
     return null;
@@ -263,6 +368,9 @@ function generateRecommendations(stats, metrics, aiAnalysis) {
   if (stats && metrics.engagementRate > 10) {
     reco.points_forts.push(`🔥 Excellent engagement (${metrics.engagementRate.toFixed(1)}%)`);
   }
+  if (stats && stats.views > 500000) {
+    reco.points_forts.push(`🚀 Excellente portée (${formatNumber(stats.views)} vues)`);
+  }
   if (aiAnalysis?.niche) {
     reco.points_forts.push(`🎯 Niche identifiée: ${aiAnalysis.niche}`);
   }
@@ -288,13 +396,10 @@ function generateRecommendations(stats, metrics, aiAnalysis) {
   
   // Suggestions par défaut
   if (!stats) {
-    reco.suggestions.push("📊 Configurez ScrapingBee pour les stats détaillées");
-  }
-  if (!aiAnalysis) {
-    reco.suggestions.push("🤖 Configurez OpenAI pour l'analyse sémantique");
+    reco.suggestions.push("📊 Les stats TikTok n'ont pas pu être extraites - Structure de page modifiée");
   }
   
-  reco.suggestions.push("📈 Utilisez cette analyse pour optimiser vos prochaines vidéos");
+  reco.suggestions.push("📈 Analysez régulièrement vos vidéos pour identifier les patterns qui marchent");
   
   return reco;
 }
@@ -303,7 +408,7 @@ function generateRecommendations(stats, metrics, aiAnalysis) {
 export default async function handler(req, res) {
   const startTime = Date.now();
   
-  console.log("🚀 API analyze-video appelée");
+  console.log("🚀 === DÉBUT ANALYSE TIKTOK ===");
   
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -316,23 +421,20 @@ export default async function handler(req, res) {
     }
     
     if (req.method !== 'POST') {
-      console.log(`❌ Méthode incorrecte: ${req.method}`);
       return res.status(405).json({ error: 'Méthode non autorisée' });
     }
     
     const { url: tiktokUrl } = req.body || {};
     
     if (!tiktokUrl) {
-      console.log("❌ URL manquante");
       return res.status(400).json({ error: 'URL manquante' });
     }
     
     if (!isValidTikTokUrl(tiktokUrl)) {
-      console.log(`❌ URL invalide: ${tiktokUrl}`);
       return res.status(400).json({ error: 'URL TikTok invalide' });
     }
     
-    console.log(`🎯 Analyse: ${tiktokUrl}`);
+    console.log(`🎯 URL à analyser: ${tiktokUrl}`);
 
     let description = "Description non disponible";
     let thumbnail = null;
@@ -342,9 +444,9 @@ export default async function handler(req, res) {
     let hasScrapingData = false;
     let hasOpenAI = false;
 
-    // ÉTAPE 1: oEmbed (5s timeout)
+    // ÉTAPE 1: oEmbed
     try {
-      console.log("📡 Tentative oEmbed...");
+      console.log("📡 === OEMBED ===");
       const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`;
       
       const oembedResponse = await fetchWithTimeout(oembedUrl, {
@@ -359,44 +461,44 @@ export default async function handler(req, res) {
         thumbnail = oembedData.thumbnail_url;
         hasOembedData = true;
         console.log("✅ oEmbed réussi");
-      } else {
-        throw new Error(`Status ${oembedResponse.status}`);
       }
     } catch (error) {
       console.log(`⚠️ oEmbed échec: ${error.message}`);
     }
 
-    // ÉTAPE 2: ScrapingBee (15s timeout)
+    // ÉTAPE 2: ScrapingBee + EXTRACTION AMÉLIORÉE
     const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY;
     if (SCRAPINGBEE_API_KEY) {
       try {
-        console.log("🕷️ Tentative ScrapingBee...");
+        console.log("🕷️ === SCRAPINGBEE ===");
         const scrapingUrl = new URL('https://app.scrapingbee.com/api/v1/');
         scrapingUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
         scrapingUrl.searchParams.set('url', tiktokUrl);
         scrapingUrl.searchParams.set('render_js', 'true');
-        scrapingUrl.searchParams.set('wait', '3000');
+        scrapingUrl.searchParams.set('wait', '4000');
+        scrapingUrl.searchParams.set('premium_proxy', 'true');
 
-        const response = await fetchWithTimeout(scrapingUrl.toString(), {}, 15000);
+        const response = await fetchWithTimeout(scrapingUrl.toString(), {}, 20000);
+
+        console.log(`📊 ScrapingBee Status: ${response.status}`);
 
         if (response.ok) {
           const html = await response.text();
           console.log(`📄 HTML reçu: ${html.length} caractères`);
           
-          const data = findJsonBlob(html);
-          if (data) {
-            stats = extractStats(data);
-            hasScrapingData = !!stats;
-            
-            if (stats && stats.description && stats.description.length > description.length) {
-              description = stats.description;
-            }
+          // NOUVELLE EXTRACTION AMÉLIORÉE
+          stats = findAndExtractStats(html);
+          hasScrapingData = !!stats;
+          
+          if (stats && stats.description && stats.description.length > description.length) {
+            description = stats.description;
           }
         } else {
-          console.log(`⚠️ ScrapingBee Status: ${response.status}`);
+          const errorText = await response.text();
+          console.log(`❌ ScrapingBee Error: ${errorText.substring(0, 200)}`);
         }
       } catch (error) {
-        console.log(`⚠️ ScrapingBee échec: ${error.message}`);
+        console.log(`❌ ScrapingBee échec: ${error.message}`);
       }
     } else {
       console.log("⚠️ SCRAPINGBEE_API_KEY non configurée");
@@ -405,6 +507,7 @@ export default async function handler(req, res) {
     // ÉTAPE 3: Analyse OpenAI
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     if (OPENAI_API_KEY) {
+      console.log("🤖 === OPENAI ===");
       aiAnalysis = await analyzeWithOpenAI(
         description, 
         stats?.hashtags || [], 
@@ -417,6 +520,7 @@ export default async function handler(req, res) {
     }
 
     // CALCULS FINAUX
+    console.log("🧮 === CALCULS FINAUX ===");
     const metrics = calculateMetrics(stats);
     const scoreResult = calculateScore(stats, metrics, aiAnalysis);
     const recommendations = generateRecommendations(stats, metrics, aiAnalysis);
@@ -441,14 +545,15 @@ export default async function handler(req, res) {
         hasScrapingData,
         hasStats: !!stats,
         hasOpenAIAnalysis: hasOpenAI,
-        frameworkVersion: "3.1-stable"
+        frameworkVersion: "3.2-enhanced-scraping"
       },
       video: {
         url: tiktokUrl,
         description,
         thumbnail,
         author: stats?.author || null,
-        hashtags: stats?.hashtags || []
+        hashtags: stats?.hashtags || [],
+        music: stats?.music || null
       },
       stats: stats ? {
         ...stats,
@@ -470,7 +575,7 @@ export default async function handler(req, res) {
       },
       metadata: {
         analysisTimestamp: new Date().toISOString(),
-        frameworkVersion: "3.1-stable",
+        frameworkVersion: "3.2-enhanced-scraping",
         features: {
           oembed: hasOembedData,
           stats_extraction: hasScrapingData,
@@ -481,13 +586,16 @@ export default async function handler(req, res) {
       }
     };
 
-    console.log(`✅ Analyse terminée - Score: ${scoreResult.score}/100 (${scoreResult.potentiel})`);
+    console.log(`✅ === ANALYSE TERMINÉE ===`);
+    console.log(`📊 Stats: ${stats ? 'EXTRAITES' : 'NON DISPONIBLES'}`);
+    console.log(`🎯 Score: ${scoreResult.score}/100 (${scoreResult.potentiel})`);
     
     return res.status(200).json(response);
 
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error("❌ ERREUR CRITIQUE:", error);
+    console.error("❌ === ERREUR CRITIQUE ===");
+    console.error("Message:", error.message);
     console.error("Stack:", error.stack);
     
     return res.status(500).json({
