@@ -1,10 +1,15 @@
 // /api/analyze-video.js
-// Objectif: recevoir {url}, extraire stats via oEmbed + scraping HTML public, auditer SEO/hashtags avec OpenAI, renvoyer un JSON complet.
-// Pas d'API TikTok officielle utilisée.
+// Version durcie pour Vercel : runtime Node.js, bodyParser off, self-test intégré, erreurs lisibles en DEBUG.
+
+// === RUNTIME (Next/Vercel) ===
+// Next.js "pages/api/*"
+export const config = { api: { bodyParser: false } };
+// Next.js "app router" ou Vercel serverless générique (sans edge)
+export const runtime = 'nodejs';
 
 let analysisLogs = [];
 
-// --------- Utils ----------
+// ----------------------- Utils -----------------------
 function isValidTikTokUrl(url) {
   const patterns = [
     /tiktok\.com\/@[\w.-]+\/video\/\d+/i,
@@ -87,7 +92,7 @@ function findStatsInObject(obj, depth = 0) {
 }
 
 function extractStatsFromHtml(html) {
-  // 1) __NEXT_DATA__
+  // __NEXT_DATA__
   try {
     const m = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
     if (m?.[1]) {
@@ -99,23 +104,21 @@ function extractStatsFromHtml(html) {
         next?.props?.pageProps?.serverCode?.ItemModule
       ].filter(Boolean);
       for (const p of paths) {
-        if (p && typeof p === 'object') {
-          if (p.stats) {
-            const s = createStatsObjectFromItem(p);
+        if (!p) continue;
+        if (p.stats) {
+          const s = createStatsObjectFromItem(p);
+          if (s) return s;
+        } else if (typeof p === 'object') {
+          for (const val of Object.values(p)) {
+            const s = createStatsObjectFromItem(val);
             if (s) return s;
-          } else {
-            // ItemModule est un map id->item
-            for (const val of Object.values(p)) {
-              const s = createStatsObjectFromItem(val);
-              if (s) return s;
-            }
           }
         }
       }
     }
   } catch {}
 
-  // 2) SIGI_STATE
+  // SIGI_STATE
   try {
     const chunk = html.split('<script id="SIGI_STATE" type="application/json">')[1];
     if (chunk) {
@@ -136,7 +139,7 @@ function extractStatsFromHtml(html) {
     }
   } catch {}
 
-  // 3) Patterns brutaux (fallback)
+  // Patterns fallback
   try {
     const patterns = [
       /<script[^>]*>window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});\s*<\/script>/,
@@ -157,7 +160,6 @@ function extractStatsFromHtml(html) {
         } catch {}
       }
     }
-
     const getMax = (reg) => {
       const all = [...html.matchAll(reg)].map(m => parseInt(m[1]));
       return all.length ? Math.max(...all) : 0;
@@ -215,7 +217,7 @@ function calculateScore(stats, metrics, ai) {
   if (ai) {
     if (typeof ai.seo_score === 'number') score += Math.round((ai.seo_score - 50) * 0.2);
     if (ai.has_hook) score += 8;
-    if (ai.has_cta) score += 6;
+    if (ai.has_cta)  score += 6;
   }
   score = Math.max(0, Math.min(100, score));
   const potentiel = score >= 85 ? 'élevé' : score >= 70 ? 'bon' : score <= 40 ? 'faible' : 'moyen';
@@ -224,7 +226,8 @@ function calculateScore(stats, metrics, ai) {
 
 async function analyzeSEOWithOpenAI({ description, hashtags, author }, openaiKey) {
   if (!openaiKey || !description) return null;
-  const prompt = `Tu es un auditeur SEO spécialisé TikTok. Analyse et réponds STRICTEMENT en JSON valide.
+  try {
+    const prompt = `Tu es un auditeur SEO spécialisé TikTok. Analyse et réponds STRICTEMENT en JSON valide.
 
 CONTENU:
 - Auteur: @${author || 'Inconnu'}
@@ -236,37 +239,33 @@ RENVOIE CE JSON UNIQUEMENT:
   "niche": "string",
   "seo_score": 0-100,
   "hashtag_alignment_score": 0-100,
-  "primary_keywords": ["mot-clé 1", "mot-clé 2"],
+  "primary_keywords": ["mot-clé 1"],
   "missing_keywords": ["mot-clé manquant 1"],
   "has_hook": true/false,
   "has_cta": true/false,
-  "issues": ["problème 1", "problème 2"],
-  "suggestions": ["action concrète 1", "action concrète 2"]
+  "issues": ["problème 1"],
+  "suggestions": ["action concrète 1"]
 }`;
-
-  const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      response_format: { type: 'json_object' },
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.2,
-      max_tokens: 800
-    })
-  }, 20000);
-
-  if (!res.ok) return null;
-  const data = await res.json();
-  try {
+    const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 600
+      })
+    }, 20000);
+    if (!res.ok) return null;
+    const data = await res.json();
     return JSON.parse(data.choices?.[0]?.message?.content || '{}');
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-// --------- Handler ----------
+// ----------------------- Handler -----------------------
 export default async function handler(req, res) {
   const allowedOrigin = '*';
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
@@ -274,17 +273,33 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Vary', 'Origin');
 
+  const DEBUG = process.env.DEBUG === '1';
+
   if (req.method === 'OPTIONS') {
     return res.status(200).json({ ok: true });
   }
 
+  // SELFTEST rapide
   if (req.method === 'GET') {
-    // petite route de stats/debug
-    const stats = {
-      total: analysisLogs.length,
-      last: analysisLogs.at(-1) || null
-    };
-    res.setHeader('Cache-Control', 'public, max-age=120');
+    if ('selftest' in (req.query || {})) {
+      const OPENAI = !!process.env.OPENAI_API_KEY;
+      const SBEE = !!process.env.SCRAPINGBEE_API_KEY;
+      // Ping oEmbed (sans throw)
+      let oembedOk = false;
+      try {
+        const r = await fetchWithTimeout('https://www.tiktok.com/oembed?url=https%3A%2F%2Fwww.tiktok.com%2F%40scout2015%2Fvideo%2F6718335390845095173', { headers:{'User-Agent':'Mozilla/5.0'} }, 6000);
+        oembedOk = r.ok;
+      } catch {}
+      return res.status(200).json({
+        ok: true,
+        runtime: 'nodejs',
+        env: { OPENAI, SCRAPINGBEE: SBEE },
+        network: { oembedOk }
+      });
+    }
+    // petite route stats
+    const stats = { total: analysisLogs.length, last: analysisLogs.at(-1) || null };
+    res.setHeader('Cache-Control', 'public, max-age=60');
     return res.status(200).json({ success: true, stats });
   }
 
@@ -292,7 +307,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
-  // parse body
+  // Parse body manuellement (évite edge cases)
   let body = req.body;
   if (!body && req.headers['content-type']?.includes('application/json')) {
     try {
@@ -303,8 +318,8 @@ export default async function handler(req, res) {
         req.on('error', reject);
       });
       body = raw ? JSON.parse(raw) : {};
-    } catch {
-      return res.status(400).json({ error: 'JSON invalide' });
+    } catch (e) {
+      return res.status(400).json({ error: 'JSON invalide', ...(DEBUG ? { debug: String(e) } : {}) });
     }
   }
 
@@ -319,7 +334,7 @@ export default async function handler(req, res) {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
     const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY || '';
 
-    // Étape 1: oEmbed
+    // 1) oEmbed
     let description = null;
     let thumbnail = null;
     try {
@@ -331,9 +346,11 @@ export default async function handler(req, res) {
         description = js.title || null;
         thumbnail = js.thumbnail_url || null;
       }
-    } catch {}
+    } catch (e) {
+      if (DEBUG) console.log('oEmbed error:', e);
+    }
 
-    // Étape 2: Scraping HTML (via ScrapingBee si clé, sinon fetch direct - souvent bloqué)
+    // 2) Scraping HTML
     let stats = null;
     try {
       let htmlResp;
@@ -346,19 +363,18 @@ export default async function handler(req, res) {
         u.searchParams.set('premium_proxy', 'true');
         u.searchParams.set('stealth_proxy', 'true');
         u.searchParams.set('country_code', 'fr');
-        htmlResp = await fetchWithTimeout(u.toString(), {
-          headers: { 'User-Agent': 'Mozilla/5.0' }
-        }, 25000);
+        htmlResp = await fetchWithTimeout(u.toString(), { headers: { 'User-Agent': 'Mozilla/5.0' } }, 25000);
       } else {
-        htmlResp = await fetchWithTimeout(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' }
-        }, 15000);
+        // Sans proxy premium, TikTok va souvent bloquer (CLOUDFLARE). On n'échoue pas la requête.
+        htmlResp = await fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, 12000);
       }
       if (htmlResp?.ok) {
         const html = await htmlResp.text();
         stats = extractStatsFromHtml(html);
       }
-    } catch {}
+    } catch (e) {
+      if (DEBUG) console.log('Scrape error:', e);
+    }
 
     if (stats && description && (!stats.description || stats.description.length < description.length)) {
       stats.description = description;
@@ -366,7 +382,7 @@ export default async function handler(req, res) {
       stats = { views: 0, likes: 0, comments: 0, shares: 0, saves: 0, description, author: null, hashtags: [], music: null, duration: null, createTime: null, videoUrl: null, coverUrl: null };
     }
 
-    // Étape 3: Audit SEO/hashtags via OpenAI
+    // 3) Audit SEO (OpenAI optionnel)
     let ai = null;
     try {
       ai = await analyzeSEOWithOpenAI({
@@ -374,13 +390,14 @@ export default async function handler(req, res) {
         hashtags: stats?.hashtags || [],
         author: stats?.author || null
       }, OPENAI_API_KEY);
-    } catch {}
+    } catch (e) {
+      if (DEBUG) console.log('OpenAI error:', e);
+    }
 
-    // Calculs
-    const metrics = calculateMetrics(stats);
-    const score = calculateScore(stats, metrics, ai);
+    // 4) Calculs & log
+    const metrics = calculateMetrics(stats || {});
+    const score = calculateScore(stats || {}, metrics, ai || null);
 
-    // Log local (en mémoire)
     const logEntry = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       timestamp: new Date().toISOString(),
@@ -394,7 +411,6 @@ export default async function handler(req, res) {
     analysisLogs.push(logEntry);
     if (analysisLogs.length > 1000) analysisLogs = analysisLogs.slice(-1000);
 
-    // Réponse finale
     return res.status(200).json({
       success: true,
       analysisId: logEntry.id,
@@ -428,11 +444,18 @@ export default async function handler(req, res) {
       meta: {
         framework: 'no-tiktok-api:v1',
         tookMs: logEntry.ms,
-        hasOpenAI: !!OPENAI_API_KEY
+        hasOpenAI: !!OPENAI_API_KEY,
+        hasScrapingBee: !!SCRAPINGBEE_API_KEY
       }
     });
+
   } catch (e) {
-    console.error('Handler error', e);
-    return res.status(500).json({ error: 'Erreur interne' });
+    // Renvoie une erreur explicite (en DEBUG) plutôt que "FUNCTION_INVOCATION_FAILED"
+    const payload = { error: 'Erreur interne' };
+    if (process.env.NODE_ENV !== 'production' || process.env.DEBUG === '1') {
+      payload.details = String(e?.message || e);
+      payload.stack = e?.stack;
+    }
+    return res.status(500).json(payload);
   }
 }
