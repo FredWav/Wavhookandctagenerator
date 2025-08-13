@@ -1,11 +1,9 @@
 // /api/analyze-video.js
-// Version durcie pour Vercel : runtime Node.js, bodyParser off, self-test intégré, erreurs lisibles en DEBUG.
-
-// === RUNTIME (Next/Vercel) ===
-// Next.js "pages/api/*"
-export const config = { api: { bodyParser: false } };
-// Next.js "app router" ou Vercel serverless générique (sans edge)
-export const runtime = 'nodejs';
+// Compatible Vercel Serverless Functions "standalone" (pas Next.js).
+// - AUCUN export Next (pas de runtime/config).
+// - CommonJS: module.exports = async (req, res) => {}
+// - Self-test GET: /api/analyze-video?selftest=1
+// - Pas d'OpenAI/ScrapingBee requis pour selftest.
 
 let analysisLogs = [];
 
@@ -38,13 +36,18 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   }
 }
 
+function getQuery(req) {
+  // Compatible Vercel Functions (pas Next): parse via URL
+  const u = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+  const q = {};
+  u.searchParams.forEach((v, k) => { q[k] = v; });
+  return q;
+}
+
 function extractUserInfo(req) {
   const fwd = req.headers['x-forwarded-for'];
   const ip = fwd ? fwd.split(',')[0].trim()
-    : req.headers['x-real-ip']
-    : req.socket?.remoteAddress
-    || req.connection?.remoteAddress
-    || 'unknown';
+    : (req.headers['x-real-ip'] || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown');
   return { ip, ua: req.headers['user-agent'] || 'unknown' };
 }
 
@@ -265,10 +268,10 @@ RENVOIE CE JSON UNIQUEMENT:
   }
 }
 
-// ----------------------- Handler -----------------------
-export default async function handler(req, res) {
-  const allowedOrigin = '*';
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+// ----------------------- Handler (CommonJS) -----------------------
+module.exports = async (req, res) => {
+  // CORS basique
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Vary', 'Origin');
@@ -276,58 +279,60 @@ export default async function handler(req, res) {
   const DEBUG = process.env.DEBUG === '1';
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).json({ ok: true });
+    res.statusCode = 200;
+    return res.end(JSON.stringify({ ok: true }));
   }
 
-  // SELFTEST rapide
+  // GET: selftest & stats
   if (req.method === 'GET') {
-    if ('selftest' in (req.query || {})) {
+    const q = getQuery(req);
+    if ('selftest' in q) {
+      // Rien qui puisse throw ici
       const OPENAI = !!process.env.OPENAI_API_KEY;
       const SBEE = !!process.env.SCRAPINGBEE_API_KEY;
-      // Ping oEmbed (sans throw)
       let oembedOk = false;
       try {
-        const r = await fetchWithTimeout('https://www.tiktok.com/oembed?url=https%3A%2F%2Fwww.tiktok.com%2F%40scout2015%2Fvideo%2F6718335390845095173', { headers:{'User-Agent':'Mozilla/5.0'} }, 6000);
+        const r = await fetchWithTimeout(
+          'https://www.tiktok.com/oembed?url=https%3A%2F%2Fwww.tiktok.com%2F%40scout2015%2Fvideo%2F6718335390845095173',
+          { headers: { 'User-Agent': 'Mozilla/5.0' } },
+          6000
+        );
         oembedOk = r.ok;
       } catch {}
-      return res.status(200).json({
-        ok: true,
-        runtime: 'nodejs',
-        env: { OPENAI, SCRAPINGBEE: SBEE },
-        network: { oembedOk }
-      });
+      res.statusCode = 200;
+      return res.end(JSON.stringify({ ok: true, env: { OPENAI, SCRAPINGBEE: SBEE }, network: { oembedOk } }));
     }
-    // petite route stats
-    const stats = { total: analysisLogs.length, last: analysisLogs.at(-1) || null };
     res.setHeader('Cache-Control', 'public, max-age=60');
-    return res.status(200).json({ success: true, stats });
+    res.statusCode = 200;
+    return res.end(JSON.stringify({ success: true, stats: { total: analysisLogs.length, last: analysisLogs.at(-1) || null } }));
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Méthode non autorisée' });
+    res.statusCode = 405;
+    return res.end(JSON.stringify({ error: 'Méthode non autorisée' }));
   }
 
-  // Parse body manuellement (évite edge cases)
-  let body = req.body;
-  if (!body && req.headers['content-type']?.includes('application/json')) {
-    try {
-      const raw = await new Promise((resolve, reject) => {
-        let data = '';
-        req.on('data', c => (data += c));
-        req.on('end', () => resolve(data));
-        req.on('error', reject);
-      });
-      body = raw ? JSON.parse(raw) : {};
-    } catch (e) {
-      return res.status(400).json({ error: 'JSON invalide', ...(DEBUG ? { debug: String(e) } : {}) });
-    }
+  // Parse body à la main (compatible Vercel Functions)
+  let body = {};
+  try {
+    const raw = await new Promise((resolve, reject) => {
+      let data = '';
+      req.on('data', c => (data += c));
+      req.on('end', () => resolve(data));
+      req.on('error', reject);
+    });
+    body = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    res.statusCode = 400;
+    return res.end(JSON.stringify({ error: 'JSON invalide', ...(DEBUG ? { debug: String(e) } : {}) }));
   }
 
   const start = Date.now();
   try {
     const { url } = body || {};
     if (!url || !isValidTikTokUrl(url)) {
-      return res.status(400).json({ error: 'URL TikTok invalide ou manquante' });
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ error: 'URL TikTok invalide ou manquante' }));
     }
 
     const user = extractUserInfo(req);
@@ -365,7 +370,7 @@ export default async function handler(req, res) {
         u.searchParams.set('country_code', 'fr');
         htmlResp = await fetchWithTimeout(u.toString(), { headers: { 'User-Agent': 'Mozilla/5.0' } }, 25000);
       } else {
-        // Sans proxy premium, TikTok va souvent bloquer (CLOUDFLARE). On n'échoue pas la requête.
+        // Sans proxy premium, TikTok bloque souvent; on ne fait pas échouer pour autant.
         htmlResp = await fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, 12000);
       }
       if (htmlResp?.ok) {
@@ -411,7 +416,8 @@ export default async function handler(req, res) {
     analysisLogs.push(logEntry);
     if (analysisLogs.length > 1000) analysisLogs = analysisLogs.slice(-1000);
 
-    return res.status(200).json({
+    res.statusCode = 200;
+    return res.end(JSON.stringify({
       success: true,
       analysisId: logEntry.id,
       timestamp: logEntry.timestamp,
@@ -447,15 +453,15 @@ export default async function handler(req, res) {
         hasOpenAI: !!OPENAI_API_KEY,
         hasScrapingBee: !!SCRAPINGBEE_API_KEY
       }
-    });
+    }));
 
   } catch (e) {
-    // Renvoie une erreur explicite (en DEBUG) plutôt que "FUNCTION_INVOCATION_FAILED"
     const payload = { error: 'Erreur interne' };
     if (process.env.NODE_ENV !== 'production' || process.env.DEBUG === '1') {
       payload.details = String(e?.message || e);
       payload.stack = e?.stack;
     }
-    return res.status(500).json(payload);
+    res.statusCode = 500;
+    return res.end(JSON.stringify(payload));
   }
-}
+};
