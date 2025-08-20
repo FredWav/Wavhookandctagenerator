@@ -4,6 +4,7 @@
     { "src": "^/$", "dest": "/index.html" },
     { "src": "^/login$", "dest": "/login.html" },
     { "src": "^/signup$", "dest": "/signup.html" },
+    { "src": "^/forgot$", "dest": "/forgot.html" },
     { "src": "^/hooks$", "dest": "/hooks.html" },
     { "src": "^/ctas$", "dest": "/cta.html" },
     { "src": "^/history$", "dest": "/history.html" },
