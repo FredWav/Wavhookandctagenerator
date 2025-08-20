@@ -1,7 +1,11 @@
 {
-  "name": "wavhookandctagenerator",
+  "name": "wav-generator",
   "private": true,
-  "scripts": { "dev": "vercel dev" },
+  "scripts": {
+    "dev": "vercel dev"
+  },
   "dependencies": {},
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }
