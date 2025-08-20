@@ -1,73 +1,84 @@
 export const config = { runtime: "edge" };
 
-function json(res, status = 200) {
-  return new Response(JSON.stringify(res), { 
-    status, 
-    headers: { "Content-Type": "application/json" }
-  });
+function corsHeaders() {
+  const origin = process.env.CORS_ORIGIN || "*";
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  };
 }
+function json(res, status = 200){ return new Response(JSON.stringify(res), { status, headers: corsHeaders() }); }
+async function getBody(req){ try{ return await req.json(); }catch{ return {}; } }
 
-export default async function handler(req) {
-  if (req.method !== "POST") return json({ error: "Use POST" }, 405);
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const MODEL = "gpt-4o-mini";
 
-  const body = await req.json().catch(() => ({}));
-  const {
-    niche = "général",
-    tone = "enthousiaste",
-    cta_goal = "s'abonner",
-    benefit = "",
-    count = 10
-  } = body;
+export default async function handler(req){
+  if(req.method==="OPTIONS") return json({ok:true});
+  if(req.method!=="POST") return json({error:"Method not allowed"},405);
 
-  const system = `Tu es un expert en marketing digital et en copywriting, spécialisé dans la création d'appels à l'action (CTA) percutants et irrésistibles pour les vidéos courtes (TikTok, Reels, Shorts).
+  const { intent="follow", platform="tiktok", tone="direct",
+          constraints="", count=20, putaclic=false } = await getBody(req);
 
-Objectif: Générer des phrases courtes (5-15 mots) qui incitent clairement et efficacement le spectateur à réaliser une action précise à la fin d'une vidéo.
+  const max = putaclic ? 50 : 50;
+  const qty = Math.min(Math.max(1, count|0), max);
 
-Instructions:
-1.  Focalise-toi sur l'action demandée (l'objectif du CTA).
-2.  Si un bénéfice est fourni, intègre-le de manière naturelle et convaincante.
-3.  Adapte-toi scrupuleusement au ton demandé. Un CTA "urgent" doit utiliser le FOMO, un CTA "bienveillant" doit être une invitation douce.
-4.  Varie les formulations : commence parfois par l'action, parfois par le bénéfice. Utilise des questions pour engager.
-5.  La sortie doit être un objet JSON au format STRICT : {"ctas": ["appel à l'action 1", "appel à l'action 2", ...]}. Ne produis AUCUN autre texte.`;
+  const sys = [
+    "Tu génères des CTAs courts et actionnables, adaptés par plateforme.",
+    "Toujours en français. 1 ligne par CTA. Pas de hashtags, pas d’émojis excessifs.",
+    "Réponse STRICTEMENT en JSON valide, sans texte hors JSON."
+  ].join(" ");
 
-  const user = `Contexte de la vidéo:
-- Niche / Domaine: ${niche}
-- Ton demandé pour le CTA: ${tone}
+  const platformHints = {
+    tiktok: "accent sur l’action immédiate, langage parlé, 0-1s d’ancrage",
+    reels: "call to action clair, doux, intégré au visuel clean",
+    shorts: "CTA tranchant, concis, orienté curiosité/répétition"
+  }[platform] || "CTA clair et concret";
 
-Demande:
-- Objectif principal de l'appel à l'action: ${cta_goal}
-- Bénéfice ou contexte à mentionner (si disponible): ${benefit || "Aucun"}
+  const putaclicBoost = putaclic
+    ? "Augmente l’intensité, propose des formulations plus polarisantes mais non insultantes."
+    : "Reste ferme mais respectueux.";
 
-Génère une liste de ${count} appels à l'action variés.`;
+  const userPrompt = `
+Objectif CTA: ${intent}
+Plateforme: ${platform} (${platformHints})
+Ton: ${tone}
+Contexte: ${constraints || "N/A"}
+${putaclicBoost}
 
-  try {
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ]
-      })
-    });
+Génère EXACTEMENT ${qty} CTAs, 5-12 mots, zero fluff, pas de 'abonne-toi si...', préfère 'Abonne-toi pour… [bénéfice concret]'.
 
-    if (!r.ok) {
-      const text = await r.text();
-      return json({ error: "OpenAI error", details: text }, 500);
-    }
-    const data = await r.json();
-    const content = data?.choices?.[0]?.message?.content || "{}";
-    const parsed = JSON.parse(content);
-    const ctas = Array.isArray(parsed.ctas) ? parsed.ctas.filter(x => typeof x === "string").slice(0, count) : [];
-    return json({ ctas });
+Renvoie UNIQUEMENT ce JSON:
+{ "ctas": ["..."] }
+  `.trim();
 
-  } catch (err) {
-    return json({ error: "Server error", details: String(err) }, 500);
+  const r = await fetch(OPENAI_URL, {
+    method:"POST",
+    headers:{
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type":"application/json"
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: putaclic ? 0.85 : 0.65,
+      messages: [
+        { role:"system", content: sys },
+        { role:"user", content: userPrompt }
+      ],
+      response_format: { type:"json_object" }
+    })
+  });
+
+  if(!r.ok){
+    const t = await r.text().catch(()=> "");
+    return json({error:"OpenAI error", details:t}, 500);
   }
+  const data = await r.json();
+  let parsed;
+  try{ parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}"); }
+  catch{ parsed = { ctas:[] }; }
+
+  return json({ ctas: Array.isArray(parsed.ctas) ? parsed.ctas : [] });
 }
