@@ -1,93 +1,35 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Historique – PRO</title>
-<style>
-  :root{ --bg:#111; --card:#18181B; --ink:#E4E4E7; --muted:#71717A; --border:#27272A; --blue:#3B82F6; --green:#22c55e; --radius:16px; }
-  [data-theme="light"]{ --bg:#F9FAFB; --card:#FFFFFF; --ink:#111827; --muted:#6B7280; --border:#E5E7EB; }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
-  header{max-width:1100px;margin:20px auto 8px;padding:0 16px;display:flex;align-items:center;justify-content:space-between; flex-wrap:wrap; gap:12px;}
-  h1{margin:0;font-size:clamp(20px,2.4vw,30px)}
-  nav{display:flex;gap:10px;align-items:center}
-  .nav-link{color:var(--ink);text-decoration:none;border:1px solid var(--border);padding:8px 12px;border-radius:999px;background:var(--card)}
-  .wrap{max-width:1100px;margin:0 auto 40px;padding:0 16px;display:grid;gap:16px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);}
-  .inner{padding:18px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .pill{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px}
-  .pill.hook{border-color:var(--blue); color:var(--blue);}
-  .pill.cta{border-color:var(--green); color:var(--green);}
-  .btn{border:1px solid var(--border);padding:8px 12px;border-radius:10px;background:transparent;color:var(--ink);cursor:pointer}
-  .btn.active{background:var(--blue); color:#fff; border-color:var(--blue);}
-  .muted{color:var(--muted)}
-</style>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Historique</title>
+<link rel="stylesheet" href="/assets/styles.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header>
-    <h1>Historique</h1>
-    <nav style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <a href="hooks.html" class="nav-link">Hooks</a>
-        <a href="cta.html" class="nav-link">CTAs</a>
-        <a href="analyzer.html" class="nav-link">Analyseur</a>
-    </nav>
-  </header>
-  <section class="wrap">
-    <div class="card"><div class="inner">
-      <div class="row">
-        <button class="btn active" id="showHooks">Historique des Hooks</button>
-        <button class="btn" id="showCTAs">Historique des CTAs</button>
-      </div>
-    </div></div>
-    <div class="card"><div class="inner" id="list"></div></div>
+<header class="header">
+  <nav class="nav container">
+    <div class="brand"><span class="brand-badge"></span> Wav Generator</div>
+    <div class="nav-actions">
+      <a class="btn-outline" href="/">Accueil</a>
+      <button id="logoutBtn" class="btn-outline">Déconnexion</button>
+    </div>
+  </nav>
+</header>
+<main class="container">
+  <section class="card">
+    <div class="card-inner">
+      <div class="kicker">Historique</div>
+      <h1 class="h1">Bientôt : historique par utilisateur</h1>
+      <p class="p">Stockage prévu via KV par userId (Freemium: 30 derniers, Premium: illimité + recherche).</p>
+    </div>
   </section>
+  <footer>© 2025 Wav</footer>
+</main>
+<script src="/assets/app.js"></script>
 <script>
-  const $ = id => document.getElementById(id);
-  const HOOKS_KEY = 'hgpp_history_v1';
-  const CTAS_KEY = 'hgpp_cta_history_v1';
-  function render(type) {
-    const root = $('list');
-    const key = type === 'hooks' ? HOOKS_KEY : CTAS_KEY;
-    const data = JSON.parse(localStorage.getItem(key) || '[]');
-    if (!data.length) {
-      root.innerHTML = `<div class="muted">Aucun enregistrement.</div>`;
-      return;
-    }
-    root.innerHTML = data.map(e => {
-      if (type === 'hooks') {
-        return `<div style="margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-            <div class="row" style="justify-content:space-between">
-              <div><span class="pill hook">Hook</span><span class="pill">${e.platform||''}</span><span class="pill">${e.tone||''}</span></div>
-              <div class="muted">${new Date(e.ts).toLocaleString()}</div>
-            </div>
-            <div><b>${e.theme}</b> — <span class="muted">${e.niche}</span></div>
-            <div class="muted" style="font-size:14px;">${(e.hooks||[]).length} hooks générés</div>
-          </div>`;
-      } else {
-        return `<div style="margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-            <div class="row" style="justify-content:space-between">
-              <div><span class="pill cta">CTA</span><span class="pill">${e.cta_goal||''}</span><span class="pill">${e.tone||''}</span></div>
-              <div class="muted">${new Date(e.ts).toLocaleString()}</div>
-            </div>
-            <div><b>${e.niche}</b> — <span class="muted">${e.benefit || 'Sans bénéfice'}</span></div>
-            <div class="muted" style="font-size:14px;">${(e.ctas||[]).length} CTAs générés</div>
-          </div>`;
-      }
-    }).join('');
-  }
-  function switchView(type) {
-    $('showHooks').classList.toggle('active', type === 'hooks');
-    $('showCTAs').classList.toggle('active', type === 'ctas');
-    $('showCTAs').style.borderColor = type === 'ctas' ? 'var(--green)' : 'var(--border)';
-    $('showCTAs').style.color = type === 'ctas' ? '#fff' : 'var(--ink)';
-    $('showCTAs').style.backgroundColor = type === 'ctas' ? 'var(--green)' : 'transparent';
-    render(type);
-  }
-  $('showHooks').onclick = () => switchView('hooks');
-  $('showCTAs').onclick = () => switchView('ctas');
-  switchView('hooks');
+(async ()=>{ await requireAuth(true); el("#logoutBtn").onclick = async()=>{ await api("auth/logout",{method:"POST"}); location.href="/login"; };})();
 </script>
 </body>
 </html>
