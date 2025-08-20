@@ -1,6 +1,7 @@
 {
-  "name": "hook-generator-pro",
+  "name": "wavhookandctagenerator",
   "private": true,
-  "type": "module",
+  "scripts": { "dev": "vercel dev" },
+  "dependencies": {},
   "engines": { "node": ">=18" }
 }
