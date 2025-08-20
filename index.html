@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wav Generator – Accueil</title>
-  <link rel="stylesheet" href="/assets/styles.css"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -23,38 +24,51 @@
   <section class="hero card">
     <div class="card-inner">
       <div class="kicker">Suite créative</div>
-      <h1 class="h1">Hooks & CTAs ultra-efficaces<br/>alignés aux plateformes</h1>
-      <p class="p">Génère des <b>hooks textuels</b> et <b>hooks visuels</b> calibrés pour TikTok / Reels / Shorts, et des <b>CTAs</b> qui convertissent. Mode <b>Putaclic+</b> disponible pour les comptes Premium.</p>
+      <h1 class="h1">Des Hooks et CTAs qui performent, sans blabla</h1>
+      <p class="p">Génère des <b>hooks texte</b> + <b>idées visuelles</b> adaptés à TikTok, Reels et Shorts, et des <b>CTAs</b> qui font vraiment agir.</p>
+
       <div class="grid">
+        <!-- Hooks -->
         <div class="col-6">
           <div class="card">
             <div class="card-inner">
               <h3>Générateur de Hooks</h3>
-              <p class="small">Textuels + Visuels (idées de plans, overlay, mise en scène)</p>
+              <p class="small">
+                <b>Texte</b> + <b>idées visuelles concrètes</b> (plans caméra, overlays, mises en scène).
+              </p>
               <div class="row">
                 <a href="/hooks" class="btn">Ouvrir</a>
-                <span class="badge">Optimisé plateformes</span>
+                <span class="badge">Adapté TikTok / Insta / Shorts</span>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- CTAs -->
         <div class="col-6">
           <div class="card">
             <div class="card-inner">
               <h3>Générateur de CTAs</h3>
-              <p class="small">Phrases d’appel à l’action contextualisées (follow, com, click, opt-in…)</p>
+              <p class="small">
+                <b>Phrases d’appel à l’action</b> pour faire <u>commenter</u>, <u>suivre</u>, <u>cliquer</u> ou <u>s’inscrire</u> — sans formules génériques.
+              </p>
               <div class="row">
                 <a href="/ctas" class="btn">Ouvrir</a>
-                <span class="badge">Anti-bateau</span>
+                <span class="badge">Anti‑bateau</span>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Premium -->
         <div class="col-12">
           <div class="card" id="premiumCard">
             <div class="card-inner">
               <h3>Putaclic+ (Premium)</h3>
-              <p class="small">Renforce l’impact en s’alignant sur la réalité attentionnelle de chaque plateforme (thumbnails implicites, pattern interrupts, polarisations contrôlées). Limité en Freemium.</p>
+              <p class="small">
+                Version <b>boostée</b> des hooks & CTAs pour capter l’attention plus vite :
+                ruptures visuelles, contrastes forts, formulations qui tranchent — sans déraper.
+              </p>
               <div class="row">
                 <a href="/hooks" class="btn">Activer sur mes hooks</a>
                 <a href="/ctas" class="btn-outline">Activer sur mes CTAs</a>
@@ -63,21 +77,29 @@
           </div>
         </div>
       </div>
-      <p class="small">Besoin d’aide ? Contacte-moi dans l’app.</p>
+
+      <p class="small" style="margin-top:10px">Besoin d’aide ? Contacte‑moi dans l’app.</p>
     </div>
   </section>
+
   <footer>© 2025 Wav • All rights reserved.</footer>
 </main>
 
 <script src="/assets/app.js"></script>
 <script>
-(async ()=>{
+(async () => {
   const me = await requireAuth(true);
-  el("#logoutBtn").onclick = async()=>{
-    try{ await api("auth/logout",{method:"POST"}); location.href="/login"; }catch(e){ toast(e.message,"error"); }
+  document.getElementById("logoutBtn").onclick = async () => {
+    try {
+      await api("auth/logout", { method: "POST" });
+      location.href = "/login";
+    } catch (e) {
+      toast(e.message, "error");
+    }
   };
-  if(me.plan!=="pro"){
-    lockPremium(el("#premiumCard"));
+  // Verrou visuel Premium si plan = free
+  if (me.plan !== "pro") {
+    lockPremium(document.getElementById("premiumCard"));
   }
 })();
 </script>
