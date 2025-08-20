@@ -1,91 +1,109 @@
 export const config = { runtime: "edge" };
 
-function json(res, status = 200) {
-  const headers = {
+function corsHeaders() {
+  const origin = process.env.CORS_ORIGIN || "*";
+  return {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization"
   };
-  return new Response(JSON.stringify(res), { status, headers });
 }
+function json(res, status = 200){ return new Response(JSON.stringify(res), { status, headers: corsHeaders() }); }
 
-export default async function handler(req) {
-  if (req.method === "OPTIONS") return json({ ok: true });
-  if (req.method !== "POST") return json({ error: "Use POST" }, 405);
+async function getBody(req){ try{ return await req.json(); }catch{ return {}; } }
 
-  const body = await req.json().catch(() => ({}));
-  const {
-    platform = "tiktok", niche = "", theme = "", tone = "intrigant",
-    brief = "", priorityCategories = [], count = 10,
-    // --- AJOUT: Récupération du mode Putaclic ---
-    putaclic = false
-  } = body;
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const MODEL = "gpt-4o-mini";
 
-  const safeCount = Math.min(Math.max(parseInt(count || 10, 10), 1), 25);
-  const catsAll = ["question","negatif","controverse","promesse","chiffres","experience","surprenant","suspense","fomo"];
-  const picked = Array.isArray(priorityCategories) ? priorityCategories.filter(c => catsAll.includes(c)) : [];
+export default async function handler(req){
+  if(req.method==="OPTIONS") return json({ok:true});
+  if(req.method!=="POST") return json({error:"Method not allowed"},405);
 
-  const platformGuide = {
-    tiktok: "Style très cut et émotionnel. Accroche immédiate <2s. Phrases courtes (<=10-12 mots).",
-    reels: "Style partageable (share/save). Promesse claire, bénéfice concret, ton plus clean.",
-    shorts: "Accroche explicite du sujet + curiosité. Bon pour chiffré/how-to. Clarté early."
-  }[String(platform).toLowerCase()] || "Style court et clair.";
+  const { platform="tiktok", niche="", theme="", brief="", tone="direct",
+          antiBateau=true, putaclic=false, countText=20, countVisual=10 } = await getBody(req);
 
-  const mustInclude = picked.length
-    ? `Priorise et inclue des hooks appartenant aux catégories: ${picked.join(", ")}.`
-    : "Varie librement les catégories en équilibrant l'ensemble.";
-    
-  // --- AJOUT: Instructions spécifiques pour le mode Putaclic ---
-  const putaclicGuide = putaclic
-    ? `\nMODE PUTACLIC ACTIVÉ: L'objectif est le clic à tout prix. Sois excessif, provocateur et utilise des superlatifs extrêmes (choquant, incroyable, interdit, jamais vu). Crée un sentiment d'urgence ou de scandale. Les titres doivent être irrésistibles, quitte à être à la limite de l'éthique. Exagération maximale.`
-    : "";
+  // Gating côté serveur (Free limits)
+  const maxText = putaclic ? 50 : 50;
+  const maxVisual = putaclic ? 50 : 50;
+  const safeText = Math.min(Math.max(0, countText|0), maxText);
+  const safeVisual = Math.min(Math.max(0, countVisual|0), maxVisual);
 
-  const system = `Tu es expert des hooks short‑form.
-Objectif: produire des hooks à FORTE CHARGE ÉMOTIONNELLE (impact en ≤2s).
-Sortie STRICTE: JSON { "hooks": string[] } uniquement.
-Langue: français. Longueur: ≤ 12 mots. Interdits: guillemets, hashtags, emojis, point final.
-Plateforme ciblée: ${platform} → ${platformGuide}
-${putaclicGuide}`; // Injection des instructions putaclic ici
+  const sys = [
+    "Tu es un générateur de hooks ultra-efficaces, calibrés par plateforme.",
+    "Tu renvoies STRICTEMENT du JSON valide, rien d’autre.",
+    "Interdiction d’ajouter une phrase hors JSON.",
+    "Évite absolument les formulations banales ('Découvrez', 'Voici', 'Dans cette vidéo').",
+    "Respecte la quantité demandée exactement."
+  ].join(" ");
 
-  const user = `Contexte:
-Niche: ${niche}
-Thème: ${theme}
-Ton: ${tone}
-Brief libre (optionnel): ${brief || "—"}
+  const platformBias = {
+    tiktok: "rythme très rapide, pattern interrupt immédiat (0-1s), promesse concrète, conflit léger ok",
+    reels: "esthétique + rythme soutenu, clarté, bénéfice concret, style 'clean'",
+    shorts: "promesse choc + curiosité, cut rapides, structure 'setup→contradiction→benefit'"
+  }[platform] || "rythme rapide, bénéfice concret";
 
-${mustInclude}
+  const putaclicBoost = putaclic ? [
+    "Amplifie le contraste (surprise, chiffre inattendu, contre-intuition).",
+    "Autorise la polarisation contrôlée sans dérive irrespectueuse.",
+    "Concis, percutant, aucun flou, aucun disclaimer."
+  ].join(" ") : "Reste impactant mais responsable.";
 
-Génère ${safeCount} hooks variés.`;
+  const antiFluff = antiBateau ? "Interdiction des platitudes, pas de 'regarde jusqu’à la fin', pas de 'astuces' génériques." : "";
 
-  try {
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ]
-      })
-    });
+  const visualSpec =
+    "Les hooks visuels sont des objets avec: 'shot' (mise en scène), 'overlay' (texte écran), 'action' (mouvement/prop), adaptés à la plateforme, 3-10 mots par champ.";
 
-    if (!r.ok) {
-      const text = await r.text();
-      return json({ error: "OpenAI error", details: text }, 500);
-    }
-    const data = await r.json();
-    const content = data?.choices?.[0]?.message?.content || "{}";
-    let parsed;
-    try { parsed = JSON.parse(content); } catch { parsed = { hooks: [] }; }
-    const hooks = Array.isArray(parsed.hooks) ? parsed.hooks.filter(x => typeof x === "string").slice(0, safeCount) : [];
-    return json({ hooks });
-  } catch (err) {
-    return json({ error: "Server error", details: String(err) }, 500);
+  const userPrompt = `
+Plateforme: ${platform}. Règles spécifiques: ${platformBias}.
+Niche/audience: ${niche}.
+Thème/sujet: ${theme}.
+Contexte: ${brief || "N/A"}.
+Ton: ${tone}.
+${putaclicBoost}
+${antiFluff}
+
+Génère:
+- EXACTEMENT ${safeText} hooks textuels (français), 7-14 mots, promesse claire, pas de ponctuation excessive, pas de hashtags.
+- EXACTEMENT ${safeVisual} hooks visuels (objets {shot, overlay, action}).
+${visualSpec}
+
+Rends UNIQUEMENT ce JSON:
+{
+  "textHooks": ["..."],
+  "visualHooks": [{"shot":"...", "overlay":"...", "action":"..."}]
+}
+  `.trim();
+
+  const r = await fetch(OPENAI_URL, {
+    method:"POST",
+    headers:{
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: putaclic ? 0.9 : 0.7,
+      messages: [
+        { role:"system", content: sys },
+        { role:"user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" }
+    })
+  });
+
+  if(!r.ok){
+    const t = await r.text().catch(()=> "");
+    return json({error:"OpenAI error", details:t}, 500);
   }
+  const data = await r.json();
+  let parsed;
+  try{
+    parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+  }catch{ parsed = { textHooks:[], visualHooks:[] }; }
+
+  return json({
+    textHooks: Array.isArray(parsed.textHooks) ? parsed.textHooks : [],
+    visualHooks: Array.isArray(parsed.visualHooks) ? parsed.visualHooks : []
+  });
 }
