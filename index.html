@@ -1,69 +1,85 @@
 <!doctype html>
-<html lang="fr" data-theme="dark">
+<html lang="fr">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="color-scheme" content="dark light"/>
-<title>Suite d'Outils pour Créateurs – PRO</title>
-<style>
-  :root {
-    --bg: #111111; --bg-glow: radial-gradient(ellipse 80% 50% at 50% -20%,rgba(120,119,198,0.3),hsla(0,0%,100%,0)); --card-bg: rgba(24, 24, 27, 0.7); --card-border: rgba(255, 255, 255, 0.1); --ink: #E4E4E7; --muted: #A1A1AA; --accent-hooks: #9333EA; --accent-cta: #22c55e; --accent-analyzer: #d946ef; --radius: 16px; --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
-  }
-  [data-theme="light"] { --bg: #F7F8FA; --bg-glow: none; --card-bg: #FFFFFF; --card-border: #E5E7EB; --ink: #111827; --muted: #6B7280; }
-  * { box-sizing: border-box; } 
-  body { margin: 0; background-color: var(--bg); background-image: var(--bg-glow); background-attachment: fixed; color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 3rem 1rem; }
-  header { text-align: center; margin-bottom: 3rem; }
-  h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
-  .subtitle { font-size: 1.1rem; color: var(--muted); max-width: 500px; margin: auto; }
-  .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-  .tool-card { display: block; text-decoration: none; color: var(--ink); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; transition: transform 0.2s, box-shadow 0.2s; backdrop-filter: blur(20px); }
-  .tool-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
-  .card-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
-  .tool-card p { color: var(--muted); font-size: 14px; margin: 0; }
-  .icon { width: 24px; height: 24px; }
-  .icon.hooks { color: var(--accent-hooks); }
-  .icon.cta { color: var(--accent-cta); }
-  .icon.analyzer { color: var(--accent-analyzer); }
-  .history-link-container { text-align: center; margin-top: 3rem; }
-  .history-link { display: inline-block; color: var(--muted); text-decoration: none; border: 1px solid var(--card-border); padding: 10px 20px; border-radius: 999px; background: rgba(255,255,255,0.05); transition: background 0.2s, color 0.2s; }
-  [data-theme="light"] .history-link { background: var(--card-bg); }
-  .history-link:hover { color: var(--ink); border-color: rgba(255,255,255,0.2); }
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Wav Generator – Accueil</title>
+  <link rel="stylesheet" href="/assets/styles.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Suite d'Outils pour Créateurs</h1>
-      <p class="subtitle">Choisissez un outil pour commencer à optimiser vos contenus vidéo.</p>
-    </header>
-    <div class="tools-grid">
-      <a href="hooks.html" class="tool-card">
-        <div class="card-header">
-          <svg class="icon hooks" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-          <h2>Générateur de Hooks</h2>
-        </div>
-        <p>Créez des accroches percutantes pour capter l'attention dès les premières secondes.</p>
-      </a>
-      <a href="cta.html" class="tool-card">
-        <div class="card-header">
-          <svg class="icon cta" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          <h2>Générateur d'Appels à l'Action</h2>
-        </div>
-        <p>Concevez des appels à l'action clairs et efficaces pour convertir votre audience.</p>
-      </a>
-      <a href="analyzer.html" class="tool-card">
-        <div class="card-header">
-          <svg class="icon analyzer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-          <h2>Analyseur de Vidéo</h2>
-        </div>
-        <p>Analysez le potentiel viral d'une vidéo TikTok à partir de son URL.</p>
-      </a>
+<header class="header">
+  <nav class="nav container">
+    <div class="brand"><span class="brand-badge"></span> Wav Generator</div>
+    <div class="nav-actions">
+      <a class="btn-outline" href="/history">Historique</a>
+      <button id="logoutBtn" class="btn-outline">Déconnexion</button>
     </div>
-    <div class="history-link-container">
-      <a href="history.html" class="history-link">Consulter l'historique</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="hero card">
+    <div class="card-inner">
+      <div class="kicker">Suite créative</div>
+      <h1 class="h1">Hooks & CTAs ultra-efficaces<br/>alignés aux plateformes</h1>
+      <p class="p">Génère des <b>hooks textuels</b> et <b>hooks visuels</b> calibrés pour TikTok / Reels / Shorts, et des <b>CTAs</b> qui convertissent. Mode <b>Putaclic+</b> disponible pour les comptes Premium.</p>
+      <div class="grid">
+        <div class="col-6">
+          <div class="card">
+            <div class="card-inner">
+              <h3>Générateur de Hooks</h3>
+              <p class="small">Textuels + Visuels (idées de plans, overlay, mise en scène)</p>
+              <div class="row">
+                <a href="/hooks" class="btn">Ouvrir</a>
+                <span class="badge">Optimisé plateformes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="card">
+            <div class="card-inner">
+              <h3>Générateur de CTAs</h3>
+              <p class="small">Phrases d’appel à l’action contextualisées (follow, com, click, opt-in…)</p>
+              <div class="row">
+                <a href="/ctas" class="btn">Ouvrir</a>
+                <span class="badge">Anti-bateau</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="card" id="premiumCard">
+            <div class="card-inner">
+              <h3>Putaclic+ (Premium)</h3>
+              <p class="small">Renforce l’impact en s’alignant sur la réalité attentionnelle de chaque plateforme (thumbnails implicites, pattern interrupts, polarisations contrôlées). Limité en Freemium.</p>
+              <div class="row">
+                <a href="/hooks" class="btn">Activer sur mes hooks</a>
+                <a href="/ctas" class="btn-outline">Activer sur mes CTAs</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="small">Besoin d’aide ? Contacte-moi dans l’app.</p>
     </div>
-  </div>
+  </section>
+  <footer>© 2025 Wav • All rights reserved.</footer>
+</main>
+
+<script src="/assets/app.js"></script>
+<script>
+(async ()=>{
+  const me = await requireAuth(true);
+  el("#logoutBtn").onclick = async()=>{
+    try{ await api("auth/logout",{method:"POST"}); location.href="/login"; }catch(e){ toast(e.message,"error"); }
+  };
+  if(me.plan!=="pro"){
+    lockPremium(el("#premiumCard"));
+  }
+})();
+</script>
 </body>
 </html>
