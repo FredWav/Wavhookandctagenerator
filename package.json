@@ -8,8 +8,8 @@
     "dev": "nodemon server.js",
     "build": "echo 'Build completed'"
   },
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
+  "depende    "bcryptjs": "^3.0.2",
+ncies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
@@ -18,5 +18,4 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  }
-}
+36feefa05ec
