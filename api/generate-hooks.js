@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-const MODEL = "gpt-4o-mini";
+const MODEL = "gpt-4o";
 
 // Anti-patterns à éviter absolument
 const CLICHE_PATTERNS = [
