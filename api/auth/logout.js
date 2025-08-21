@@ -1,6 +1,6 @@
 export const config = { runtime: "nodejs" };
 
-const { json, clearSession } = require("../_auth-util");
+const { json, clearSession } = require("../utils/auth-util");
 
 export default async function handler(req){
   if(req.method!=="POST") return json({error:"Method not allowed"},405);

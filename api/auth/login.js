@@ -1,19 +1,31 @@
-export const config = { runtime: "nodejs" };
+const express = require('express');
+const router = express.Router();
+const { json, getBody, setSession, verifyUser } = require("../utils/auth-util");
 
-const { json, getBody, setSession, verifyUser } = require("../_auth-util");
+router.post('/', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({ error: "Champs manquants" });
+        }
 
-export default async function handler(req){
-  if(req.method!=="POST") return json({error:"Method not allowed"},405);
-  const { email, password } = await getBody(req);
-  if(!email || !password) return json({error:"Champs manquants"},400);
-  try{
-    const user = await verifyUser(email, password);
-    const cookie = setSession(user);
-    return new Response(JSON.stringify({ ok:true, user:{ email:user.email, plan:user.plan }}), {
-      status:200,
-      headers:{ "Content-Type":"application/json", "Set-Cookie": cookie }
-    });
-  }catch(e){
-    return json({error: e.message || "Login failed"},401);
-  }
-}
+        const user = await verifyUser(email, password);
+        const cookie = setSession(user);
+        
+        res.setHeader('Set-Cookie', cookie);
+        res.json({ 
+            ok: true, 
+            user: { 
+                email: user.email, 
+                plan: user.plan 
+            } 
+        });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(401).json({ error: error.message || "Login failed" });
+    }
+});
+
+module.exports = router;

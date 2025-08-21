@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Générateur de CTAs</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+  <nav class="nav container">
+    <div class="brand"><span class="brand-badge"></span> Wav Generator</div>
+    <div class="nav-actions">
+      <a class="btn-outline" href="/">Accueil</a>
+      <button id="logoutBtn" class="btn-outline">Déconnexion</button>
+    </div>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="card">
+    <div class="card-inner">
+      <div class="kicker">CTAs</div>
+      <h1 class="h1">Appels à l’action non-bateau</h1>
+
+      <div class="grid">
+        <div class="col-6">
+          <label class="small">Objectif</label>
+          <select id="intent" class="select">
+            <option value="follow">Follow</option>
+            <option value="comment">Commentaire</option>
+            <option value="click">Clic lien</option>
+            <option value="save">Sauvegarde</option>
+            <option value="dm">DM / Contact</option>
+            <option value="optin">Opt-in email</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="small">Plateforme</label>
+          <select id="platform" class="select">
+            <option value="tiktok">TikTok</option>
+            <option value="reels">Instagram Reels</option>
+            <option value="shorts">YouTube Shorts</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="small">Contexte (optionnel)</label>
+          <textarea id="constraints" class="textarea" placeholder="ex: audience lycéens, tutos, objection: 'j’ai pas le temps'…"></textarea>
+        </div>
+        <div class="col-6">
+          <label class="small">Ton</label>
+          <select id="tone" class="select">
+            <option>direct</option><option>autorité</option><option>humour</option><option>story</option><option>urgent</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="small">Quantité</label>
+          <input id="count" class="input" type="number" min="1" max="50" value="20"/>
+        </div>
+        <div class="col-12 row">
+          <label class="row">
+            <input id="putaclic" type="checkbox" style="width:18px;height:18px;margin-right:8px"/>
+            <span>Renforcer avec Putaclic+ (Premium)</span>
+          </label>
+        </div>
+        <div class="col-12 row">
+          <button id="run" class="btn">Générer</button>
+          <button id="copyAll" class="btn-outline">Copier tout</button>
+        </div>
+      </div>
+
+      <div class="separator"></div>
+      <ul id="out" class="list"></ul>
+    </div>
+  </section>
+  <footer>© 2025 Wav</footer>
+</main>
+
+<script src="/assets/app.js"></script>
+<script>
+let currentUser;
+(async ()=>{
+  currentUser = await requireAuth(true);
+  el("#logoutBtn").onclick = async()=>{ await api("auth/logout",{method:"POST"}); location.href="/login"; };
+
+  if(currentUser.plan!=="pro"){
+    el("#count").max = 20;
+    const p = el("#putaclic");
+    p.addEventListener("change", ()=>{
+      if(p.checked){ toast("Putaclic+ est réservé aux comptes Premium.","error"); p.checked=false; }
+    });
+  }
+
+  el("#run").addEventListener("click", async ()=>{
+    const body = {
+      intent: el("#intent").value,
+      platform: el("#platform").value,
+      tone: el("#tone").value,
+      constraints: el("#constraints").value.trim(),
+      count: parseInt(el("#count").value || "0",10),
+      putaclic: el("#putaclic").checked && currentUser.plan==="pro"
+    };
+    try{
+      const data = await api("generate-ctas",{method:"POST",body});
+      const out = el("#out"); out.innerHTML="";
+      data.ctas.forEach((c,i)=>{
+        const li=document.createElement("li"); li.textContent = `${i+1}. ${c}`; out.appendChild(li);
+      });
+      toast("Génération terminée");
+    }catch(err){ toast(err.message || "Erreur API","error"); }
+  });
+
+  el("#copyAll").addEventListener("click", ()=>{
+    const items = els("#out li").map(li=> li.textContent);
+    navigator.clipboard.writeText(items.join("\n")).then(()=> toast("Copié !"));
+  });
+})();
+</script>
+</body>
+</html>
