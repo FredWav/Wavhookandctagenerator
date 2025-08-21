@@ -1,35 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
-<head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Historique</title>
-<link rel="stylesheet" href="/styles.css">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-</head>
-<body>
-<header class="header">
-  <nav class="nav container">
-    <div class="brand"><span class="brand-badge"></span> Wav Generator</div>
-    <div class="nav-actions">
-      <a class="btn-outline" href="/">Accueil</a>
-      <button id="logoutBtn" class="btn-outline">Déconnexion</button>
-    </div>
-  </nav>
-</header>
-<main class="container">
-  <section class="card">
-    <div class="card-inner">
-      <div class="kicker">Historique</div>
-      <h1 class="h1">Bientôt : historique par utilisateur</h1>
-      <p class="p">Stockage prévu via KV par userId (Freemium: 30 derniers, Premium: illimité + recherche).</p>
-    </div>
-  </section>
-  <footer>© 2025 Wav</footer>
-</main>
-<script src="/assets/app.js"></script>
-<script>
-(async ()=>{ await requireAuth(true); el("#logoutBtn").onclick = async()=>{ await api("auth/logout",{method:"POST"}); location.href="/login"; };})();
-</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Historique</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="container">
+      <section class="hero card">
+        <div class="card-inner">
+          <div class="kicker">Historique</div>
+          <h1 class="h1">Bientôt : historique par utilisateur</h1>
+          <p class="p">
+            Stockage prévu via KV par userId (Freemium: 30 derniers, Premium:
+            illimité + recherche).
+          </p>
+        </div>
+      </section>
+      <div id="footer"></div>
+    </main>
+    <script src="/components/header.js"></script>
+    <script src="/assets/app.js"></script>
+    <script>
+      (async () => {
+        await requireAuth(true);
+        el("#logoutBtn").onclick = async () => {
+          await api("auth/logout", { method: "POST" });
+          location.href = "/login";
+        };
+      })();
+    </script>
+  </body>
 </html>
