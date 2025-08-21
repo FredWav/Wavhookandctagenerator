@@ -177,24 +177,22 @@
     <script src="/components/header-auth.js"></script>
     <script src="/components/loader.js"></script>
 
-    <!--
-<script>
-(async () => {
-  const me = await requireAuth(true);
-  document.getElementById("logoutBtn").onclick = async () => {
-    try {
-      await api("auth/logout", { method: "POST" });
-      location.href = "/login";
-    } catch (e) {
-      toast(e.message, "error");
-    }
-  };
-  // Verrou visuel Premium si plan = free
-  if (me.plan !== "pro") {
-    lockPremium(document.getElementById("premiumCard"));
-  }
-})();
-</script>
--->
+    <script>
+      (async () => {
+        const me = await requireAuth(true);
+        document.getElementById("logoutBtn").onclick = async () => {
+          try {
+            await api("auth/logout", { method: "POST" });
+            location.href = "/login";
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+        // Verrou visuel Premium si plan = free
+        if (me.plan !== "pro") {
+          lockPremium(document.getElementById("premiumCard"));
+        }
+      })();
+    </script>
   </body>
 </html>

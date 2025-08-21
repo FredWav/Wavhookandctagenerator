@@ -234,68 +234,210 @@
     </main>
 
     <script src="/app.js"></script>
+    <script src="/components/header-auth.js"></script>
     <script src="/components/loader.js"></script>
-    <!--<script>
-let currentUser;
-(async ()=>{
-  currentUser = await requireAuth(true);
-  el("#logoutBtn").onclick = async()=>{ await api("auth/logout",{method:"POST"}); location.href="/login"; };
 
-  if(currentUser.plan!=="pro"){
-    const putaclic = el("#putaclic");
-    putaclic.addEventListener("change", ()=>{
-      if(putaclic.checked){ toast("Putaclic+ est réservé aux comptes Premium.","error"); putaclic.checked=false; }
-    });
-    // limiter les quantités
-    el("#countText").max = 20;
-    el("#countVisual").max = 10;
-  }
+    <script>
+      let currentUser;
+      (async () => {
+        try {
+          // Vérifier l'auth via le header (qui charge déjà l'utilisateur)
+          currentUser = await api("auth/me");
 
-  el("#run").addEventListener("click", async ()=>{
-    const body = {
-      platform: el("#platform").value,
-      niche: el("#niche").value.trim(),
-      theme: el("#theme").value.trim(),
-      brief: el("#brief").value.trim(),
-      tone: el("#tone").value,
-      antiBateau: el("#antiBateau").checked,
-      putaclic: el("#putaclic").checked && currentUser.plan==="pro",
-      countText: parseInt(el("#countText").value || "0",10),
-      countVisual: parseInt(el("#countVisual").value || "0",10)
-    };
-    try{
-      const data = await api("generate-hooks", {method:"POST",body});
-      const { textHooks=[], visualHooks=[] } = data;
+          // Gestion des limites selon le plan
+          if (currentUser.user.plan !== "pro") {
+            const putaclic = el("#putaclic");
+            putaclic.addEventListener("change", () => {
+              if (putaclic.checked) {
+                toast("Putaclic+ est réservé aux comptes Premium.", "error");
+                putaclic.checked = false;
+              }
+            });
+            // Limiter les quantités pour les comptes gratuits
+            el("#countText").max = 20;
+            el("#countVisual").max = 10;
+          }
 
-      const t = el("#outText"); t.innerHTML="";
-      textHooks.forEach((h,i)=>{
-        const li=document.createElement("li");
-        li.className = "bg-panel-2 border border-white/10 p-4 rounded-xl";
-        li.textContent = `${i+1}. ${h}`;
-        t.appendChild(li);
-      });
-      
-      const v = el("#outVisual"); v.innerHTML="";
-      visualHooks.forEach((h,i)=>{
-        const li=document.createElement("li");
-        li.className = "bg-panel-2 border border-white/10 p-4 rounded-xl";
-        li.innerHTML = `<div class="font-semibold">${i+1}. ${h.shot || ""}</div><div class="text-xs text-muted mt-1">${h.overlay || ""}</div><div class="text-xs text-muted">${h.action || ""}</div>`;
-        v.appendChild(li);
-      });
-      toast("Génération terminée");
-    }catch(err){
-      toast(err.message || "Erreur API","error");
-    }
-  });
+          // Bouton Générer
+          el("#run").addEventListener("click", async () => {
+            const generateBtn = el("#run");
+            const originalText = generateBtn.textContent;
 
-  el("#copyAll").addEventListener("click", ()=>{
-    const texts = els("#outText li").map(li=> li.textContent);
-    const visuals = els("#outVisual li").map(li=> li.textContent);
-    const blob = [ "Hooks textuels:", ...texts, "", "Hooks visuels:", ...visuals ].join("\n");
-    navigator.clipboard.writeText(blob).then(()=> toast("Copié !"));
-  });
-})();
-</script>-->
+            // État de chargement
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Génération...
+      `;
+
+            const body = {
+              platform: el("#platform").value,
+              niche: el("#niche").value.trim(),
+              theme: el("#theme").value.trim(),
+              brief: el("#brief").value.trim(),
+              tone: el("#tone").value,
+              antiBateau: el("#antiBateau").checked,
+              putaclic:
+                el("#putaclic").checked && currentUser.user.plan === "pro",
+              countText: parseInt(el("#countText").value || "0", 10),
+              countVisual: parseInt(el("#countVisual").value || "0", 10),
+            };
+
+            try {
+              const data = await api("generate-hooks", {
+                method: "POST",
+                body,
+              });
+              const { textHooks = [], visualHooks = [] } = data;
+
+              // Afficher les hooks textuels
+              const t = el("#outText");
+              t.innerHTML = "";
+              if (textHooks.length === 0) {
+                t.innerHTML =
+                  '<li class="bg-panel-2 border border-white/10 p-4 rounded-xl text-center text-muted">Aucun hook textuel généré</li>';
+              } else {
+                textHooks.forEach((h, i) => {
+                  const li = document.createElement("li");
+                  li.className =
+                    "bg-panel-2 border border-white/10 p-4 rounded-xl hover:bg-white/5 transition-colors group";
+                  li.innerHTML = `
+              <div class="flex items-start justify-between">
+                <span class="flex-1">${i + 1}. ${h}</span>
+                <button onclick="copyToClipboard('${h.replace(
+                  /'/g,
+                  "\\'"
+                )}', this)" class="opacity-0 group-hover:opacity-100 ml-3 px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-all">
+                  Copier
+                </button>
+              </div>
+            `;
+                  t.appendChild(li);
+                });
+              }
+
+              // Afficher les hooks visuels
+              const v = el("#outVisual");
+              v.innerHTML = "";
+              if (visualHooks.length === 0) {
+                v.innerHTML =
+                  '<li class="bg-panel-2 border border-white/10 p-4 rounded-xl text-center text-muted">Aucun hook visuel généré</li>';
+              } else {
+                visualHooks.forEach((h, i) => {
+                  const li = document.createElement("li");
+                  li.className =
+                    "bg-panel-2 border border-white/10 p-4 rounded-xl hover:bg-white/5 transition-colors group";
+                  li.innerHTML = `
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="font-semibold">${i + 1}. ${h.shot || ""}</div>
+                  ${
+                    h.overlay
+                      ? `<div class="text-xs text-muted mt-1"><strong>Overlay:</strong> ${h.overlay}</div>`
+                      : ""
+                  }
+                  ${
+                    h.action
+                      ? `<div class="text-xs text-muted"><strong>Action:</strong> ${h.action}</div>`
+                      : ""
+                  }
+                </div>
+                <button onclick="copyToClipboard('${(
+                  h.shot +
+                  " " +
+                  (h.overlay || "") +
+                  " " +
+                  (h.action || "")
+                ).replace(
+                  /'/g,
+                  "\\'"
+                )}', this)" class="opacity-0 group-hover:opacity-100 ml-3 px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-all">
+                  Copier
+                </button>
+              </div>
+            `;
+                  v.appendChild(li);
+                });
+              }
+
+              toast("Génération terminée avec succès!", "success");
+
+              // Scroll vers les résultats
+              el("#outText").scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            } catch (err) {
+              console.error("Erreur génération:", err);
+              toast(err.message || "Erreur lors de la génération", "error");
+            } finally {
+              // Restaurer le bouton
+              generateBtn.disabled = false;
+              generateBtn.textContent = originalText;
+            }
+          });
+
+          // Bouton Copier tout
+          el("#copyAll").addEventListener("click", () => {
+            const texts = els("#outText li").map((li) =>
+              li.textContent.replace(/Copier$/, "").trim()
+            );
+            const visuals = els("#outVisual li").map((li) =>
+              li.textContent.replace(/Copier$/, "").trim()
+            );
+
+            if (texts.length === 0 && visuals.length === 0) {
+              toast("Aucun contenu à copier", "warning");
+              return;
+            }
+
+            const blob = [
+              texts.length > 0 ? "🎯 Hooks textuels:" : "",
+              ...texts,
+              texts.length > 0 && visuals.length > 0 ? "" : "",
+              visuals.length > 0 ? "🎬 Hooks visuels:" : "",
+              ...visuals,
+            ]
+              .filter((line) => line !== "")
+              .join("\n");
+
+            navigator.clipboard
+              .writeText(blob)
+              .then(() => {
+                toast("Tout le contenu a été copié!", "success");
+              })
+              .catch(() => {
+                toast("Erreur lors de la copie", "error");
+              });
+          });
+        } catch (error) {
+          // Rediriger vers login si non authentifié
+          console.error("Erreur auth:", error);
+          location.href = "/login";
+        }
+      })();
+
+      // Fonction pour copier un élément individuel
+      function copyToClipboard(text, button) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const originalText = button.textContent;
+            button.textContent = "Copié!";
+            button.classList.add("bg-success", "text-white");
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.classList.remove("bg-success", "text-white");
+            }, 1500);
+          })
+          .catch(() => {
+            toast("Erreur lors de la copie", "error");
+          });
+      }
+    </script>
 
     <!-- Style custom pour les toasts car app.js utilise des classes personnalisées -->
     <style>

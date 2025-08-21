@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mon Profil – Wav Generator</title>
+    <!-- Tailwind CDN + config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: "#7b2cff",
+              "accent-2": "#00e7ff",
+              panel: "#12121b",
+              "panel-2": "#161627",
+              muted: "#8b90a1",
+              text: "#e6e8ef",
+              danger: "#ff3b3b",
+              success: "#1ad199",
+              warning: "#ffcc00",
+            },
+            borderRadius: {
+              xl: "20px",
+            },
+            boxShadow: {
+              neon: "0 20px 60px rgba(0,0,0,.4)",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: radial-gradient(
+            800px 400px at 10% -10%,
+            rgba(0, 231, 255, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 400px at 110% 10%,
+            rgba(123, 44, 255, 0.15),
+            transparent 60%
+          ),
+          #0b0b11;
+      }
+    </style>
+  </head>
+  <body class="font-sans text-text min-h-screen">
+    <!-- Header -->
+    <div id="header"></div>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-8">
+      <!-- Hero Profile Section -->
+      <section class="mt-7 p-8 rounded-2xl border border-white/10 bg-[radial-gradient(800px_400px_at_-10%_10%,rgba(0,231,255,0.12),transparent_60%),radial-gradient(800px_400px_at_110%_0%,rgba(123,44,255,0.12),transparent_60%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))] shadow-neon">
+        <div class="flex flex-col md:flex-row items-start gap-8">
+          <!-- Avatar et infos principales -->
+          <div class="flex-shrink-0">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-accent-2 to-accent flex items-center justify-center text-3xl font-bold text-slate-900 mb-4">
+              <span id="userInitials">W</span>
+            </div>
+            <div class="text-center">
+              <button id="changeAvatarBtn" class="text-xs text-accent-2 hover:underline">
+                Changer l'avatar
+              </button>
+            </div>
+          </div>
+
+          <!-- Informations utilisateur -->
+          <div class="flex-grow">
+            <div class="flex items-center gap-3 mb-2">
+              <h1 class="text-3xl font-extrabold" id="displayName">john</h1>
+              <span id="planBadge" class="px-3 py-1 text-sm font-bold bg-gradient-to-r from-accent to-accent-2 text-slate-900 rounded-full">
+                PRO
+              </span>
+            </div>
+            
+            <div class="flex items-center gap-2 text-muted mb-4">
+              <span class="w-2 h-2 bg-success rounded-full"></span>
+              <span class="text-sm">Connecté</span>
+              <span class="text-xs opacity-60">•</span>
+              <span class="text-xs" id="memberSince">Membre depuis janvier 2025</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div class="bg-panel-2 border border-white/10 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-accent-2" id="totalGenerations">0</div>
+                <div class="text-xs text-muted">Générations</div>
+              </div>
+              <div class="bg-panel-2 border border-white/10 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-accent" id="totalHooks">0</div>
+                <div class="text-xs text-muted">Hooks créés</div>
+              </div>
+              <div class="bg-panel-2 border border-white/10 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-success" id="totalCtas">0</div>
+                <div class="text-xs text-muted">CTAs créés</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <!-- Paramètres du compte -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Informations personnelles -->
+          <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+              Informations personnelles
+            </h2>
+
+            <!-- Pseudo (non modifiable) -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-muted mb-2">Pseudo</label>
+              <input 
+                id="usernameInput"
+                type="text" 
+                class="w-full px-4 py-3 rounded-xl text-text bg-panel-2 border border-white/10 outline-none opacity-50 cursor-not-allowed"
+                disabled
+              />
+              <p class="text-xs text-muted mt-1">Le pseudo ne peut pas être modifié</p>
+            </div>
+
+            <!-- Email (non modifiable) -->
+            <div>
+              <label class="block text-sm font-medium text-muted mb-2">Adresse email</label>
+              <input 
+                id="emailInput"
+                type="email" 
+                class="w-full px-4 py-3 rounded-xl text-text bg-panel-2 border border-white/10 outline-none opacity-50 cursor-not-allowed"
+                disabled
+              />
+              <p class="text-xs text-muted mt-1">L'email ne peut pas être modifié pour des raisons de sécurité</p>
+            </div>
+          </div>
+
+          <!-- Changer le mot de passe -->
+          <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+              Changer le mot de passe
+            </h2>
+
+            <form id="passwordForm" class="space-y-4">
+              <!-- Mot de passe actuel -->
+              <div>
+                <label class="block text-sm font-medium text-muted mb-2">Mot de passe actuel</label>
+                <input 
+                  id="currentPassword"
+                  type="password" 
+                  class="w-full px-4 py-3 rounded-xl text-text bg-panel-2 border border-white/10 outline-none transition-all duration-200 focus:border-accent/50 focus:ring-2 focus:ring-accent/20"
+                  placeholder="Votre mot de passe actuel"
+                  required
+                />
+              </div>
+
+              <!-- Nouveau mot de passe -->
+              <div>
+                <label class="block text-sm font-medium text-muted mb-2">Nouveau mot de passe</label>
+                <input 
+                  id="newPassword"
+                  type="password" 
+                  class="w-full px-4 py-3 rounded-xl text-text bg-panel-2 border border-white/10 outline-none transition-all duration-200 focus:border-accent/50 focus:ring-2 focus:ring-accent/20"
+                  placeholder="Nouveau mot de passe"
+                  minlength="8"
+                  required
+                />
+                <p class="text-xs text-muted mt-1">Minimum 8 caractères</p>
+              </div>
+
+              <!-- Confirmer nouveau mot de passe -->
+              <div>
+                <label class="block text-sm font-medium text-muted mb-2">Confirmer le nouveau mot de passe</label>
+                <input 
+                  id="confirmNewPassword"
+                  type="password" 
+                  class="w-full px-4 py-3 rounded-xl text-text bg-panel-2 border border-white/10 outline-none transition-all duration-200 focus:border-accent/50 focus:ring-2 focus:ring-accent/20"
+                  placeholder="Confirmer le nouveau mot de passe"
+                  required
+                />
+                <div id="passwordMatchError" class="text-xs text-danger mt-1 hidden">
+                  Les mots de passe ne correspondent pas
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-slate-900 bg-gradient-to-r from-accent to-accent-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+              >
+                Changer le mot de passe
+              </button>
+            </form>
+          </div>
+
+          <!-- Préférences -->
+          <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Préférences de génération
+            </h2>
+
+            <form id="preferencesForm" class="space-y-4">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input 
+                  id="defaultPlatform" 
+                  type="checkbox"
+                  class="w-4 h-4 text-accent bg-transparent border-2 border-white/20 rounded transition-all duration-200"
+                />
+                <span class="text-sm">Se souvenir de ma plateforme préférée</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input 
+                  id="emailNotifications" 
+                  type="checkbox"
+                  class="w-4 h-4 text-accent bg-transparent border-2 border-white/20 rounded transition-all duration-200"
+                />
+                <span class="text-sm">Recevoir les nouveautés par email</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input 
+                  id="autoSaveHistory" 
+                  type="checkbox"
+                  checked
+                  class="w-4 h-4 text-accent bg-transparent border-2 border-white/20 rounded transition-all duration-200"
+                />
+                <span class="text-sm">Sauvegarder automatiquement dans l'historique</span>
+              </label>
+
+              <button 
+                type="submit"
+                class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 transition-all duration-200"
+              >
+                Sauvegarder les préférences
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+          <!-- Plan actuel -->
+          <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold mb-4">Plan actuel</h3>
+            <div id="planDetails">
+              <!-- Contenu généré dynamiquement -->
+            </div>
+          </div>
+
+          <!-- Actions rapides -->
+          <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold mb-4">Actions rapides</h3>
+            <div class="space-y-3">
+              <a href="/hooks" class="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:bg-white/5 transition-colors">
+                <span class="text-lg"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5b63fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target-icon lucide-target"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <div>
+                  <div class="font-medium text-sm">Générer des Hooks</div>
+                  <div class="text-xs text-muted">Créer du contenu accrocheur</div>
+                </div>
+              </a>
+              <a href="/ctas" class="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:bg-white/5 transition-colors">
+                <span class="text-lg"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a8efd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mouse-pointer-click-icon lucide-mouse-pointer-click"><path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/></svg></span>
+                <div>
+                  <div class="font-medium text-sm">Générer des CTAs</div>
+                  <div class="text-xs text-muted">Appels à l'action efficaces</div>
+                </div>
+              </a>
+              <a href="/history" class="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:bg-white/5 transition-colors">
+                <span class="text-lg"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#42adfe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history-icon lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>
+                <div>
+                  <div class="font-medium text-sm">Voir l'historique</div>
+                  <div class="text-xs text-muted">Vos créations passées</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Zone de danger -->
+          <div class="bg-panel border border-danger/20 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold mb-4 text-danger">Zone de danger</h3>
+            <div class="space-y-3">
+              <button 
+                id="deleteAccountBtn"
+                class="w-full px-4 py-3 text-sm font-semibold bg-danger/20 hover:bg-danger/30 text-danger rounded-xl transition-all duration-200"
+              >
+                Supprimer mon compte
+              </button>
+              <p class="text-xs text-muted">Cette action est irréversible. Toutes vos données seront perdues.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="footer"></div>
+    </main>
+
+    <script src="/app.js"></script>
+    <script src="/components/header-auth.js"></script>
+    <script src="/components/loader.js"></script>
+
+    <script>
+      let currentUser;
+
+      (async () => {
+        try {
+          const response = await api("auth/me");
+          currentUser = response.user;
+          
+          await loadUserProfile();
+          await loadUserStats();
+          setupEventListeners();
+          
+        } catch (error) {
+          console.error('Erreur auth:', error);
+          location.href = "/login";
+        }
+      })();
+
+      async function loadUserProfile() {
+        // Afficher les infos utilisateur
+        const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1).toLowerCase();
+        document.getElementById('displayName').textContent = displayName;
+        document.getElementById('userInitials').textContent = currentUser.username.charAt(0).toUpperCase();
+        document.getElementById('usernameInput').value = displayName;
+        document.getElementById('emailInput').value = currentUser.email;
+        
+        // Badge du plan
+        const planBadge = document.getElementById('planBadge');
+        if (currentUser.plan === 'pro') {
+          planBadge.textContent = 'PRO';
+          planBadge.className = 'px-3 py-1 text-sm font-bold bg-gradient-to-r from-accent to-accent-2 text-slate-900 rounded-full';
+        } else {
+          planBadge.textContent = 'FREE';
+          planBadge.className = 'px-3 py-1 text-sm font-bold bg-panel-2 text-muted rounded-full';
+        }
+
+        // Date d'inscription
+        if (currentUser.createdAt) {
+          const memberDate = new Date(currentUser.createdAt);
+          document.getElementById('memberSince').textContent = 
+            `Membre depuis ${memberDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`;
+        }
+
+        // Détails du plan
+        renderPlanDetails();
+      }
+
+      async function loadUserStats() {
+        try {
+          const historyResponse = await api("history");
+          const history = historyResponse.history || [];
+          
+          const totalGenerations = history.length;
+          const totalHooks = history.filter(item => item.type === 'hooks').length;
+          const totalCtas = history.filter(item => item.type === 'ctas').length;
+
+          document.getElementById('totalGenerations').textContent = totalGenerations;
+          document.getElementById('totalHooks').textContent = totalHooks;
+          document.getElementById('totalCtas').textContent = totalCtas;
+          
+        } catch (error) {
+          console.warn('Impossible de charger les statistiques:', error);
+        }
+      }
+
+      function renderPlanDetails() {
+        const planDetails = document.getElementById('planDetails');
+        
+        if (currentUser.plan === 'pro') {
+          planDetails.innerHTML = `
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-3 h-3 bg-success rounded-full"></span>
+              <span class="font-medium">Plan PRO Actif</span>
+            </div>
+            <ul class="text-sm text-muted space-y-1 mb-4">
+              <li>✓ Générations illimitées</li>
+              <li>✓ Historique complet</li>
+              <li>✓ Mode Putaclic+</li>
+              <li>✓ Support prioritaire</li>
+            </ul>
+            <button class="w-full px-4 py-2 text-sm bg-panel-2 hover:bg-white/5 rounded-xl transition-colors">
+              Gérer l'abonnement
+            </button>
+          `;
+        } else {
+          planDetails.innerHTML = `
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-3 h-3 bg-warning rounded-full"></span>
+              <span class="font-medium">Plan FREE</span>
+            </div>
+            <ul class="text-sm text-muted space-y-1 mb-4">
+              <li>• 20 hooks max</li>
+              <li>• 10 hooks visuels max</li>
+              <li>• 30 derniers historique</li>
+              <li>• Pas de Putaclic+</li>
+            </ul>
+            <a href="/upgrade" class="block w-full px-4 py-2 text-sm text-center bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform">
+              Passer à PRO
+            </a>
+          `;
+        }
+      }
+
+      function setupEventListeners() {
+        // Formulaire de changement de mot de passe
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const currentPassword = document.getElementById('currentPassword').value;
+          const newPassword = document.getElementById('newPassword').value;
+          const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+          const errorDiv = document.getElementById('passwordMatchError');
+          
+          // Validation côté client
+          errorDiv.classList.add('hidden');
+          
+          if (newPassword !== confirmNewPassword) {
+            errorDiv.classList.remove('hidden');
+            toast('Les mots de passe ne correspondent pas', 'error');
+            return;
+          }
+          
+          if (newPassword.length < 8) {
+            toast('Le nouveau mot de passe doit contenir au moins 8 caractères', 'error');
+            return;
+          }
+
+          try {
+            await api("auth/change-password", {
+              method: "PUT",
+              body: {
+                currentPassword,
+                newPassword
+              }
+            });
+            
+            // Réinitialiser le formulaire
+            document.getElementById('passwordForm').reset();
+            toast("Mot de passe modifié avec succès!", "success");
+          } catch (error) {
+            toast(error.message || "Erreur lors du changement de mot de passe", "error");
+          }
+        });
+
+        // Vérification en temps réel des mots de passe
+        document.getElementById('confirmNewPassword').addEventListener('input', (e) => {
+          const newPassword = document.getElementById('newPassword').value;
+          const confirmPassword = e.target.value;
+          const errorDiv = document.getElementById('passwordMatchError');
+          
+          if (confirmPassword && newPassword !== confirmPassword) {
+            errorDiv.classList.remove('hidden');
+          } else {
+            errorDiv.classList.add('hidden');
+          }
+        });
+
+        // Formulaire de préférences
+        document.getElementById('preferencesForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const preferences = {
+            defaultPlatform: document.getElementById('defaultPlatform').checked,
+            emailNotifications: document.getElementById('emailNotifications').checked,
+            autoSaveHistory: document.getElementById('autoSaveHistory').checked
+          };
+
+          try {
+            await api("user/preferences", { 
+              method: "PUT", 
+              body: preferences 
+            });
+            toast("Préférences sauvegardées!", "success");
+          } catch (error) {
+            toast("Erreur lors de la sauvegarde", "error");
+          }
+        });
+
+        // Suppression de compte
+        document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+          const confirmation = prompt(
+            'Pour supprimer votre compte, tapez "SUPPRIMER" en majuscules:'
+          );
+          
+          if (confirmation === 'SUPPRIMER') {
+            try {
+              await api("user/delete", { method: "DELETE" });
+              toast("Compte supprimé. Redirection...", "success");
+              setTimeout(() => {
+                location.href = "/";
+              }, 2000);
+            } catch (error) {
+              toast("Erreur lors de la suppression", "error");
+            }
+          }
+        });
+      }
+    </script>
+
+    <!-- Style custom pour les toasts -->
+    <style>
+      .toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #161627;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        max-width: 360px;
+        color: #e6e8ef;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+      }
+      
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+    </style>
+  </body>
+</html>

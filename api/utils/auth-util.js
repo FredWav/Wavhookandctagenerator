@@ -28,17 +28,27 @@ function cookie(opts) {
     return `${name}=${value}; Expires=${exp}; Path=${path}; ${secure ? "Secure;" : ""} ${httpOnly ? "HttpOnly;" : ""} SameSite=${sameSite()}`;
 }
 
-async function createUser(email, password) {
+async function createUser(username, email, password) {
     const connection = await pool.getConnection();
     try {
         // Vérifier si l'email existe déjà
-        const [existingUsers] = await connection.execute(
+        const [existingEmail] = await connection.execute(
             'SELECT id FROM users WHERE email = ?',
             [email.toLowerCase()]
         );
 
-        if (existingUsers.length > 0) {
-            throw new Error("Email déjà utilisé");
+        if (existingEmail.length > 0) {
+            throw new Error("Cette adresse email est déjà utilisée");
+        }
+
+        // Vérifier si le pseudo existe déjà
+        const [existingUsername] = await connection.execute(
+            'SELECT id FROM users WHERE username = ?',
+            [username.toLowerCase()]
+        );
+
+        if (existingUsername.length > 0) {
+            throw new Error("Ce pseudo est déjà pris");
         }
 
         // Hasher le mot de passe
@@ -46,25 +56,30 @@ async function createUser(email, password) {
 
         // Créer l'utilisateur
         const [result] = await connection.execute(
-            'INSERT INTO users (email, password_hash, plan) VALUES (?, ?, ?)',
-            [email.toLowerCase(), passwordHash, 'free']
+            'INSERT INTO users (username, email, password_hash, plan) VALUES (?, ?, ?, ?)',
+            [username.toLowerCase(), email.toLowerCase(), passwordHash, 'free']
         );
 
         const userId = result.insertId;
 
         // Récupérer l'utilisateur créé
         const [users] = await connection.execute(
-            'SELECT id, email, plan, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, plan, created_at FROM users WHERE id = ?',
             [userId]
         );
 
-        return {
-            id: users[0].id,
-            email: users[0].email,
-            plan: users[0].plan,
-            createdAt: users[0].created_at ? new Date(users[0].created_at).getTime() : null
-        };
+        if (users.length === 0) {
+            throw new Error("Utilisateur non trouvé après création");
+        }
 
+        const user = users[0];
+        return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            plan: user.plan,
+            createdAt: user.created_at ? new Date(user.created_at).getTime() : null
+        };
     } finally {
         connection.release();
     }
@@ -74,7 +89,7 @@ async function verifyUser(email, password) {
     const connection = await pool.getConnection();
     try {
         const [users] = await connection.execute(
-            'SELECT id, email, password_hash, plan, created_at FROM users WHERE email = ?',
+            'SELECT id, username, email, password_hash, plan, created_at FROM users WHERE email = ?',
             [email.toLowerCase()]
         );
 
@@ -91,6 +106,7 @@ async function verifyUser(email, password) {
 
         return {
             id: user.id,
+            username: user.username,
             email: user.email,
             plan: user.plan,
             createdAt: user.created_at.getTime()
@@ -104,7 +120,7 @@ async function getUserById(userId) {
     const connection = await pool.getConnection();
     try {
         const [users] = await connection.execute(
-            'SELECT id, email, plan, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, plan, created_at FROM users WHERE id = ?',
             [userId]
         );
 
@@ -115,6 +131,7 @@ async function getUserById(userId) {
         const user = users[0];
         return {
             id: user.id,
+            username: user.username,
             email: user.email,
             plan: user.plan,
             createdAt: user.created_at.getTime()

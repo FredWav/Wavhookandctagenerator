@@ -3,21 +3,21 @@ const router = express.Router();
 const { requireUser } = require("../utils/auth-util");
 
 router.get('/', async (req, res) => {
-    try {
-        const user = await requireUser(req);
-        res.json({ 
-            ok: true, 
-            user: { 
-                email: user.email, 
-                plan: user.plan,
-                createdAt: user.createdAt 
-            } 
-        });
-
-    } catch (error) {
-        console.error('Me route error:', error);
-        res.status(401).json({ error: "Non authentifié" });
-    }
+  try {
+    const user = await requireUser(req);
+    res.json({
+      ok: true,
+      user: {
+        username: user.username,
+        email: user.email,
+        plan: user.plan,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Me route error:', error);
+    res.status(401).json({ error: "Non authentifié" });
+  }
 });
 
 router.post('/logout', (req, res) => {

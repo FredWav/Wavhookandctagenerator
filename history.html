@@ -3,40 +3,380 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Historique</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>Historique – Wav Generator</title>
+    <!-- Tailwind CDN + config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: "#7b2cff",
+              "accent-2": "#00e7ff",
+              panel: "#12121b",
+              "panel-2": "#161627",
+              muted: "#8b90a1",
+              text: "#e6e8ef",
+              danger: "#ff3b3b",
+              success: "#1ad199",
+              warning: "#ffcc00",
+            },
+            borderRadius: {
+              xl: "20px",
+            },
+            boxShadow: {
+              neon: "0 20px 60px rgba(0,0,0,.4)",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
       rel="stylesheet"
     />
+    <style>
+      body {
+        background: radial-gradient(
+            800px 400px at 10% -10%,
+            rgba(0, 231, 255, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 400px at 110% 10%,
+            rgba(123, 44, 255, 0.15),
+            transparent 60%
+          ),
+          #0b0b11;
+      }
+    </style>
   </head>
-  <body>
+  <body class="font-sans text-text min-h-screen">
+    <!-- Header -->
     <div id="header"></div>
-    <main class="container">
-      <section class="hero card">
-        <div class="card-inner">
-          <div class="kicker">Historique</div>
-          <h1 class="h1">Bientôt : historique par utilisateur</h1>
-          <p class="p">
-            Stockage prévu via KV par userId (Freemium: 30 derniers, Premium:
-            illimité + recherche).
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-8">
+      <!-- Hero Section -->
+      <section class="mt-7 p-8 rounded-2xl border border-white/10 bg-[radial-gradient(800px_400px_at_-10%_10%,rgba(0,231,255,0.12),transparent_60%),radial-gradient(800px_400px_at_110%_0%,rgba(123,44,255,0.12),transparent_60%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))] shadow-neon">
+        <div>
+          <div class="uppercase tracking-widest text-xs text-muted mb-2">Historique</div>
+          <h1 class="text-3xl font-extrabold leading-tight mb-4">Vos générations récentes</h1>
+          <p class="text-base text-slate-200 leading-relaxed mb-8">
+            Retrouvez tous vos hooks et CTAs générés. 
+            <span class="text-accent-2">Plan PRO :</span> historique illimité + recherche avancée.
           </p>
+
+          <!-- Filtres et recherche -->
+          <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <div class="flex-1">
+              <input 
+                id="searchInput" 
+                type="text" 
+                placeholder="Rechercher dans l'historique..."
+                class="w-full px-4 py-3 rounded-xl text-text bg-panel border border-white/10 outline-none transition-all duration-200 placeholder:text-muted/60"
+              />
+            </div>
+            <select 
+              id="typeFilter"
+              class="px-4 py-3 rounded-xl text-text bg-panel border border-white/10 outline-none transition-all duration-200"
+            >
+              <option value="">Tous les types</option>
+              <option value="hooks">Hooks</option>
+              <option value="ctas">CTAs</option>
+            </select>
+            <button 
+              id="clearHistory"
+              class="px-4 py-3 rounded-xl font-semibold transition border border-danger/30 text-danger bg-transparent hover:bg-danger/10 hover:border-danger/50"
+            >
+              Vider l'historique
+            </button>
+          </div>
+
+          <!-- Liste de l'historique -->
+          <div id="historyContainer" class="space-y-4">
+            <!-- Contenu généré dynamiquement -->
+          </div>
+
+          <!-- État vide -->
+          <div id="emptyState" class="text-center py-12 hidden">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-panel-2 border border-white/10 flex items-center justify-center">
+              <svg class="w-8 h-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Aucune génération</h3>
+            <p class="text-muted mb-6">Commencez par générer des hooks ou des CTAs !</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/hooks" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200">
+                Générer des Hooks
+              </a>
+              <a href="/ctas" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200">
+                Générer des CTAs
+              </a>
+            </div>
+          </div>
+
+          <!-- Loading state -->
+          <div id="loadingState" class="text-center py-12">
+            <div class="inline-flex items-center gap-3 text-muted">
+              <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Chargement de l'historique...
+            </div>
+          </div>
         </div>
       </section>
+
+      <!-- Statistiques (pour les PRO) -->
+      <section id="statsSection" class="mt-6 p-6 rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 shadow-lg backdrop-blur-sm hidden">
+        <h2 class="text-lg font-bold mb-4">📊 Statistiques</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-accent-2" id="totalGenerations">0</div>
+            <div class="text-xs text-muted">Générations</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-accent" id="totalHooks">0</div>
+            <div class="text-xs text-muted">Hooks</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-success" id="totalCtas">0</div>
+            <div class="text-xs text-muted">CTAs</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-warning" id="thisWeek">0</div>
+            <div class="text-xs text-muted">Cette semaine</div>
+          </div>
+        </div>
+      </section>
+
       <div id="footer"></div>
     </main>
-    <script src="/components/header.js"></script>
-    <script src="/assets/app.js"></script>
+
+    <script src="/app.js"></script>
+    <script src="/components/header-auth.js"></script>
+    <script src="/components/loader.js"></script>
+
     <script>
+      let currentUser;
+      let historyData = [];
+
       (async () => {
-        await requireAuth(true);
-        el("#logoutBtn").onclick = async () => {
-          await api("auth/logout", { method: "POST" });
+        try {
+          currentUser = await api("auth/me");
+          
+          // Afficher les stats pour les PRO
+          if (currentUser.user.plan === "pro") {
+            document.getElementById("statsSection").classList.remove("hidden");
+          }
+
+          await loadHistory();
+          setupEventListeners();
+
+        } catch (error) {
+          console.error('Erreur auth:', error);
           location.href = "/login";
-        };
+        }
       })();
+
+      async function loadHistory() {
+        const loadingState = document.getElementById("loadingState");
+        const historyContainer = document.getElementById("historyContainer");
+        const emptyState = document.getElementById("emptyState");
+
+        try {
+          // Simuler un appel API (à remplacer par ton API réelle)
+          const response = await api("history");
+          historyData = response.history || [];
+
+          loadingState.classList.add("hidden");
+
+          if (historyData.length === 0) {
+            emptyState.classList.remove("hidden");
+            historyContainer.classList.add("hidden");
+          } else {
+            emptyState.classList.add("hidden");
+            historyContainer.classList.remove("hidden");
+            renderHistory(historyData);
+            updateStats();
+          }
+
+        } catch (error) {
+          // Si l'API n'existe pas encore, afficher des données de démo
+          loadingState.classList.add("hidden");
+          emptyState.classList.remove("hidden");
+          console.warn("API historique non disponible, affichage état vide");
+        }
+      }
+
+      function renderHistory(data) {
+        const container = document.getElementById("historyContainer");
+        container.innerHTML = "";
+
+        data.forEach(item => {
+          const historyItem = createHistoryItem(item);
+          container.appendChild(historyItem);
+        });
+      }
+
+      function createHistoryItem(item) {
+        const div = document.createElement("div");
+        div.className = "bg-panel-2 border border-white/10 rounded-xl p-4 hover:bg-white/5 transition-colors";
+        
+        const typeColor = item.type === 'hooks' ? 'text-accent' : 'text-success';
+        const typeIcon = item.type === 'hooks' ? '🎯' : '💬';
+
+        div.innerHTML = `
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <span class="text-lg">${typeIcon}</span>
+              <div>
+                <h3 class="font-semibold ${typeColor}">${item.type === 'hooks' ? 'Hooks' : 'CTAs'}</h3>
+                <p class="text-xs text-muted">${formatDate(item.createdAt)}</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="copyItem('${item.id}')" class="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-all">
+                Copier
+              </button>
+              <button onclick="deleteItem('${item.id}')" class="px-3 py-1 text-xs bg-danger/20 hover:bg-danger/30 text-danger rounded transition-all">
+                Supprimer
+              </button>
+            </div>
+          </div>
+          
+          <div class="text-sm text-slate-300 mb-2">
+            <strong>Thème:</strong> ${item.theme || 'Non spécifié'}
+          </div>
+          
+          <div class="text-xs text-muted space-y-1">
+            ${item.platform ? `<div><strong>Plateforme:</strong> ${item.platform}</div>` : ''}
+            ${item.tone ? `<div><strong>Ton:</strong> ${item.tone}</div>` : ''}
+            <div><strong>Résultats:</strong> ${item.results?.length || 0} éléments générés</div>
+          </div>
+        `;
+
+        return div;
+      }
+
+      function setupEventListeners() {
+        // Recherche
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+          const query = e.target.value.toLowerCase();
+          const filtered = historyData.filter(item => 
+            (item.theme || '').toLowerCase().includes(query) ||
+            (item.platform || '').toLowerCase().includes(query) ||
+            (item.type || '').toLowerCase().includes(query)
+          );
+          renderHistory(filtered);
+        });
+
+        // Filtre par type
+        document.getElementById("typeFilter").addEventListener("change", (e) => {
+          const type = e.target.value;
+          const filtered = type ? historyData.filter(item => item.type === type) : historyData;
+          renderHistory(filtered);
+        });
+
+        // Vider l'historique
+        document.getElementById("clearHistory").addEventListener("click", async () => {
+          if (confirm("Êtes-vous sûr de vouloir supprimer tout l'historique ? Cette action est irréversible.")) {
+            try {
+              await api("history", { method: "DELETE" });
+              historyData = [];
+              document.getElementById("emptyState").classList.remove("hidden");
+              document.getElementById("historyContainer").classList.add("hidden");
+              toast("Historique supprimé", "success");
+            } catch (error) {
+              toast("Erreur lors de la suppression", "error");
+            }
+          }
+        });
+      }
+
+      function updateStats() {
+        const totalGen = document.getElementById("totalGenerations");
+        const totalHooks = document.getElementById("totalHooks");
+        const totalCtas = document.getElementById("totalCtas");
+        const thisWeek = document.getElementById("thisWeek");
+
+        totalGen.textContent = historyData.length;
+        totalHooks.textContent = historyData.filter(item => item.type === 'hooks').length;
+        totalCtas.textContent = historyData.filter(item => item.type === 'ctas').length;
+        
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        thisWeek.textContent = historyData.filter(item => new Date(item.createdAt) > weekAgo).length;
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', { 
+          day: 'numeric', 
+          month: 'short', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      }
+
+      function copyItem(id) {
+        const item = historyData.find(h => h.id === id);
+        if (item && item.results) {
+          const content = item.results.join('\n');
+          navigator.clipboard.writeText(content).then(() => {
+            toast("Contenu copié!", "success");
+          });
+        }
+      }
+
+      async function deleteItem(id) {
+        if (confirm("Supprimer cet élément ?")) {
+          try {
+            await api(`history/${id}`, { method: "DELETE" });
+            historyData = historyData.filter(h => h.id !== id);
+            renderHistory(historyData);
+            updateStats();
+            toast("Élément supprimé", "success");
+          } catch (error) {
+            toast("Erreur lors de la suppression", "error");
+          }
+        }
+      }
     </script>
+
+    <!-- Style custom pour les toasts -->
+    <style>
+      .toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #161627;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        max-width: 360px;
+        color: #e6e8ef;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+      }
+      
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    </style>
   </body>
 </html>

@@ -37,6 +37,7 @@ app.use('/api/generate-ctas', require('./api/generate-ctas'));
 app.use('/api/generate-hooks', require('./api/generate-hooks'));
 app.use('/api/analyze-video', require('./api/analyze-video'));
 app.use('/api/save-analysis', require('./api/save-analysis'));
+app.use('/api/history', require('./api/history'));
 app.use('/api/auth', require('./api/auth'));
 
 // Test route
