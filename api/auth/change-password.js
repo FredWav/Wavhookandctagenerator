@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireUser, json } = require('../utils/auth-util');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const pool = require('../db/connection');
 
 router.put('/', async (req, res) => {

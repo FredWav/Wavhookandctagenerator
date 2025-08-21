@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { requireUser, json } = require('../utils/auth-util');
-const bcrypt = require('bcrypt');
 const pool = require('../db/connection');
 const multer = require('multer');
 const path = require('path');
