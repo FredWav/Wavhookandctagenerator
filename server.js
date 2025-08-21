@@ -39,6 +39,8 @@ app.use('/api/analyze-video', require('./api/analyze-video'));
 app.use('/api/save-analysis', require('./api/save-analysis'));
 app.use('/api/history', require('./api/history'));
 app.use('/api/auth', require('./api/auth'));
+app.use('/api/user', require('./api/auth/user'));
+app.use('/api/auth/change-password', require('./api/auth/change-password'));
 
 // Test route
 app.get('/api/hello', (req, res) => {

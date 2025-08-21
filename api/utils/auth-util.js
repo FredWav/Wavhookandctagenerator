@@ -62,6 +62,12 @@ async function createUser(username, email, password) {
 
         const userId = result.insertId;
 
+        // Créer les préférences par défaut
+        await connection.execute(`
+      INSERT INTO user_preferences (user_id, email_notifications, auto_save_history)
+      VALUES (?, 1, 1)
+    `, [userId]);
+
         // Récupérer l'utilisateur créé
         const [users] = await connection.execute(
             'SELECT id, username, email, plan, created_at FROM users WHERE id = ?',

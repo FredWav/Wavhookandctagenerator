@@ -29,3 +29,13 @@ CREATE TABLE user_history (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE user_preferences (
+  user_id INT PRIMARY KEY,
+  default_platform TINYINT(1) DEFAULT 0,
+  email_notifications TINYINT(1) DEFAULT 0,
+  auto_save_history TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+

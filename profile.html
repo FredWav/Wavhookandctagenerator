@@ -219,14 +219,6 @@
             <form id="preferencesForm" class="space-y-4">
               <label class="flex items-center gap-3 cursor-pointer">
                 <input 
-                  id="defaultPlatform" 
-                  type="checkbox"
-                  class="w-4 h-4 text-accent bg-transparent border-2 border-white/20 rounded transition-all duration-200"
-                />
-                <span class="text-sm">Se souvenir de ma plateforme préférée</span>
-              </label>
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input 
                   id="emailNotifications" 
                   type="checkbox"
                   class="w-4 h-4 text-accent bg-transparent border-2 border-white/20 rounded transition-all duration-200"
@@ -237,7 +229,6 @@
                 <input 
                   id="autoSaveHistory" 
                   type="checkbox"
-                  checked
                   class="w-4 h-4 text-accent bg-transparent border-2 border-white/20 rounded transition-all duration-200"
                 />
                 <span class="text-sm">Sauvegarder automatiquement dans l'historique</span>
@@ -323,6 +314,7 @@
           currentUser = response.user;
           
           await loadUserProfile();
+          await loadUserPreferences();
           await loadUserStats();
           setupEventListeners();
           
@@ -359,6 +351,24 @@
 
         // Détails du plan
         renderPlanDetails();
+      }
+
+      async function loadUserPreferences() {
+        try {
+          const preferencesResponse = await api("user/preferences");
+          const preferences = preferencesResponse.preferences || {};
+          
+          // Appliquer les préférences aux checkboxes
+          document.getElementById('emailNotifications').checked = preferences.emailNotifications || false;
+          document.getElementById('autoSaveHistory').checked = preferences.autoSaveHistory !== false; // true par défaut
+          
+          console.log('Préférences chargées:', preferences);
+        } catch (error) {
+          console.warn('Impossible de charger les préférences, utilisation des valeurs par défaut:', error);
+          // Valeurs par défaut si l'API échoue
+          document.getElementById('emailNotifications').checked = true;
+          document.getElementById('autoSaveHistory').checked = true;
+        }
       }
 
       async function loadUserStats() {
@@ -476,7 +486,6 @@
           e.preventDefault();
           
           const preferences = {
-            defaultPlatform: document.getElementById('defaultPlatform').checked,
             emailNotifications: document.getElementById('emailNotifications').checked,
             autoSaveHistory: document.getElementById('autoSaveHistory').checked
           };
