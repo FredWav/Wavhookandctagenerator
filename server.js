@@ -5,6 +5,8 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+require('./api/db/connection');
+
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));

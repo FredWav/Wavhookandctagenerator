@@ -1,10 +1,11 @@
-// utils/auth-util.js
 const crypto = require("crypto");
-const { kvGet, kvSet } = require("../_kv");
+const bcrypt = require('bcrypt');
+const pool = require('../db/connection');
 const { sign, verify } = require("../_jwt");
 
 const COOKIE_NAME = "wav_auth";
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-please-super-secret";
+const SALT_ROUNDS = 12;
 
 // Adapter pour Express
 function json(res, data, status = 200, headers = {}) {
@@ -27,36 +28,108 @@ function cookie(opts) {
     return `${name}=${value}; Expires=${exp}; Path=${path}; ${secure ? "Secure;" : ""} ${httpOnly ? "HttpOnly;" : ""} SameSite=${sameSite()}`;
 }
 
-async function hashPassword(password, salt = crypto.randomBytes(16)) {
-    return new Promise((resolve, reject) => {
-        crypto.pbkdf2(password, salt, 120000, 32, "sha256", (err, derived) => {
-            if (err) return reject(err);
-            resolve({ hash: derived.toString("hex"), salt: salt.toString("hex") });
-        });
-    });
-}
-
 async function createUser(email, password) {
-    const key = `user:${email.toLowerCase()}`;
-    const exists = await kvGet(key);
-    if (exists) throw new Error("Email déjà utilisé");
-    const { hash, salt } = await hashPassword(password);
-    const user = { id: key, email, hash, salt, plan: "free", createdAt: Date.now() };
-    await kvSet(key, user);
-    return user;
+    const connection = await pool.getConnection();
+    try {
+        // Vérifier si l'email existe déjà
+        const [existingUsers] = await connection.execute(
+            'SELECT id FROM users WHERE email = ?',
+            [email.toLowerCase()]
+        );
+
+        if (existingUsers.length > 0) {
+            throw new Error("Email déjà utilisé");
+        }
+
+        // Hasher le mot de passe
+        const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+        // Créer l'utilisateur
+        const [result] = await connection.execute(
+            'INSERT INTO users (email, password_hash, plan) VALUES (?, ?, ?)',
+            [email.toLowerCase(), passwordHash, 'free']
+        );
+
+        const userId = result.insertId;
+
+        // Récupérer l'utilisateur créé
+        const [users] = await connection.execute(
+            'SELECT id, email, plan, created_at FROM users WHERE id = ?',
+            [userId]
+        );
+
+        return {
+            id: users[0].id,
+            email: users[0].email,
+            plan: users[0].plan,
+            createdAt: users[0].created_at ? new Date(users[0].created_at).getTime() : null
+        };
+
+    } finally {
+        connection.release();
+    }
 }
 
 async function verifyUser(email, password) {
-    const key = `user:${email.toLowerCase()}`;
-    const user = await kvGet(key);
-    if (!user) throw new Error("Utilisateur introuvable");
-    const { hash } = await hashPassword(password, Buffer.from(user.salt, "hex"));
-    if (hash !== user.hash) throw new Error("Mot de passe invalide");
-    return user;
+    const connection = await pool.getConnection();
+    try {
+        const [users] = await connection.execute(
+            'SELECT id, email, password_hash, plan, created_at FROM users WHERE email = ?',
+            [email.toLowerCase()]
+        );
+
+        if (users.length === 0) {
+            throw new Error("Utilisateur introuvable");
+        }
+
+        const user = users[0];
+        const isValid = await bcrypt.compare(password, user.password_hash);
+
+        if (!isValid) {
+            throw new Error("Mot de passe invalide");
+        }
+
+        return {
+            id: user.id,
+            email: user.email,
+            plan: user.plan,
+            createdAt: user.created_at.getTime()
+        };
+    } finally {
+        connection.release();
+    }
+}
+
+async function getUserById(userId) {
+    const connection = await pool.getConnection();
+    try {
+        const [users] = await connection.execute(
+            'SELECT id, email, plan, created_at FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            return null;
+        }
+
+        const user = users[0];
+        return {
+            id: user.id,
+            email: user.email,
+            plan: user.plan,
+            createdAt: user.created_at.getTime()
+        };
+    } finally {
+        connection.release();
+    }
 }
 
 function setSession(user) {
-    const token = sign({ sub: user.id, email: user.email, plan: user.plan }, JWT_SECRET);
+    const token = sign({
+        sub: user.id,
+        email: user.email,
+        plan: user.plan
+    }, JWT_SECRET);
     const c = cookie({ name: COOKIE_NAME, value: token });
     return c;
 }
@@ -74,10 +147,22 @@ function getTokenFromCookie(req) {
 async function requireUser(req) {
     const token = getTokenFromCookie(req);
     if (!token) throw new Error("Not authenticated");
+
     const payload = verify(token, JWT_SECRET);
-    const user = await kvGet(payload.sub);
+    const user = await getUserById(payload.sub);
+
     if (!user) throw new Error("User missing");
     return user;
 }
 
-module.exports = { json, getBody, COOKIE_NAME, setSession, clearSession, requireUser, createUser, verifyUser };
+module.exports = {
+    json,
+    getBody,
+    COOKIE_NAME,
+    setSession,
+    clearSession,
+    requireUser,
+    createUser,
+    verifyUser,
+    getUserById
+};

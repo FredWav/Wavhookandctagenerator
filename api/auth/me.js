@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-    const { clearSession, COOKIE_NAME } = require("../../utils/auth-util");
+    const { clearSession, COOKIE_NAME } = require("../utils/auth-util");
     const clearCookie = clearSession();
     
     res.setHeader('Set-Cookie', clearCookie);

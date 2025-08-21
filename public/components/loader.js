@@ -16,4 +16,9 @@ async function loadComponent(selector, componentPath) {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadComponent('#header', '/components/header.html');
   await loadComponent('#footer', '/components/footer.html');
+  
+  // Initialiser AuthHeader APRÈS le chargement du header
+  if (window.AuthHeader) {
+    new AuthHeader();
+  }
 });
