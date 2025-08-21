@@ -1,21 +1,47 @@
 {
-  "name": "creative-suite",
+  "name": "wav-generator",
   "version": "1.0.0",
-  "description": "Suite créative pour hooks et CTAs",
+  "description": "Wav Generator - AI-powered Hooks and CTAs",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server",
     "dev": "nodemon server.js",
-    "build": "echo 'Build completed'"
+    "migrate": "node migrate.js",
+    "test": "node test.js"
   },
-  "depende    "bcryptjs": "^3.0.2",
-ncies": {
+  "dependencies": {
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
+    "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "multer": "^2.0.2",
-    "mysql2": "^3.14.3"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.3",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
-36feefa05ec
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=18.14.2"
+  },
+  "keywords": [
+    "ai", 
+    "generator", 
+    "hooks", 
+    "calls-to-action", 
+    "express", 
+    "nodejs", 
+    "mysql", 
+    "authentication"
+  ],
+  "author": "WavABuilt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/username/wav-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/wav-generator/issues"
+  },
+  "homepage": "https://github.com/username/wav-generator#readme"
+}
