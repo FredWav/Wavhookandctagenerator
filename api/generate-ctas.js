@@ -1,6 +1,8 @@
-// api/generate-ctas.js - Version Corrigée - GPT-4o
+// api/generate-ctas.js - Version avec Historique Intégré
 const express = require('express');
 const router = express.Router();
+const { requireUser, json } = require('./utils/auth-util');
+const pool = require('./db/connection');
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const MODEL = "gpt-4o";
@@ -30,6 +32,9 @@ router.post('/', async (req, res) => {
     corsHeaders(res);
     
     try {
+        // ✅ Authentification utilisateur
+        const user = await requireUser(req);
+        
         const { 
             intent = "follow", 
             platform = "tiktok", 
@@ -39,9 +44,17 @@ router.post('/', async (req, res) => {
             putaclic = false 
         } = req.body;
 
-        const max = 50;
-        const safeCount = Math.min(Math.max(1, count | 0), max);
+        // Vérifier les limites selon le plan utilisateur
+        const maxCount = user.plan === 'pro' ? 50 : 20;
+        const safeCount = Math.min(Math.max(1, count | 0), maxCount);
         
+        // Vérifier si l'utilisateur peut utiliser Putaclic+
+        const canUsePutaclic = putaclic && user.plan === 'pro';
+        
+        if (putaclic && !canUsePutaclic) {
+            return json(res, { error: 'Putaclic+ est réservé aux comptes Premium' }, 400);
+        }
+
         // SPÉCIFICATIONS PLATEFORMES
         const platformSpecs = {
             tiktok: {
@@ -61,7 +74,7 @@ router.post('/', async (req, res) => {
             }
         };
 
-        // SPÉCIFICATIONS INTENTIONS (SYNCHRONISÉES AVEC LE FRONT)
+        // SPÉCIFICATIONS INTENTIONS
         const intentSpecs = {
             follow: {
                 goal: "Convertir un spectateur en abonné.",
@@ -102,12 +115,12 @@ router.post('/', async (req, res) => {
         const resolveOptions = () => {
             let intensity = "normale";
             let mode = "balanced";
-            let temperature = 0.8; // CORRIGÉ: Augmenté de 0.7 à 0.8
+            let temperature = 0.8;
 
-            if (putaclic) {
+            if (canUsePutaclic) {
                 mode = "putaclic_extreme";
                 intensity = "maximale";
-                temperature = 0.95; // CORRIGÉ: Augmenté de 0.9 à 0.95
+                temperature = 0.95;
             }
             return { mode, intensity, temperature };
         };
@@ -142,7 +155,7 @@ CONTEXTE:
 - Ton: ${tone}
 - Contraintes: ${constraints || "Aucune"}
 
-${putaclic ? `
+${canUsePutaclic ? `
 🔥 PUTACLIC EXTRÊME - MODE BRUTAL ACTIVÉ:
 • VIOLENCE ÉMOTIONNELLE: 'FAIS-LE MAINTENANT', 'DERNIÈRE CHANCE', 'URGENT'
 • MOTS CHOCS OBLIGATOIRES: 'CRITIQUE', 'VITAL', 'MAINTENANT OU JAMAIS'
@@ -159,7 +172,7 @@ ${putaclic ? `
 `}
 
 SPÉCIFICATIONS TECHNIQUES:
-- Longueur: 3-8 mots MAXIMUM (CORRIGÉ: plus strict)
+- Longueur: 3-8 mots MAXIMUM
 - Structure: [VERBE D'ACTION] pour [BÉNÉFICE UTILISATEUR]
 - Interdictions: Jamais "${FORBIDDEN_PATTERNS.slice(0, 4).join('", "')}"
 - Originalité: Chaque CTA unique et mémorable
@@ -172,7 +185,7 @@ RETOURNE EXACTEMENT:
 
         // GÉNÉRATION AVEC RETRY INTELLIGENT
         const generate = async (prompt, temp) => {
-            return await fetch(OPENAI_URL, {
+            const response = await fetch(OPENAI_URL, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -191,19 +204,21 @@ RETOURNE EXACTEMENT:
                     response_format: { type: "json_object" }
                 })
             });
+
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => "");
+                console.error("OpenAI API Error:", response.status, errorText);
+                throw new Error(`OpenAI API Error: ${response.status} - ${errorText}`);
+            }
+
+            return response;
         };
 
         // Première tentative
         let response = await generate(userPrompt, temperature);
-
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => "");
-            console.error("OpenAI API Error:", errorText);
-            return res.status(500).json({ error: "OpenAI error", details: errorText });
-        }
-
         let data = await response.json();
         let parsed;
+        
         try {
             parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
         } catch {
@@ -212,23 +227,22 @@ RETOURNE EXACTEMENT:
 
         let initialCtas = Array.isArray(parsed.ctas) ? parsed.ctas : [];
         
-        // VALIDATION STRICTE (CORRIGÉE)
+        // VALIDATION STRICTE
         const validatedCtas = initialCtas.filter(cta => {
             if (typeof cta !== 'string') return false;
             const wordCount = cta.trim().split(/\s+/).length;
             const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p => 
                 cta.toLowerCase().includes(p.toLowerCase())
             );
-            // CORRIGÉ: 3-8 mots au lieu de 5-15
             return wordCount >= 3 && wordCount <= 8 && !hasForbiddenPattern;
         });
 
         // SYSTÈME DE RETRY AMÉLIORÉ
-        const qualityThreshold = Math.floor(safeCount * (putaclic ? 0.5 : 0.7));
+        const qualityThreshold = Math.floor(safeCount * (canUsePutaclic ? 0.5 : 0.7));
         if (validatedCtas.length < qualityThreshold && safeCount >= 10) {
             console.log(`Qualité insuffisante (${validatedCtas.length}/${safeCount}), retry...`);
 
-            const retryBoost = putaclic ? `
+            const retryBoost = canUsePutaclic ? `
 🔥 RETRY PUTACLIC ULTRA-BRUTAL: La génération précédente n'était PAS ASSEZ VIOLENTE.
 • TRIPLE l'intensité émotionnelle
 • Utilise des mots encore plus CHOQUANTS et AUTORITAIRES  
@@ -244,30 +258,27 @@ RETOURNE EXACTEMENT:
 `;
             
             const retryPrompt = userPrompt + retryBoost;
-            const retryResponse = await generate(retryPrompt, Math.min(temperature + 0.1, 1.0));
-
-            if (retryResponse.ok) {
+            try {
+                const retryResponse = await generate(retryPrompt, Math.min(temperature + 0.1, 1.0));
                 const retryData = await retryResponse.json();
-                try {
-                    const retryParsed = JSON.parse(retryData.choices?.[0]?.message?.content || "{}");
-                    const retryCtas = Array.isArray(retryParsed.ctas) ? retryParsed.ctas : [];
-                    
-                    const retryValidated = retryCtas.filter(cta => {
-                        if (typeof cta !== 'string') return false;
-                        const wordCount = cta.trim().split(/\s+/).length;
-                        const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p => 
-                            cta.toLowerCase().includes(p.toLowerCase())
-                        );
-                        return wordCount >= 3 && wordCount <= 8 && !hasForbiddenPattern;
-                    });
+                const retryParsed = JSON.parse(retryData.choices?.[0]?.message?.content || "{}");
+                const retryCtas = Array.isArray(retryParsed.ctas) ? retryParsed.ctas : [];
+                
+                const retryValidated = retryCtas.filter(cta => {
+                    if (typeof cta !== 'string') return false;
+                    const wordCount = cta.trim().split(/\s+/).length;
+                    const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p => 
+                        cta.toLowerCase().includes(p.toLowerCase())
+                    );
+                    return wordCount >= 3 && wordCount <= 8 && !hasForbiddenPattern;
+                });
 
-                    if (retryValidated.length > validatedCtas.length) {
-                        console.log("Retry réussi, nouveaux CTAs utilisés");
-                        parsed.ctas = retryValidated;
-                    }
-                } catch (e) {
-                    console.log('Retry parsing failed, keeping original');
+                if (retryValidated.length > validatedCtas.length) {
+                    console.log("Retry réussi, nouveaux CTAs utilisés");
+                    parsed.ctas = retryValidated;
                 }
+            } catch (e) {
+                console.log('Retry failed, keeping original');
             }
         }
         
@@ -279,26 +290,94 @@ RETOURNE EXACTEMENT:
             return wordCount >= 3 && wordCount <= 8;
         });
 
-        res.json({
-            ctas: finalCtas.slice(0, safeCount),
+        const resultCtas = finalCtas.slice(0, safeCount);
+
+        // ✅ SAUVEGARDE DANS L'HISTORIQUE
+        try {
+            const connection = await pool.getConnection();
+            try {
+                const historyData = {
+                    intent,
+                    platform,
+                    tone,
+                    constraints: constraints || null,
+                    putaclic: canUsePutaclic,
+                    count: safeCount,
+                    results: resultCtas
+                };
+
+                await connection.execute(`
+                    INSERT INTO user_history (user_id, type, theme, platform, tone, niche, brief, results)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `, [
+                    user.id,
+                    'ctas',
+                    `CTAs ${intent}`,
+                    platform,
+                    tone,
+                    null, // niche (pour CTAs on n'a pas de niche)
+                    constraints || null,
+                    JSON.stringify(historyData)
+                ]);
+
+                // Nettoyage automatique pour les comptes gratuits
+                if (user.plan !== 'pro') {
+                    await connection.execute(`
+                        DELETE FROM user_history 
+                        WHERE user_id = ? 
+                        AND id NOT IN (
+                            SELECT id FROM (
+                                SELECT id FROM user_history 
+                                WHERE user_id = ? 
+                                ORDER BY created_at DESC 
+                                LIMIT 30
+                            ) AS recent
+                        )
+                    `, [user.id, user.id]);
+                }
+
+                console.log('✅ CTAs sauvegardés dans l\'historique utilisateur');
+            } finally {
+                connection.release();
+            }
+        } catch (historyError) {
+            console.error('❌ Erreur sauvegarde historique:', historyError);
+            // Ne pas faire échouer la génération si l'historique échoue
+        }
+
+        // RÉPONSE FINALE
+        return json(res, {
+            ok: true,
+            ctas: resultCtas,
             metadata: {
                 platform,
                 intent,
                 tone,
                 mode: resolvedMode,
                 intensity,
+                putaclic_enabled: canUsePutaclic,
                 requested_count: safeCount,
                 generated_count: initialCtas.length,
                 validated_count: finalCtas.length,
                 quality_score: Math.round((finalCtas.length / Math.max(initialCtas.length, 1)) * 100),
                 temperature_used: temperature,
+                user_plan: user.plan,
                 timestamp: new Date().toISOString()
-            }
+            },
+            message: `${resultCtas.length} CTAs générés avec succès`
         });
 
     } catch (error) {
         console.error('Generate CTAs error:', error);
-        res.status(500).json({ error: 'Erreur serveur', details: error.message });
+        
+        if (error.message && error.message.includes('Not authenticated')) {
+            return json(res, { error: 'Authentication required' }, 401);
+        }
+        
+        return json(res, { 
+            error: 'Erreur serveur', 
+            details: process.env.NODE_ENV === 'development' ? error.message : 'Une erreur est survenue'
+        }, 500);
     }
 });
 

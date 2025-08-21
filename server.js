@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 3000;
 
 require('./api/db/connection');
 
+app.use('/api/stripe/webhook', express.raw({type: 'application/json'}), require('./api/stripe/stripe-webhook'));
+
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -37,12 +39,13 @@ htmlFiles.forEach(filename => {
 // Routes API
 app.use('/api/generate-ctas', require('./api/generate-ctas'));
 app.use('/api/generate-hooks', require('./api/generate-hooks'));
-app.use('/api/analyze-video', require('./api/analyze-video'));
+//app.use('/api/analyze-video', require('./api/analyze-video'));
 app.use('/api/save-analysis', require('./api/save-analysis'));
 app.use('/api/history', require('./api/history'));
 app.use('/api/auth', require('./api/auth'));
 app.use('/api/user', require('./api/auth/user'));
 app.use('/api/auth/change-password', require('./api/auth/change-password'));
+app.use('/api/stripe', require('./api/stripe'));
 
 // Test route
 app.get('/api/hello', (req, res) => {

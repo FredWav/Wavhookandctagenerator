@@ -34,6 +34,41 @@ class AuthHeader {
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     }
 
+    // Nouvelle fonction pour générer l'HTML de l'avatar
+    getAvatarHTML(user, size = 'small') {
+        const sizeClasses = {
+            small: 'w-8 h-8 text-sm',
+            large: 'w-12 h-12 text-lg'
+        };
+
+        const sizeClass = sizeClasses[size] || sizeClasses.small;
+
+        if (user.avatar_path) {
+            // Afficher l'image avatar
+            return `
+                <img 
+                    src="${user.avatar_path}" 
+                    alt="Avatar ${user.username}" 
+                    class="${sizeClass} rounded-full object-cover border-2 border-white/10"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                />
+                <div class="${sizeClass} rounded-full bg-gradient-to-br from-accent-2 to-accent flex items-center justify-center font-bold text-slate-900 border-2 border-white/10" style="display: none;">
+                    ${this.getInitials(user.username)}
+                </div>
+            `;
+        } else {
+            // Afficher les initiales
+            return `
+                <div class="${sizeClass} rounded-full flex items-center justify-center font-bold text-white border-2 border-white/10 overflow-hidden" style="aspect-ratio: 1;">
+                    <span class="w-full h-full flex items-center justify-center rounded-full bg-gradient-to-br from-accent-2 to-accent text-slate-900 text-center" style="font-size:inherit;">
+                        ${this.getInitials(user.username)}
+                    </span>
+                </div>
+
+            `;
+        }
+    }
+
     renderAuthenticatedNav(container, user) {
         const currentPath = location.pathname;
 
@@ -44,17 +79,20 @@ class AuthHeader {
       
       <!-- Dropdown Profile -->
       <div class="relative" id="profileDropdown">
-        <button id="profileBtn" class="flex items-center gap-3 px-4 py-2 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10">
-          <!-- Avatar -->
-          <div class="w-6 h-6 rounded-full bg-gradient-to-br from-accent-2 to-accent flex items-center justify-center text-sm font-bold text-slate-900">
-            ${this.getInitials(user.email)}
+        <button id="profileBtn" class="flex items-center gap-3 px-4 py-2 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50">
+          <!-- Avatar (petit) -->
+          <div class="flex-shrink-0">
+            ${this.getAvatarHTML(user, 'small')}
           </div>
           <!-- User Info -->
           <div class="hidden sm:flex flex-col items-start">
-            <span class="text-sm font-medium">${user.username.charAt(0).toUpperCase() + user.username.slice(1).toLowerCase()}</span>
+            <span class="text-sm font-medium">${this.capitalize(user.username)}</span>
             <div class="flex items-center gap-2">
               <span class="w-2 h-2 bg-success rounded-full"></span>
-              <span class="text-xs text-muted">${user.plan.toUpperCase()}</span>
+              ${user.plan === 'pro' ?
+                '<span class="text-xs text-muted">PRO</span>' :
+                '<span class="text-xs text-muted">FREE</span>'
+            }
             </div>
           </div>
           <!-- Chevron -->
@@ -68,13 +106,14 @@ class AuthHeader {
           <!-- User Info Header -->
           <div class="px-4 py-3 border-b border-white/10">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-accent-2 to-accent flex items-center justify-center text-lg font-bold text-slate-900">
-                ${this.getInitials(user.email)}
+              <!-- Avatar (grand) -->
+              <div class="flex-shrink-0">
+                ${this.getAvatarHTML(user, 'large')}
               </div>
-              <div>
-                <div class="font-medium text-text">${user.username.charAt(0).toUpperCase() + user.username.slice(1).toLowerCase()}</div>
+              <div class="flex-grow min-w-0">
+                <div class="font-medium text-text truncate">${this.capitalize(user.username)}</div>
+                <div class="text-xs text-muted truncate">${user.email}</div>
                 <div class="flex items-center gap-2 mt-1">
-                  <span class="text-xs text-muted">${user.email}</span>
                 </div>
               </div>
             </div>
@@ -118,6 +157,7 @@ class AuthHeader {
     renderGuestNav(container) {
         container.innerHTML = `
       <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/login">Connexion</a>
+      <a class="px-4 py-3 rounded-xl font-semibold transition bg-gradient-to-r from-accent to-accent-2 text-slate-900 hover:scale-105 active:scale-95" href="/signup">S'inscrire</a>
     `;
     }
 
@@ -172,8 +212,8 @@ class AuthHeader {
         }
     }
 
-    getInitials(email) {
-        return email.charAt(0).toUpperCase();
+    getInitials(username) {
+        return username ? username.charAt(0).toUpperCase() : '?';
     }
 
     async handleLogout() {

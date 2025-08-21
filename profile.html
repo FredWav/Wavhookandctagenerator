@@ -6,6 +6,7 @@
     <title>Mon Profil – Wav Generator</title>
     <!-- Tailwind CDN + config -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -59,13 +60,12 @@
     <div id="header"></div>
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-6 py-8">
+    <main class="max-w-6xl mx-auto px-6">
       <!-- Hero Profile Section -->
       <section
         class="mt-7 p-8 rounded-2xl border border-white/10 bg-[radial-gradient(800px_400px_at_-10%_10%,rgba(0,231,255,0.12),transparent_60%),radial-gradient(800px_400px_at_110%_0%,rgba(123,44,255,0.12),transparent_60%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))] shadow-neon"
       >
         <div class="flex flex-col md:flex-row items-start gap-8">
-          <!-- Avatar et infos principales -->
           <!-- Avatar et infos principales -->
           <div class="flex-shrink-0 relative">
             <!-- Avatar container -->
@@ -151,12 +151,8 @@
             </div>
 
             <div class="flex items-center gap-2 text-muted mb-4">
-              <span class="w-2 h-2 bg-success rounded-full"></span>
-              <span class="text-sm">Connecté</span>
               <span class="text-xs opacity-60">•</span>
-              <span class="text-xs" id="memberSince"
-                >Membre depuis janvier 2025</span
-              >
+              <span class="text-xs" id="memberSince">Membre depuis --</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
@@ -692,14 +688,14 @@
 
       async function loadUserAvatar() {
         try {
-          const response = await api("user/avatar");
-          if (response.avatar && response.avatar.url) {
-            showAvatarPreview(response.avatar.url);
+          // Utiliser directement currentUser qui contient avatar_path
+          if (currentUser.avatar_path) {
+            showAvatarPreview(currentUser.avatar_path);
           } else {
             showInitials();
           }
         } catch (error) {
-          // Pas d'avatar ou erreur -> afficher initiales
+          console.error("Erreur chargement avatar:", error);
           showInitials();
         }
       }
@@ -714,8 +710,6 @@
             preferences.emailNotifications || false;
           document.getElementById("autoSaveHistory").checked =
             preferences.autoSaveHistory !== false; // true par défaut
-
-          console.log("Préférences chargées:", preferences);
         } catch (error) {
           console.warn(
             "Impossible de charger les préférences, utilisation des valeurs par défaut:",
@@ -754,36 +748,81 @@
 
         if (currentUser.plan === "pro") {
           planDetails.innerHTML = `
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-3 h-3 bg-success rounded-full"></span>
-              <span class="font-medium">Plan PRO Actif</span>
-            </div>
-            <ul class="text-sm text-muted space-y-1 mb-4">
-              <li>✓ Générations illimitées</li>
-              <li>✓ Historique complet</li>
-              <li>✓ Mode Putaclic+</li>
-              <li>✓ Support prioritaire</li>
-            </ul>
-            <button class="w-full px-4 py-2 text-sm bg-panel-2 hover:bg-white/5 rounded-xl transition-colors">
-              Gérer l'abonnement
-            </button>
-          `;
+      <div class="flex items-center gap-2 mb-3">
+        <span class="w-3 h-3 bg-success rounded-full"></span>
+        <span class="font-medium">Plan PRO Actif</span>
+      </div>
+      <ul class="text-sm text-muted space-y-1 mb-4">
+        <li>✓ Générations illimitées</li>
+        <li>✓ Historique complet</li>
+        <li>✓ Mode Putaclic+</li>
+        <li>✓ Support prioritaire</li>
+      </ul>
+      <button id="manageSubscriptionBtn" class="w-full px-4 py-2 text-sm bg-panel-2 hover:bg-white/5 rounded-xl transition-colors">
+        Gérer l'abonnement
+      </button>
+    `;
+
+          // Gérer l'abonnement
+          document
+            .getElementById("manageSubscriptionBtn")
+            .addEventListener("click", async () => {
+              try {
+                const response = await api("stripe/create-portal-session", {
+                  method: "POST",
+                });
+                window.open(response.portal_url, "_blank");
+              } catch (error) {
+                toast("Erreur lors de l'accès au portail", "error");
+              }
+            });
         } else {
           planDetails.innerHTML = `
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-3 h-3 bg-warning rounded-full"></span>
-              <span class="font-medium">Plan FREE</span>
-            </div>
-            <ul class="text-sm text-muted space-y-1 mb-4">
-              <li>• 20 hooks max</li>
-              <li>• 10 hooks visuels max</li>
-              <li>• 30 derniers historique</li>
-              <li>• Pas de Putaclic+</li>
-            </ul>
-            <a href="/upgrade" class="block w-full px-4 py-2 text-sm text-center bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform">
-              Passer à PRO
-            </a>
-          `;
+      <div class="flex items-center gap-2 mb-3">
+        <span class="w-3 h-3 bg-warning rounded-full"></span>
+        <span class="font-medium">Plan FREE</span>
+      </div>
+      <ul class="text-sm text-muted space-y-1 mb-4">
+        <li>• 20 hooks max</li>
+        <li>• 10 hooks visuels max</li>
+        <li>• 30 derniers historique</li>
+        <li>• Pas de Putaclic+</li>
+      </ul>
+      <div class="space-y-2">
+        <div class="text-center py-2">
+          <span class="text-lg font-bold text-accent-2">19€</span>
+          <span class="text-sm text-muted">/mois</span>
+        </div>
+        <button id="upgradeBtn" class="block w-full px-4 py-2 text-sm text-center bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform">
+          Passer à PRO
+        </button>
+      </div>
+    `;
+
+          // Upgrade vers PRO
+          document
+            .getElementById("upgradeBtn")
+            .addEventListener("click", async () => {
+              const btn = document.getElementById("upgradeBtn");
+              const originalText = btn.textContent;
+
+              btn.disabled = true;
+              btn.textContent = "Redirection...";
+
+              try {
+                const response = await api("stripe/create-checkout-session", {
+                  method: "POST",
+                });
+                window.location.href = response.checkout_url;
+              } catch (error) {
+                toast(
+                  error.message || "Erreur lors de la création de la session",
+                  "error"
+                );
+                btn.disabled = false;
+                btn.textContent = originalText;
+              }
+            });
         }
       }
 

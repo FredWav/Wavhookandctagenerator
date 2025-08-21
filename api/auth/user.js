@@ -8,149 +8,167 @@ const fs = require('fs').promises;
 
 // Configuration multer pour l'upload d'images
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/avatars/');
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const filename = `avatar-${Date.now()}${ext}`;
-    cb(null, filename);
-  }
+    destination: (req, file, cb) => {
+        cb(null, 'public/avatars/');
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const filename = `avatar-${Date.now()}${ext}`;
+        cb(null, filename);
+    }
 });
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Format d\'image non supporté'), false);
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Format d\'image non supporté'), false);
+        }
     }
-  }
 });
 
 // POST /api/user/avatar - Upload avatar
 router.post('/avatar', upload.single('avatar'), async (req, res) => {
-  try {
-    const user = await requireUser(req);
-    
-    if (!req.file) {
-      return json(res, { error: 'Aucun fichier fourni' }, 400);
-    }
-
-    const connection = await pool.getConnection();
-
     try {
-      // Récupérer l'ancien avatar pour le supprimer
-      const [oldAvatar] = await connection.execute(
-        'SELECT avatar_path FROM users WHERE id = ?',
-        [user.id]
-      );
+        const user = await requireUser(req);
 
-      // Supprimer l'ancien fichier si il existe
-      if (oldAvatar.length > 0 && oldAvatar[0].avatar_path) {
+        if (!req.file) {
+            return json(res, { error: 'Aucun fichier fourni' }, 400);
+        }
+
+        const connection = await pool.getConnection();
+
         try {
-          await fs.unlink(path.join('public', oldAvatar.avatar_path));
-        } catch (error) {
-          console.warn('Impossible de supprimer ancien avatar:', error);
+            // Récupérer l'ancien avatar pour le supprimer
+            const [oldAvatar] = await connection.execute(
+                'SELECT avatar_path FROM users WHERE id = ?',
+                [user.id]
+            );
+
+            // Supprimer l'ancien fichier si il existe ET s'il n'est pas null/undefined
+            if (oldAvatar.length > 0) {
+                const avatarData = oldAvatar[0];
+                const oldPath = avatarData?.avatar_path;
+
+                if (oldPath && typeof oldPath === 'string' && oldPath.trim() !== '') {
+                    try {
+                        const fullPath = path.resolve('public' + oldPath);
+                        await fs.unlink(fullPath);
+                        console.log('✅ Ancien avatar supprimé:', fullPath);
+                    } catch (error) {
+                        console.warn('⚠️ Suppression échouée:', error.message);
+                    }
+                }
+            }
+
+            // Sauvegarder le nouveau chemin
+            const avatarPath = `/avatars/${req.file.filename}`;
+            await connection.execute(
+                'UPDATE users SET avatar_path = ? WHERE id = ?',
+                [avatarPath, user.id]
+            );
+
+            return json(res, {
+                ok: true,
+                avatar: {
+                    url: avatarPath,
+                    filename: req.file.filename
+                }
+            });
+
+        } finally {
+            connection.release();
         }
-      }
+    } catch (error) {
+        console.error('❌ Erreur upload avatar:', error);
 
-      // Sauvegarder le nouveau chemin
-      const avatarPath = `/avatars/${req.file.filename}`;
-      await connection.execute(
-        'UPDATE users SET avatar_path = ? WHERE id = ?',
-        [avatarPath, user.id]
-      );
-
-      return json(res, {
-        ok: true,
-        avatar: {
-          url: avatarPath,
-          filename: req.file.filename
+        // Supprimer le fichier uploadé en cas d'erreur
+        if (req.file && req.file.path) {
+            try {
+                await fs.unlink(req.file.path);
+                console.log('🧹 Fichier temporaire nettoyé');
+            } catch (cleanupError) {
+                console.warn('⚠️ Impossible de nettoyer:', cleanupError.message);
+            }
         }
-      });
 
-    } finally {
-      connection.release();
+        return json(res, { error: 'Erreur lors de l\'upload' }, 500);
     }
-  } catch (error) {
-    console.error('Erreur upload avatar:', error);
-    return json(res, { error: 'Erreur lors de l\'upload' }, 500);
-  }
 });
 
 // GET /api/user/avatar - Récupérer avatar
 router.get('/avatar', async (req, res) => {
-  try {
-    const user = await requireUser(req);
-    const connection = await pool.getConnection();
-
     try {
-      const [rows] = await connection.execute(
-        'SELECT avatar_path FROM users WHERE id = ?',
-        [user.id]
-      );
+        const user = await requireUser(req);
+        const connection = await pool.getConnection();
 
-      if (rows.length > 0 && rows[0].avatar_path) {
-        return json(res, {
-          ok: true,
-          avatar: {
-            url: rows.avatar_path
-          }
-        });
-      } else {
-        return json(res, { ok: true, avatar: null });
-      }
+        try {
+            const [rows] = await connection.execute(
+                'SELECT avatar_path FROM users WHERE id = ?',
+                [user.id]
+            );
 
-    } finally {
-      connection.release();
+            if (rows.length > 0 && rows[0].avatar_path) {
+                return json(res, {
+                    ok: true,
+                    avatar: {
+                        url: rows.avatar_path
+                    }
+                });
+            } else {
+                return json(res, { ok: true, avatar: null });
+            }
+
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Erreur récupération avatar:', error);
+        return json(res, { error: 'Erreur serveur' }, 500);
     }
-  } catch (error) {
-    console.error('Erreur récupération avatar:', error);
-    return json(res, { error: 'Erreur serveur' }, 500);
-  }
 });
 
 // DELETE /api/user/avatar - Supprimer avatar
 router.delete('/avatar', async (req, res) => {
-  try {
-    const user = await requireUser(req);
-    const connection = await pool.getConnection();
-
     try {
-      // Récupérer le chemin avant suppression
-      const [rows] = await connection.execute(
-        'SELECT avatar_path FROM users WHERE id = ?',
-        [user.id]
-      );
+        const user = await requireUser(req);
+        const connection = await pool.getConnection();
 
-      // Supprimer le fichier
-      if (rows.length > 0 && rows[0].avatar_path) {
         try {
-          await fs.unlink(path.join('public', rows.avatar_path));
-        } catch (error) {
-          console.warn('Fichier avatar introuvable:', error);
+            // Récupérer le chemin avant suppression
+            const [rows] = await connection.execute(
+                'SELECT avatar_path FROM users WHERE id = ?',
+                [user.id]
+            );
+
+            // Supprimer le fichier
+            if (rows.length > 0 && rows[0].avatar_path) {
+                try {
+                    await fs.unlink(path.join('public', rows.avatar_path));
+                } catch (error) {
+                    console.warn('Fichier avatar introuvable:', error);
+                }
+            }
+
+            // Supprimer de la base
+            await connection.execute(
+                'UPDATE users SET avatar_path = NULL WHERE id = ?',
+                [user.id]
+            );
+
+            return json(res, { ok: true });
+
+        } finally {
+            connection.release();
         }
-      }
-
-      // Supprimer de la base
-      await connection.execute(
-        'UPDATE users SET avatar_path = NULL WHERE id = ?',
-        [user.id]
-      );
-
-      return json(res, { ok: true });
-
-    } finally {
-      connection.release();
+    } catch (error) {
+        console.error('Erreur suppression avatar:', error);
+        return json(res, { error: 'Erreur serveur' }, 500);
     }
-  } catch (error) {
-    console.error('Erreur suppression avatar:', error);
-    return json(res, { error: 'Erreur serveur' }, 500);
-  }
 });
 
 // Mettre à jour les préférences utilisateur
@@ -198,27 +216,18 @@ router.get('/preferences', async (req, res) => {
                 [user.id]
             );
 
-            console.log('Raw rows:', JSON.stringify(rows, null, 2));
-
             if (rows.length > 0) {
                 const row = rows[0];
-
-                console.log('email_notifications:', row.email_notifications, typeof row.email_notifications);
-                console.log('auto_save_history:', row.auto_save_history, typeof row.auto_save_history);
 
                 // Version très explicite
                 const emailNotif = row.email_notifications;
                 const autoSave = row.auto_save_history;
-
-                console.log('emailNotif == 1:', emailNotif == 1);
-                console.log('autoSave == 1:', autoSave == 1);
 
                 const preferences = {
                     emailNotifications: emailNotif == 1 ? true : false,
                     autoSaveHistory: autoSave == 1 ? true : false
                 };
 
-                console.log('Final preferences:', preferences);
                 return json(res, { ok: true, preferences });
             } else {
                 return json(res, {
@@ -243,6 +252,27 @@ router.delete('/delete', async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
+            // Récupérer l'avatar avant suppression du compte
+            const [rows] = await connection.execute(
+                'SELECT avatar_path FROM users WHERE id = ?', 
+                [user.id]
+            );
+
+            // Supprimer le fichier avatar s'il existe
+            if (rows.length > 0 && rows[0].avatar_path) {
+                try {
+                    const avatarPath = path.join(process.cwd(), 'public', rows[0].avatar_path);
+                    await fs.unlink(avatarPath);
+                    console.log('✅ Avatar supprimé:', avatarPath);
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        console.warn('⚠️ Fichier avatar déjà inexistant:', rows[0].avatar_path);
+                    } else {
+                        console.warn('❌ Erreur suppression avatar:', error.message);
+                    }
+                }
+            }
+
             // Supprimer l'utilisateur (CASCADE supprimera les données liées)
             await connection.execute('DELETE FROM users WHERE id = ?', [user.id]);
 

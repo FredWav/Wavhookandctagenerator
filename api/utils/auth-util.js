@@ -126,7 +126,7 @@ async function getUserById(userId) {
     const connection = await pool.getConnection();
     try {
         const [users] = await connection.execute(
-            'SELECT id, username, email, plan, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, plan, avatar_path, stripe_customer_id, stripe_subscription_id, subscription_status, created_at FROM users WHERE id = ?',
             [userId]
         );
 
@@ -140,7 +140,10 @@ async function getUserById(userId) {
             username: user.username,
             email: user.email,
             plan: user.plan,
-            createdAt: user.created_at.getTime()
+            createdAt: user.created_at.getTime(),
+            avatar_path: user.avatar_path || null,
+            stripe_customer_id: user.stripe_customer_id || null,
+            stripe_subscription_id: user.stripe_subscription_id || null,
         };
     } finally {
         connection.release();
