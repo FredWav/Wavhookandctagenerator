@@ -1,51 +1,73 @@
 class AuthHeader {
-    constructor() {
-        // Attendre que le DOM soit prêt
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.init());
-        } else {
-            this.init();
-        }
+  constructor() {
+    // Attendre que le DOM soit prêt
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.init());
+    } else {
+      this.init();
+    }
+  }
+
+  async init() {
+    // Attendre un peu que le header soit chargé
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await this.updateNavigation();
+  }
+
+  async updateNavigation() {
+    const headerNav = document.getElementById('header-nav');
+    if (!headerNav) {
+      console.error('Element #header-nav non trouvé');
+      return;
     }
 
-    async init() {
-        // Attendre un peu que le header soit chargé
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await this.updateNavigation();
+    try {
+      const me = await api("auth/me");
+      this.renderAuthenticatedNav(headerNav, me.user);
+    } catch (error) {
+      this.renderGuestNav(headerNav);
     }
+  }
 
-    async updateNavigation() {
-        const headerNav = document.getElementById('header-nav');
-        if (!headerNav) {
-            console.error('Element #header-nav non trouvé');
-            return;
-        }
+  capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
 
-        try {
-            const me = await api("auth/me");
-            this.renderAuthenticatedNav(headerNav, me.user);
-        } catch (error) {
-            this.renderGuestNav(headerNav);
-        }
-    }
+  // Configuration des plans
+  getPlanConfig(plan) {
+    const configs = {
+      free: {
+        name: 'FREE',
+        color: 'text-muted',
+        bgColor: 'bg-muted'
+      },
+      plus: {
+        name: 'PLUS',
+        color: 'text-warning',
+        bgColor: 'bg-warning '
+      },
+      pro: {
+        name: 'PRO',
+        color: 'text-success',
+        bgColor: 'bg-success'
+      }
+    };
+    return configs[plan] || configs.free;
+  }
 
-    capitalize(str) {
-        if (!str) return '';
-        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    }
+  // Nouvelle fonction pour générer l'HTML de l'avatar
+  getAvatarHTML(user, size = 'small') {
+    const sizeClasses = {
+      small: 'w-8 h-8 text-sm',
+      large: 'w-12 h-12 text-lg'
+    };
 
-    // Nouvelle fonction pour générer l'HTML de l'avatar
-    getAvatarHTML(user, size = 'small') {
-        const sizeClasses = {
-            small: 'w-8 h-8 text-sm',
-            large: 'w-12 h-12 text-lg'
-        };
+    const sizeClass = sizeClasses[size] || sizeClasses.small;
 
-        const sizeClass = sizeClasses[size] || sizeClasses.small;
-
-        if (user.avatar_path) {
-            // Afficher l'image avatar
-            return `
+    if (user.avatar_path) {
+      // Afficher l'image avatar
+      return `
                 <img 
                     src="${user.avatar_path}" 
                     alt="Avatar ${user.username}" 
@@ -56,25 +78,26 @@ class AuthHeader {
                     ${this.getInitials(user.username)}
                 </div>
             `;
-        } else {
-            // Afficher les initiales
-            return `
+    } else {
+      // Afficher les initiales
+      return `
                 <div class="${sizeClass} rounded-full flex items-center justify-center font-bold text-white border-2 border-white/10 overflow-hidden" style="aspect-ratio: 1;">
                     <span class="w-full h-full flex items-center justify-center rounded-full bg-gradient-to-br from-accent-2 to-accent text-slate-900 text-center" style="font-size:inherit;">
                         ${this.getInitials(user.username)}
                     </span>
                 </div>
-
             `;
-        }
     }
+  }
 
-    renderAuthenticatedNav(container, user) {
-        const currentPath = location.pathname;
+  renderAuthenticatedNav(container, user) {
+    const currentPath = location.pathname;
+    const userPlan = user.plan || 'free';
+    const planConfig = this.getPlanConfig(userPlan);
 
-        container.innerHTML = `
+    container.innerHTML = `
       ${currentPath !== '/' ?
-                '<a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/">Accueil</a>' : ''}
+        '<a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/">Accueil</a>' : ''}
       <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/history">Historique</a>
       
       <!-- Dropdown Profile -->
@@ -88,11 +111,8 @@ class AuthHeader {
           <div class="hidden sm:flex flex-col items-start">
             <span class="text-sm font-medium">${this.capitalize(user.username)}</span>
             <div class="flex items-center gap-2">
-              <span class="w-2 h-2 bg-success rounded-full"></span>
-              ${user.plan === 'pro' ?
-                '<span class="text-xs text-muted">PRO</span>' :
-                '<span class="text-xs text-muted">FREE</span>'
-            }
+              <span class="w-2 h-2 ${planConfig.bgColor} rounded-full"></span>
+              <span class="text-xs ${planConfig.color}">${planConfig.name}</span>
             </div>
           </div>
           <!-- Chevron -->
@@ -128,14 +148,8 @@ class AuthHeader {
               Mon Profil
             </a>
 
-            ${user.plan !== 'pro' ? `
-            <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
-              Passer à PRO
-            </a>
-            ` : ''}
+            <!-- Options d'upgrade conditionnelles -->
+            ${this.getUpgradeOptions(userPlan)}
 
             <div class="border-t border-white/10 my-2"></div>
             
@@ -150,80 +164,109 @@ class AuthHeader {
       </div>
     `;
 
-        // Attacher les événements du dropdown
-        this.setupDropdownEvents();
-    }
+    // Attacher les événements du dropdown
+    this.setupDropdownEvents();
+  }
 
-    renderGuestNav(container) {
-        container.innerHTML = `
+  getUpgradeOptions(userPlan) {
+    switch (userPlan) {
+      case 'free':
+        return `
+                    <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-warning hover:bg-warning/10 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Passer à PLUS
+                    </a>
+                    <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
+<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                        Passer à PRO
+                    </a>
+                `;
+      case 'plus':
+        return `
+                    <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
+<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                        Upgrader vers PRO
+                    </a>
+                `;
+      case 'pro':
+        return ''; // Aucune option d'upgrade pour les utilisateurs PRO
+      default:
+        return '';
+    }
+  }
+
+  renderGuestNav(container) {
+    container.innerHTML = `
       <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/login">Connexion</a>
       <a class="px-4 py-3 rounded-xl font-semibold transition bg-gradient-to-r from-accent to-accent-2 text-slate-900 hover:scale-105 active:scale-95" href="/signup">S'inscrire</a>
     `;
+  }
+
+  setupDropdownEvents() {
+    const profileBtn = document.getElementById('profileBtn');
+    const profileMenu = document.getElementById('profileMenu');
+    const chevron = document.getElementById('chevron');
+    const logoutBtn = document.getElementById('dropdownLogoutBtn');
+
+    if (!profileBtn || !profileMenu) return;
+
+    let isOpen = false;
+
+    // Toggle dropdown
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isOpen = !isOpen;
+      this.toggleDropdown(profileMenu, chevron, isOpen);
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+        isOpen = false;
+        this.toggleDropdown(profileMenu, chevron, false);
+      }
+    });
+
+    // Logout event
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => this.handleLogout());
     }
 
-    setupDropdownEvents() {
-        const profileBtn = document.getElementById('profileBtn');
-        const profileMenu = document.getElementById('profileMenu');
-        const chevron = document.getElementById('chevron');
-        const logoutBtn = document.getElementById('dropdownLogoutBtn');
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        isOpen = false;
+        this.toggleDropdown(profileMenu, chevron, false);
+      }
+    });
+  }
 
-        if (!profileBtn || !profileMenu) return;
-
-        let isOpen = false;
-
-        // Toggle dropdown
-        profileBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isOpen = !isOpen;
-            this.toggleDropdown(profileMenu, chevron, isOpen);
-        });
-
-        // Close on outside click
-        document.addEventListener('click', (e) => {
-            if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
-                isOpen = false;
-                this.toggleDropdown(profileMenu, chevron, false);
-            }
-        });
-
-        // Logout event
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => this.handleLogout());
-        }
-
-        // Close on escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isOpen) {
-                isOpen = false;
-                this.toggleDropdown(profileMenu, chevron, false);
-            }
-        });
+  toggleDropdown(menu, chevron, isOpen) {
+    if (isOpen) {
+      menu.classList.remove('opacity-0', 'invisible', 'scale-95');
+      menu.classList.add('opacity-100', 'visible', 'scale-100');
+      chevron.style.transform = 'rotate(180deg)';
+    } else {
+      menu.classList.add('opacity-0', 'invisible', 'scale-95');
+      menu.classList.remove('opacity-100', 'visible', 'scale-100');
+      chevron.style.transform = 'rotate(0deg)';
     }
+  }
 
-    toggleDropdown(menu, chevron, isOpen) {
-        if (isOpen) {
-            menu.classList.remove('opacity-0', 'invisible', 'scale-95');
-            menu.classList.add('opacity-100', 'visible', 'scale-100');
-            chevron.style.transform = 'rotate(180deg)';
-        } else {
-            menu.classList.add('opacity-0', 'invisible', 'scale-95');
-            menu.classList.remove('opacity-100', 'visible', 'scale-100');
-            chevron.style.transform = 'rotate(0deg)';
-        }
-    }
+  getInitials(username) {
+    return username ? username.charAt(0).toUpperCase() : '?';
+  }
 
-    getInitials(username) {
-        return username ? username.charAt(0).toUpperCase() : '?';
+  async handleLogout() {
+    try {
+      await api("auth/me/logout", { method: "POST" });
+      location.href = "/login";
+    } catch (error) {
+      toast(error.message, "error");
     }
-
-    async handleLogout() {
-        try {
-            await api("auth/me/logout", { method: "POST" });
-            location.href = "/login";
-        } catch (error) {
-            toast(error.message, "error");
-        }
-    }
+  }
 }
 
 // Exposer la classe globalement

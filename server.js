@@ -45,7 +45,7 @@ app.use('/api/history', require('./api/history'));
 app.use('/api/auth', require('./api/auth'));
 app.use('/api/user', require('./api/auth/user'));
 app.use('/api/auth/change-password', require('./api/auth/change-password'));
-app.use('/api/stripe', require('./api/stripe'));
+app.use('/api/stripe', require('./api/stripe/stripe'));
 
 // Test route
 app.get('/api/hello', (req, res) => {

@@ -146,7 +146,7 @@
                 id="planBadge"
                 class="px-3 py-1 text-sm font-bold bg-gradient-to-r from-accent to-accent-2 text-slate-900 rounded-full"
               >
-                PRO
+                FREE
               </span>
             </div>
 
@@ -523,6 +523,46 @@
     <script>
       let currentUser;
 
+      // Configuration des plans
+      const PLAN_CONFIG = {
+        free: {
+          name: "FREE",
+          badge:
+            "px-3 py-1 text-sm font-bold bg-panel-2 text-muted rounded-full",
+          features: [
+            "20 hooks max",
+            "10 hooks visuels max",
+            "30 derniers historique",
+            "Pas de Putaclic+",
+          ],
+        },
+        plus: {
+          name: "PLUS",
+          badge:
+            "px-3 py-1 text-sm font-bold bg-gradient-to-r from-warning to-orange-500 text-slate-900 rounded-full",
+          features: [
+            "Générations illimitées",
+            "Historique complet",
+            "Mode Putaclic+",
+            "Support standard",
+          ],
+          price: "9€",
+        },
+        pro: {
+          name: "PRO",
+          badge:
+            "px-3 py-1 text-sm font-bold bg-gradient-to-r from-accent to-accent-2 text-slate-900 rounded-full",
+          features: [
+            "Générations illimitées",
+            "Historique complet",
+            "Mode Putaclic+",
+            "Support prioritaire",
+            "Fonctionnalités exclusives",
+          ],
+          price: "19€",
+        },
+      };
+
       (async () => {
         try {
           const response = await api("auth/me");
@@ -660,15 +700,11 @@
 
         // Badge du plan
         const planBadge = document.getElementById("planBadge");
-        if (currentUser.plan === "pro") {
-          planBadge.textContent = "PRO";
-          planBadge.className =
-            "px-3 py-1 text-sm font-bold bg-gradient-to-r from-accent to-accent-2 text-slate-900 rounded-full";
-        } else {
-          planBadge.textContent = "FREE";
-          planBadge.className =
-            "px-3 py-1 text-sm font-bold bg-panel-2 text-muted rounded-full";
-        }
+        const userPlan = currentUser.plan || "free";
+        const planConfig = PLAN_CONFIG[userPlan];
+
+        planBadge.textContent = planConfig.name;
+        planBadge.className = planConfig.badge;
 
         // Date d'inscription
         if (currentUser.createdAt) {
@@ -745,23 +781,98 @@
 
       function renderPlanDetails() {
         const planDetails = document.getElementById("planDetails");
+        const userPlan = currentUser.plan || "free";
+        const planConfig = PLAN_CONFIG[userPlan];
 
-        if (currentUser.plan === "pro") {
+        if (userPlan === "free") {
           planDetails.innerHTML = `
-      <div class="flex items-center gap-2 mb-3">
-        <span class="w-3 h-3 bg-success rounded-full"></span>
-        <span class="font-medium">Plan PRO Actif</span>
-      </div>
-      <ul class="text-sm text-muted space-y-1 mb-4">
-        <li>✓ Générations illimitées</li>
-        <li>✓ Historique complet</li>
-        <li>✓ Mode Putaclic+</li>
-        <li>✓ Support prioritaire</li>
-      </ul>
-      <button id="manageSubscriptionBtn" class="w-full px-4 py-2 text-sm bg-panel-2 hover:bg-white/5 rounded-xl transition-colors">
-        Gérer l'abonnement
-      </button>
-    `;
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-3 h-3 bg-warning rounded-full"></span>
+              <span class="font-medium">Plan ${planConfig.name}</span>
+            </div>
+            <ul class="text-sm text-muted space-y-1 mb-4">
+              ${planConfig.features
+                .map((feature) => `<li>• ${feature}</li>`)
+                .join("")}
+            </ul>
+            <div class="space-y-2">
+              <!-- Plan Plus -->
+              <div class="p-3 bg-panel-2 rounded-xl border border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-medium text-warning">Plan Plus</span>
+                  <span class="text-lg font-bold text-warning">${
+                    PLAN_CONFIG.plus.price
+                  }<span class="text-sm text-muted">/mois</span></span>
+                </div>
+                <button class="upgrade-btn w-full px-4 py-2 text-sm bg-gradient-to-r from-warning to-orange-500 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform" data-plan="plus">
+                  Passer à Plus
+                </button>
+              </div>
+              
+              <!-- Plan Pro -->
+              <div class="p-3 bg-panel-2 rounded-xl border border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-medium text-accent-2">Plan Pro</span>
+                  <span class="text-lg font-bold text-accent-2">${
+                    PLAN_CONFIG.pro.price
+                  }<span class="text-sm text-muted">/mois</span></span>
+                </div>
+                <button class="upgrade-btn w-full px-4 py-2 text-sm bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform" data-plan="pro">
+                  Passer à Pro
+                </button>
+              </div>
+            </div>
+          `;
+
+          // Event listeners pour les upgrades
+          document.querySelectorAll(".upgrade-btn").forEach((btn) => {
+            btn.addEventListener("click", async (e) => {
+              const plan = e.target.dataset.plan;
+              await upgradeToPlan(plan, e.target);
+            });
+          });
+        } else {
+          // Plan payant (plus ou pro)
+          const statusColor = userPlan === "pro" ? "success" : "warning";
+
+          planDetails.innerHTML = `
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-3 h-3 bg-${statusColor} rounded-full"></span>
+              <span class="font-medium">Plan ${planConfig.name} Actif</span>
+            </div>
+            <ul class="text-sm text-muted space-y-1 mb-4">
+              ${planConfig.features
+                .map((feature) => `<li>✓ ${feature}</li>`)
+                .join("")}
+            </ul>
+            ${
+              userPlan === "plus"
+                ? `
+              <div class="p-3 bg-panel-2 rounded-xl border border-white/10 mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-medium text-accent-2">Upgrader vers Pro</span>
+                  <span class="text-lg font-bold text-accent-2">${PLAN_CONFIG.pro.price}<span class="text-sm text-muted">/mois</span></span>
+                </div>
+                <button class="upgrade-btn w-full px-4 py-2 text-sm bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform" data-plan="pro">
+                  Passer à Pro
+                </button>
+              </div>
+            `
+                : ""
+            }
+            <button id="manageSubscriptionBtn" class="w-full px-4 py-2 text-sm bg-panel-2 hover:bg-white/5 rounded-xl transition-colors">
+              Gérer l'abonnement
+            </button>
+          `;
+
+          // Event listeners
+          const upgradeBtn = document.querySelector(".upgrade-btn");
+          if (upgradeBtn) {
+            upgradeBtn.addEventListener("click", async (e) => {
+              const plan = e.target.dataset.plan;
+              await upgradeToPlan(plan, e.target);
+            });
+          }
 
           // Gérer l'abonnement
           document
@@ -776,53 +887,28 @@
                 toast("Erreur lors de l'accès au portail", "error");
               }
             });
-        } else {
-          planDetails.innerHTML = `
-      <div class="flex items-center gap-2 mb-3">
-        <span class="w-3 h-3 bg-warning rounded-full"></span>
-        <span class="font-medium">Plan FREE</span>
-      </div>
-      <ul class="text-sm text-muted space-y-1 mb-4">
-        <li>• 20 hooks max</li>
-        <li>• 10 hooks visuels max</li>
-        <li>• 30 derniers historique</li>
-        <li>• Pas de Putaclic+</li>
-      </ul>
-      <div class="space-y-2">
-        <div class="text-center py-2">
-          <span class="text-lg font-bold text-accent-2">19€</span>
-          <span class="text-sm text-muted">/mois</span>
-        </div>
-        <button id="upgradeBtn" class="block w-full px-4 py-2 text-sm text-center bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform">
-          Passer à PRO
-        </button>
-      </div>
-    `;
+        }
+      }
 
-          // Upgrade vers PRO
-          document
-            .getElementById("upgradeBtn")
-            .addEventListener("click", async () => {
-              const btn = document.getElementById("upgradeBtn");
-              const originalText = btn.textContent;
+      async function upgradeToPlan(plan, buttonElement) {
+        const originalText = buttonElement.textContent;
 
-              btn.disabled = true;
-              btn.textContent = "Redirection...";
+        buttonElement.disabled = true;
+        buttonElement.textContent = "Redirection...";
 
-              try {
-                const response = await api("stripe/create-checkout-session", {
-                  method: "POST",
-                });
-                window.location.href = response.checkout_url;
-              } catch (error) {
-                toast(
-                  error.message || "Erreur lors de la création de la session",
-                  "error"
-                );
-                btn.disabled = false;
-                btn.textContent = originalText;
-              }
-            });
+        try {
+          const response = await api("stripe/create-checkout-session", {
+            method: "POST",
+            body: { plan: plan },
+          });
+          window.location.href = response.checkout_url;
+        } catch (error) {
+          toast(
+            error.message || "Erreur lors de la création de la session",
+            "error"
+          );
+          buttonElement.disabled = false;
+          buttonElement.textContent = originalText;
         }
       }
 

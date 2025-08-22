@@ -3,19 +3,42 @@ const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const pool = require('../db/connection');
 
+// Configuration des plans avec leurs price IDs Stripe
+const STRIPE_PLANS = {
+    'price_1RyrESL3PzgBzdCeSIMQ3lMG': 'plus',
+    'price_1RyfNGL3PzgBzdCeXt8Dpcs8': 'pro',
+};
+
+// Fonction helper pour déterminer le plan selon le price_id
+const getPlanFromPriceId = (priceId) => {
+    return STRIPE_PLANS[priceId] || 'free';
+};
+
+// Fonction helper pour déterminer le plan selon l'abonnement Stripe
+const getPlanFromSubscription = async (subscriptionId) => {
+    try {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const priceId = subscription.items.data[0]?.price.id;
+        return getPlanFromPriceId(priceId);
+    } catch (error) {
+        console.error('Erreur récupération abonnement:', error);
+        return 'free';
+    }
+};
+
 router.post('/', async (req, res) => {
     const sig = req.headers['stripe-signature'];
     let event;
 
-    console.log('🔍 Debug webhook:');
+    /*console.log('🔍 Debug webhook:');
     console.log('- Body type:', typeof req.body);
     console.log('- Body length:', req.body ? req.body.length : 'undefined');
     console.log('- Signature present:', sig ? 'YES' : 'NO');
-    console.log('- Secret configured:', process.env.STRIPE_WEBHOOK_SECRET ? 'YES' : 'NO');
+    console.log('- Secret configured:', process.env.STRIPE_WEBHOOK_SECRET ? 'YES' : 'NO');*/
 
     try {
         event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-        console.log('✅ Webhook signature vérifiée:', event.type);
+        //console.log('✅ Webhook signature vérifiée:', event.type);
     } catch (err) {
         console.error('❌ Erreur signature webhook:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -24,7 +47,7 @@ router.post('/', async (req, res) => {
     const connection = await pool.getConnection();
 
     try {
-        console.log(`📨 Webhook reçu: ${event.type} | ID: ${event.id} | Created: ${new Date(event.created * 1000).toISOString()}`);
+        //console.log(`📨 Webhook reçu: ${event.type} | ID: ${event.id} | Created: ${new Date(event.created * 1000).toISOString()}`);
         
         switch (event.type) {
             case 'checkout.session.completed':
@@ -32,29 +55,31 @@ router.post('/', async (req, res) => {
                 console.log('🎉 Checkout completed pour:', session.customer_email);
 
                 if (session.subscription) {
-                    const subscription = await stripe.subscriptions.retrieve(session.subscription);
+                    // Déterminer le plan à partir des métadonnées ou de l'abonnement
+                    const targetPlan = session.metadata?.plan || await getPlanFromSubscription(session.subscription);
 
                     await connection.execute(`
                         UPDATE users SET 
-                            plan = 'pro',
+                            plan = ?,
                             stripe_customer_id = ?,
                             stripe_subscription_id = ?,
                             subscription_status = 'active',
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
                     `, [
+                        targetPlan,
                         session.customer,
                         session.subscription,
                         session.metadata.user_id
                     ]);
 
-                    console.log('✅ Utilisateur mis à niveau vers PRO:', session.metadata.user_id);
+                    console.log(`✅ Utilisateur mis à niveau vers ${targetPlan.toUpperCase()}:`, session.metadata.user_id);
                 }
                 break;
 
             case 'customer.subscription.created':
                 const createdSub = event.data.object;
-                // Ne pas donner accès PRO tant qu'il n'y a pas eu de paiement
+                // Ne pas donner accès premium tant qu'il n'y a pas eu de paiement
                 await connection.execute(`
                     UPDATE users SET
                         stripe_subscription_id = ?,
@@ -78,6 +103,9 @@ router.post('/', async (req, res) => {
                     break;
                 }
 
+                // Déterminer le nouveau plan
+                const newPlan = await getPlanFromSubscription(updatedSub.id);
+
                 await connection.execute(`
                     UPDATE users SET
                         subscription_status = ?,
@@ -87,12 +115,16 @@ router.post('/', async (req, res) => {
 
                 // Logique du plan selon le status
                 if (updatedSub.status === 'active') {
-                    await connection.execute(`UPDATE users SET plan = 'pro' WHERE stripe_subscription_id = ?`, [updatedSub.id]);
+                    await connection.execute(`
+                        UPDATE users SET plan = ? WHERE stripe_subscription_id = ?
+                    `, [newPlan, updatedSub.id]);
                 } else if (['canceled', 'unpaid', 'past_due'].includes(updatedSub.status)) {
-                    await connection.execute(`UPDATE users SET plan = 'free' WHERE stripe_subscription_id = ?`, [updatedSub.id]);
+                    await connection.execute(`
+                        UPDATE users SET plan = 'free' WHERE stripe_subscription_id = ?
+                    `, [updatedSub.id]);
                 }
 
-                console.log('🔄 Abonnement mis à jour:', updatedSub.id, 'Nouveau status:', updatedSub.status);
+                console.log('🔄 Abonnement mis à jour:', updatedSub.id, 'Nouveau status:', updatedSub.status, 'Plan:', newPlan);
                 break;
 
             case 'customer.subscription.deleted':
@@ -112,14 +144,18 @@ router.post('/', async (req, res) => {
             case 'invoice.payment_succeeded':
                 const paidInvoice = event.data.object;
                 if (paidInvoice.subscription) {
+                    // Déterminer le plan correct
+                    const planForPayment = await getPlanFromSubscription(paidInvoice.subscription);
+                    
                     await connection.execute(`
                         UPDATE users SET
                             subscription_status = 'active',
-                            plan = 'pro',
+                            plan = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE stripe_subscription_id = ?
-                    `, [paidInvoice.subscription]);
-                    console.log('💰 Paiement réussi pour abonnement:', paidInvoice.subscription);
+                    `, [planForPayment, paidInvoice.subscription]);
+                    
+                    console.log(`💰 Paiement réussi pour abonnement ${planForPayment}:`, paidInvoice.subscription);
                 }
                 break;
 
@@ -149,12 +185,12 @@ router.post('/', async (req, res) => {
                 break;
 
             default:
-                console.log(`ℹ️ Événement non géré: ${event.type}`, {
+                /*console.log(`ℹ️ Événement non géré: ${event.type}`, {
                     id: event.id,
                     created: event.created,
                     object_id: event.data.object.id,
                     livemode: event.livemode
-                });
+                });*/
         }
 
         // Toujours répondre 200 pour confirmer la réception
