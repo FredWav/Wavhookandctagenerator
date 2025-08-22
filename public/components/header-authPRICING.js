@@ -34,6 +34,28 @@ class AuthHeader {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
 
+  // Configuration des plans
+  getPlanConfig(plan) {
+    const configs = {
+      free: {
+        name: 'FREE',
+        color: 'text-muted',
+        bgColor: 'bg-muted'
+      },
+      plus: {
+        name: 'PLUS',
+        color: 'text-warning',
+        bgColor: 'bg-warning '
+      },
+      pro: {
+        name: 'PRO',
+        color: 'text-success',
+        bgColor: 'bg-success'
+      }
+    };
+    return configs[plan] || configs.free;
+  }
+
   // Nouvelle fonction pour générer l'HTML de l'avatar
   getAvatarHTML(user, size = 'small') {
     const sizeClasses = {
@@ -70,10 +92,13 @@ class AuthHeader {
 
   renderAuthenticatedNav(container, user) {
     const currentPath = location.pathname;
+    const userPlan = user.plan || 'free';
+    const planConfig = this.getPlanConfig(userPlan);
 
     container.innerHTML = `
       ${currentPath !== '/' ?
         '<a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/">Accueil</a>' : ''}
+        <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/upgrade">Prix</a>
       <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/history">Historique</a>
       
       <!-- Dropdown Profile -->
@@ -87,6 +112,8 @@ class AuthHeader {
           <div class="hidden sm:flex flex-col items-start">
             <span class="text-sm font-medium">${this.capitalize(user.username)}</span>
             <div class="flex items-center gap-2">
+              <span class="w-2 h-2 ${planConfig.bgColor} rounded-full"></span>
+              <span class="text-xs ${planConfig.color}">${planConfig.name}</span>
             </div>
           </div>
           <!-- Chevron -->
@@ -123,6 +150,7 @@ class AuthHeader {
             </a>
 
             <!-- Options d'upgrade conditionnelles -->
+            ${this.getUpgradeOptions(userPlan)}
 
             <div class="border-t border-white/10 my-2"></div>
             
@@ -139,8 +167,54 @@ class AuthHeader {
 
     // Attacher les événements du dropdown
     this.setupDropdownEvents();
+    this.setupManageSubscriptionHeaderBtn();
   }
 
+  getUpgradeOptions(userPlan) {
+    // Bouton visible seulement pour les plans payants
+    let manageBtn = '';
+    if (userPlan === 'plus' || userPlan === 'pro') {
+      manageBtn = `
+      <button 
+        id="headerManageSubscriptionBtn"
+        class="flex items-center gap-3 px-4 py-2 text-sm text-text hover:bg-white/5 transition-colors w-full"
+        type="button"
+      >
+<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet-icon lucide-wallet"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+        Gérer mon abonnement
+      </button>
+    `;
+    }
+
+    // Options d’upgrade éventuelles
+    switch (userPlan) {
+      case 'free':
+        return `
+        <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-warning hover:bg-warning/10 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          Passer à PLUS
+        </a>
+        <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+          Passer à PRO
+        </a>
+      `;
+      case 'plus':
+        return `
+        <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+          Upgrader vers PRO
+        </a>
+        ${manageBtn}
+      `;
+      case 'pro':
+        return manageBtn;
+      default:
+        return '';
+    }
+  }
 
   renderGuestNav(container) {
     container.innerHTML = `
@@ -216,7 +290,32 @@ class AuthHeader {
   getInitials(username) {
     return username ? username.charAt(0).toUpperCase() : '?';
   }
-  
+
+  setupManageSubscriptionHeaderBtn() {
+    setTimeout(() => {
+      const btn = document.getElementById('headerManageSubscriptionBtn');
+      if (btn) {
+        btn.onclick = async () => {
+          btn.disabled = true;
+          const original = btn.innerHTML;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> Redirection...';
+          try {
+            const response = await api("stripe/create-portal-session", {
+              method: "POST"
+            });
+            window.open(response.portal_url, '_blank');
+          } catch (err) {
+            toast("Erreur lors de l'accès au portail", "error");
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+          }
+        };
+      }
+    }, 50);
+  }
+
+
   async handleLogout() {
     try {
       await api("auth/me/logout", { method: "POST" });

@@ -5,11 +5,18 @@ const { requireUser, json } = require('./utils/auth-util');
 const pool = require('./db/connection');
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-const MODEL = "gpt-4o";
+
+// Déduire le modèle selon le plan utilisateur
+function getOpenAIModelForPlan(plan) {
+    if (plan === 'pro') return 'gpt-4o';
+    if (plan === 'plus') return 'gpt-4o';
+    // Par défaut pour free et inconnu
+    return 'gpt-4o'; // 'gpt-4o-mini' aprés tests
+}
 
 // CTAs génériques à éviter absolument
 const FORBIDDEN_PATTERNS = [
-    "N'oubliez pas de", "Pensez à", "Cliquez sur", "Suivez-moi", 
+    "N'oubliez pas de", "Pensez à", "Cliquez sur", "Suivez-moi",
     "Abonne-toi si", "Laisse un commentaire si", "Like si"
 ];
 
@@ -30,27 +37,29 @@ router.options('/', (req, res) => {
 
 router.post('/', async (req, res) => {
     corsHeaders(res);
-    
+
     try {
         // ✅ Authentification utilisateur
         const user = await requireUser(req);
-        
-        const { 
-            intent = "follow", 
-            platform = "tiktok", 
+
+        const MODEL = getOpenAIModelForPlan(user.plan);
+
+        const {
+            intent = "follow",
+            platform = "tiktok",
             tone = "direct",
-            constraints = "", 
-            count = 20, 
-            putaclic = false 
+            constraints = "",
+            count = 20,
+            putaclic = false
         } = req.body;
 
         // Vérifier les limites selon le plan utilisateur
         const maxCount = user.plan === 'pro' ? 50 : 20;
         const safeCount = Math.min(Math.max(1, count | 0), maxCount);
-        
+
         // Vérifier si l'utilisateur peut utiliser Putaclic+
         const canUsePutaclic = putaclic && user.plan === 'pro';
-        
+
         if (putaclic && !canUsePutaclic) {
             return json(res, { error: 'Putaclic+ est réservé aux comptes Premium' }, 400);
         }
@@ -218,7 +227,7 @@ RETOURNE EXACTEMENT:
         let response = await generate(userPrompt, temperature);
         let data = await response.json();
         let parsed;
-        
+
         try {
             parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
         } catch {
@@ -226,12 +235,12 @@ RETOURNE EXACTEMENT:
         }
 
         let initialCtas = Array.isArray(parsed.ctas) ? parsed.ctas : [];
-        
+
         // VALIDATION STRICTE
         const validatedCtas = initialCtas.filter(cta => {
             if (typeof cta !== 'string') return false;
             const wordCount = cta.trim().split(/\s+/).length;
-            const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p => 
+            const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p =>
                 cta.toLowerCase().includes(p.toLowerCase())
             );
             return wordCount >= 3 && wordCount <= 8 && !hasForbiddenPattern;
@@ -256,18 +265,18 @@ RETOURNE EXACTEMENT:
 • RESPECTE 3-8 mots: Concision maximale
 • DOUBLE l'originalité et l'impact émotionnel
 `;
-            
+
             const retryPrompt = userPrompt + retryBoost;
             try {
                 const retryResponse = await generate(retryPrompt, Math.min(temperature + 0.1, 1.0));
                 const retryData = await retryResponse.json();
                 const retryParsed = JSON.parse(retryData.choices?.[0]?.message?.content || "{}");
                 const retryCtas = Array.isArray(retryParsed.ctas) ? retryParsed.ctas : [];
-                
+
                 const retryValidated = retryCtas.filter(cta => {
                     if (typeof cta !== 'string') return false;
                     const wordCount = cta.trim().split(/\s+/).length;
-                    const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p => 
+                    const hasForbiddenPattern = FORBIDDEN_PATTERNS.some(p =>
                         cta.toLowerCase().includes(p.toLowerCase())
                     );
                     return wordCount >= 3 && wordCount <= 8 && !hasForbiddenPattern;
@@ -281,7 +290,7 @@ RETOURNE EXACTEMENT:
                 console.log('Retry failed, keeping original');
             }
         }
-        
+
         // FINALISATION
         let finalCtas = Array.isArray(parsed.ctas) ? parsed.ctas : [];
         finalCtas = finalCtas.filter(cta => {
@@ -369,13 +378,13 @@ RETOURNE EXACTEMENT:
 
     } catch (error) {
         console.error('Generate CTAs error:', error);
-        
+
         if (error.message && error.message.includes('Not authenticated')) {
             return json(res, { error: 'Authentication required' }, 401);
         }
-        
-        return json(res, { 
-            error: 'Erreur serveur', 
+
+        return json(res, {
+            error: 'Erreur serveur',
             details: process.env.NODE_ENV === 'development' ? error.message : 'Une erreur est survenue'
         }, 500);
     }

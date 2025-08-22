@@ -1,9 +1,17 @@
-// api/generate-hooks.js - Version Finale Optimisée
 const express = require('express');
 const router = express.Router();
+const { requireUser } = require('./utils/auth-util');
+const pool = require('./db/connection');
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-const MODEL = "gpt-4o";
+
+// Déduire le modèle selon le plan utilisateur
+function getOpenAIModelForPlan(plan) {
+    if (plan === 'pro') return 'gpt-4o';
+    if (plan === 'plus') return 'gpt-4o';
+    // Par défaut pour free et inconnu
+    return 'gpt-4o'; // 'gpt-4o-mini' aprés tests
+}
 
 // Anti-patterns à éviter absolument
 const CLICHE_PATTERNS = [
@@ -29,25 +37,29 @@ router.options('/', (req, res) => {
 
 router.post('/', async (req, res) => {
     corsHeaders(res);
-    
+
     try {
-        const { 
-            platform = "tiktok", 
-            niche = "", 
-            theme = "", 
-            brief = "", 
+        const {
+            platform = "tiktok",
+            niche = "",
+            theme = "",
+            brief = "",
             tone = "direct",
-            originalityMode = true, 
-            putaclic = false, 
-            countText = 20, 
-            countVisual = 10 
+            originalityMode = true,
+            putaclic = false,
+            countText = 20,
+            countVisual = 10
         } = req.body;
+        const user = await requireUser(req);
+
+        const MODEL = getOpenAIModelForPlan(user.plan);
+        console.log(`Utilisateur plan=${user.plan} utilise modèle ${MODEL}`);
 
         const maxText = 50;
         const maxVisual = 50;
         const safeText = Math.min(Math.max(1, countText | 0), maxText);
         const safeVisual = Math.min(Math.max(0, countVisual | 0), maxVisual);
-        
+
         // Contexte enrichi selon la tonalité
         const toneContext = {
             "direct": "Franc, sans détour, promesses concrètes, verbes d'action",
@@ -68,7 +80,7 @@ router.post('/', async (req, res) => {
                 hook_mechanics: "pattern interrupt + promesse concrète + curiosité gap"
             },
             reels: {
-                attention_span: "1-3 secondes", 
+                attention_span: "1-3 secondes",
                 language_style: "accessible mais soigné, aspirationnel",
                 emotional_triggers: "inspiration, transformation, esthétique, lifestyle",
                 format_preference: "avant/après, routines, lifestyle, tips esthétiques",
@@ -84,7 +96,7 @@ router.post('/', async (req, res) => {
                 hook_mechanics: "question/problème + solution teaser + bénéfice mesurable"
             }
         };
-        
+
         const currentPlatform = platformSpecs[platform] || platformSpecs.tiktok;
 
         // Instructions spécialisées selon les paramètres
@@ -133,11 +145,11 @@ router.post('/', async (req, res) => {
             let intensity = "normale";
             let creativityBoost = 0;
             let mode = "standard";
-            
+
             // HIÉRARCHIE: Putaclic écrase tout > Originalité > Standard
             if (putaclic) {
                 mode = "putaclic_extreme";
-                intensity = "maximale"; 
+                intensity = "maximale";
                 creativityBoost = 0.25;
             } else if (originalityMode) {
                 mode = "creativity_max";
@@ -148,7 +160,7 @@ router.post('/', async (req, res) => {
                 intensity = "normale";
                 creativityBoost = 0;
             }
-            
+
             return { mode, intensity, creativityBoost };
         };
 
@@ -267,7 +279,7 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                 response_format: { type: "json_object" }
             })
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text().catch(() => "");
             console.error("OpenAI API Error:", errorText);
@@ -303,7 +315,7 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                 return !hasSoftCliche;
             });
         }
-        
+
         // Validation longueur optimale (6-14 mots)
         const validatedHooks = filteredHooks.filter(hook => {
             const wordCount = hook.split(/\s+/).length;
@@ -329,7 +341,7 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
 
         if (shouldRetry(finalHooks.length, safeText) && safeText >= 10) {
             console.log(`Qualité insuffisante mode ${resolvedMode} (${finalHooks.length}/${safeText}), retry...`);
-            
+
             // Retry prompt adapté au mode
             let retryBoost = "";
             if (putaclic) {
@@ -339,14 +351,14 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
             } else {
                 retryBoost = `\n\n🔄 RETRY OPTIMISÉ: Améliore la créativité et l'impact émotionnel.`;
             }
-            
+
             const retryPrompt = userPrompt + retryBoost;
-            
+
             // Paramètres retry adaptés
             let retryTemperature = temperature + 0.1;
             let retryFrequency = 0.4;
             let retryPresence = 0.2;
-            
+
             if (putaclic) {
                 retryTemperature = Math.min(temperature + 0.05, 1.0);
                 retryFrequency = 0.3; // Moins de diversité, plus d'intensité
@@ -356,7 +368,7 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                 retryFrequency = 0.5; // Plus de diversité
                 retryPresence = 0.4;
             }
-            
+
             const retryResponse = await fetch(OPENAI_URL, {
                 method: "POST",
                 headers: {
@@ -376,19 +388,19 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                     response_format: { type: "json_object" }
                 })
             });
-            
+
             if (retryResponse.ok) {
                 const retryData = await retryResponse.json();
                 try {
                     const retryParsed = JSON.parse(retryData.choices?.[0]?.message?.content || "{}");
                     const retryTextHooks = Array.isArray(retryParsed.textHooks) ? retryParsed.textHooks : [];
-                    
+
                     // Re-validation adaptée
                     let retryFiltered = retryTextHooks;
                     if (originalityMode && !putaclic) {
                         retryFiltered = retryTextHooks.filter(hook => {
                             const lowerHook = hook.toLowerCase();
-                            const hasCliche = CLICHE_PATTERNS.some(cliche => 
+                            const hasCliche = CLICHE_PATTERNS.some(cliche =>
                                 lowerHook.includes(cliche.toLowerCase())
                             );
                             const hasRepetitiveStructure = /^(comment|pourquoi|voici|découvrez)\s/.test(lowerHook);
@@ -398,18 +410,18 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                         retryFiltered = retryTextHooks.filter(hook => {
                             const lowerHook = hook.toLowerCase();
                             const softCliches = ["découvrez", "voici", "dans cette vidéo", "bonjour à tous"];
-                            const hasSoftCliche = softCliches.some(cliche => 
+                            const hasSoftCliche = softCliches.some(cliche =>
                                 lowerHook.includes(cliche.toLowerCase())
                             );
                             return !hasSoftCliche;
                         });
                     }
-                    
+
                     const retryValidated = retryFiltered.filter(hook => {
                         const wordCount = hook.split(/\s+/).length;
                         return wordCount >= 6 && wordCount <= 14;
                     });
-                    
+
                     // Si le retry est meilleur, on l'utilise
                     if (retryValidated.length > finalHooks.length) {
                         finalHooks = retryValidated;
@@ -421,7 +433,64 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
             }
         }
 
+        try {
+            const connection = await pool.getConnection();
+            try {
+                const historyData = {
+                    platform,
+                    niche: niche || null,
+                    theme: theme || null,
+                    brief: brief || null,
+                    tone,
+                    originalityMode,
+                    putaclic,
+                    countText: safeText,
+                    countVisual: safeVisual,
+                    textHooks: finalHooks.slice(0, safeText),
+                    visualHooks: (Array.isArray(parsed.visualHooks) ? parsed.visualHooks : []).slice(0, safeVisual)
+                };
+
+                await connection.execute(`
+      INSERT INTO user_history (user_id, type, theme, platform, tone, niche, brief, results)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+                    user.id,
+                    'hooks',
+                    theme || 'Hooks généraux',
+                    platform,
+                    tone,
+                    niche || null,
+                    brief || null,
+                    JSON.stringify(historyData)
+                ]);
+
+                // Nettoyage automatique pour les comptes gratuits
+                if (user.plan !== 'pro') {
+                    await connection.execute(`
+        DELETE FROM user_history 
+        WHERE user_id = ? 
+        AND id NOT IN (
+          SELECT id FROM (
+            SELECT id FROM user_history 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT 30
+          ) AS recent
+        )
+      `, [user.id, user.id]);
+                }
+
+                console.log('✅ Hooks sauvegardés dans l\'historique utilisateur');
+            } finally {
+                connection.release();
+            }
+        } catch (historyError) {
+            console.error('❌ Erreur sauvegarde historique:', historyError);
+        }
+
+        // RÉPONSE FINALE
         res.json({
+            ok: true, // ← Ajouter cette propriété pour cohérence avec CTAs
             textHooks: finalHooks.slice(0, safeText),
             visualHooks: (Array.isArray(parsed.visualHooks) ? parsed.visualHooks : []).slice(0, safeVisual),
             metadata: {
@@ -436,14 +505,25 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                 quality_score: Math.round((finalHooks.length / Math.max(textHooks.length, 1)) * 100),
                 temperature_used: temperature,
                 conflict_resolution: resolvedMode !== "balanced" ? `Résolu en mode ${resolvedMode}` : "Aucun conflit",
+                user_plan: user.plan, // ← Ajouter cette info
                 timestamp: new Date().toISOString()
-            }
+            },
+            message: `${finalHooks.length} hooks générés avec succès` // ← Ajouter message de succès
         });
 
     } catch (error) {
         console.error('Generate hooks error:', error);
-        res.status(500).json({ error: 'Erreur serveur', details: error.message });
+
+        if (error.message && error.message.includes('Not authenticated')) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        return res.status(500).json({
+            error: 'Erreur serveur',
+            details: process.env.NODE_ENV === 'development' ? error.message : 'Une erreur est survenue'
+        });
     }
+
 });
 
 module.exports = router;

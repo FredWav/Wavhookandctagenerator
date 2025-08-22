@@ -52,6 +52,89 @@
           ),
           #0b0b11;
       }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        animation: modalBackdropIn 0.2s ease-out;
+      }
+
+      .modal-content {
+        background: linear-gradient(
+          135deg,
+          rgba(18, 18, 27, 0.95) 0%,
+          rgba(22, 22, 39, 0.95) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: hidden;
+        animation: modalContentIn 0.3s ease-out;
+        min-width: 600px;
+      }
+
+      @keyframes modalBackdropIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes modalContentIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9) translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .result-item {
+        background: rgba(22, 22, 39, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+
+      .result-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(123, 44, 255, 0.3);
+      }
+
+      .visual-hook-card {
+        background: linear-gradient(
+          135deg,
+          rgba(22, 22, 39, 0.8),
+          rgba(18, 18, 27, 0.9)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          min-width: auto;
+          width: 95vw;
+        }
+      }
     </style>
   </head>
   <body class="font-sans text-text min-h-screen">
@@ -61,26 +144,31 @@
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-6 py-8">
       <!-- Hero Section -->
-      <section class="mt-7 p-8 rounded-2xl border border-white/10 bg-[radial-gradient(800px_400px_at_-10%_10%,rgba(0,231,255,0.12),transparent_60%),radial-gradient(800px_400px_at_110%_0%,rgba(123,44,255,0.12),transparent_60%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))] shadow-neon">
+      <section
+        class="mt-7 p-8 rounded-2xl border border-white/10 bg-[radial-gradient(800px_400px_at_-10%_10%,rgba(0,231,255,0.12),transparent_60%),radial-gradient(800px_400px_at_110%_0%,rgba(123,44,255,0.12),transparent_60%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))] shadow-neon"
+      >
         <div>
-          <div class="uppercase tracking-widest text-xs text-muted mb-2">Historique</div>
-          <h1 class="text-3xl font-extrabold leading-tight mb-4">Vos générations récentes</h1>
+          <div class="uppercase tracking-widest text-xs text-muted mb-2">
+            Historique
+          </div>
+          <h1 class="text-3xl font-extrabold leading-tight mb-4">
+            Vos générations récentes
+          </h1>
           <p class="text-base text-slate-200 leading-relaxed mb-8">
-            Retrouvez tous vos hooks et CTAs générés. 
-            <span class="text-accent-2">Plan PRO :</span> historique illimité + recherche avancée.
+            Cliquez sur une génération pour voir les détails et résultats.
           </p>
 
           <!-- Filtres et recherche -->
           <div class="flex flex-col sm:flex-row gap-4 mb-8">
             <div class="flex-1">
-              <input 
-                id="searchInput" 
-                type="text" 
+              <input
+                id="searchInput"
+                type="text"
                 placeholder="Rechercher dans l'historique..."
                 class="w-full px-4 py-3 rounded-xl text-text bg-panel border border-white/10 outline-none transition-all duration-200 placeholder:text-muted/60"
               />
             </div>
-            <select 
+            <select
               id="typeFilter"
               class="px-4 py-3 rounded-xl text-text bg-panel border border-white/10 outline-none transition-all duration-200"
             >
@@ -88,7 +176,7 @@
               <option value="hooks">Hooks</option>
               <option value="ctas">CTAs</option>
             </select>
-            <button 
+            <button
               id="clearHistory"
               class="px-4 py-3 rounded-xl font-semibold transition border border-danger/30 text-danger bg-transparent hover:bg-danger/10 hover:border-danger/50"
             >
@@ -103,18 +191,38 @@
 
           <!-- État vide -->
           <div id="emptyState" class="text-center py-12 hidden">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-panel-2 border border-white/10 flex items-center justify-center">
-              <svg class="w-8 h-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            <div
+              class="w-16 h-16 mx-auto mb-4 rounded-full bg-panel-2 border border-white/10 flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 text-muted"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                ></path>
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">Aucune génération</h3>
-            <p class="text-muted mb-6">Commencez par générer des hooks ou des CTAs !</p>
+            <p class="text-muted mb-6">
+              Commencez par générer des hooks ou des CTAs !
+            </p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="/hooks" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200">
+              <a
+                href="/hooks"
+                class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200"
+              >
                 Générer des Hooks
               </a>
-              <a href="/ctas" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200">
+              <a
+                href="/ctas"
+                class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200"
+              >
                 Générer des CTAs
               </a>
             </div>
@@ -124,8 +232,19 @@
           <div id="loadingState" class="text-center py-12">
             <div class="inline-flex items-center gap-3 text-muted">
               <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Chargement de l'historique...
             </div>
@@ -134,11 +253,16 @@
       </section>
 
       <!-- Statistiques (pour les PRO) -->
-      <section id="statsSection" class="mt-6 p-6 rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 shadow-lg backdrop-blur-sm hidden">
+      <section
+        id="statsSection"
+        class="mt-6 p-6 rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 shadow-lg backdrop-blur-sm hidden"
+      >
         <h2 class="text-lg font-bold mb-4">📊 Statistiques</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="text-center">
-            <div class="text-2xl font-bold text-accent-2" id="totalGenerations">0</div>
+            <div class="text-2xl font-bold text-accent-2" id="totalGenerations">
+              0
+            </div>
             <div class="text-xs text-muted">Générations</div>
           </div>
           <div class="text-center">
@@ -159,6 +283,92 @@
       <div id="footer"></div>
     </main>
 
+    <!-- Modal -->
+    <div id="modal" class="modal-backdrop hidden">
+      <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-white/10">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span id="modalIcon" class="text-2xl">🎯</span>
+              <div>
+                <h2 id="modalTitle" class="text-xl font-bold text-accent">
+                  Hooks
+                </h2>
+                <p id="modalDate" class="text-sm text-muted">22 août 2025</p>
+              </div>
+            </div>
+            <button
+              id="closeModal"
+              class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="flex-1 overflow-y-auto max-h-[70vh]">
+          <!-- Informations -->
+          <div id="modalInfo" class="p-6 border-b border-white/10">
+            <!-- Contenu généré dynamiquement -->
+          </div>
+
+          <!-- Résultats -->
+          <div id="modalResults" class="p-6">
+            <!-- Contenu généré dynamiquement -->
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-white/10 flex gap-3">
+          <button
+            id="copyAllResults"
+            class="flex-1 px-4 py-2 bg-gradient-to-r from-accent to-accent-2 text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform"
+          >
+            Copier tout
+          </button>
+          <button
+            id="regenerateItem"
+            class="px-4 py-2 bg-gradient-to-r from-accent-2 to-accent text-slate-900 font-semibold rounded-xl hover:scale-105 transition-transform flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Regénérer
+          </button>
+          <button
+            id="deleteItem"
+            class="px-4 py-2 bg-danger/20 hover:bg-danger/30 text-danger font-semibold rounded-xl transition-colors"
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="/app.js"></script>
     <script src="/components/header-auth.js"></script>
     <script src="/components/loader.js"></script>
@@ -166,11 +376,12 @@
     <script>
       let currentUser;
       let historyData = [];
+      let selectedItem = null;
 
       (async () => {
         try {
           currentUser = await api("auth/me");
-          
+
           // Afficher les stats pour les PRO
           if (currentUser.user.plan === "pro") {
             document.getElementById("statsSection").classList.remove("hidden");
@@ -178,9 +389,9 @@
 
           await loadHistory();
           setupEventListeners();
-
+          setupModalEvents();
         } catch (error) {
-          console.error('Erreur auth:', error);
+          console.error("Erreur auth:", error);
           location.href = "/login";
         }
       })();
@@ -191,7 +402,6 @@
         const emptyState = document.getElementById("emptyState");
 
         try {
-          // Simuler un appel API (à remplacer par ton API réelle)
           const response = await api("history");
           historyData = response.history || [];
 
@@ -206,9 +416,7 @@
             renderHistory(historyData);
             updateStats();
           }
-
         } catch (error) {
-          // Si l'API n'existe pas encore, afficher des données de démo
           loadingState.classList.add("hidden");
           emptyState.classList.remove("hidden");
           console.warn("API historique non disponible, affichage état vide");
@@ -219,7 +427,7 @@
         const container = document.getElementById("historyContainer");
         container.innerHTML = "";
 
-        data.forEach(item => {
+        data.forEach((item) => {
           const historyItem = createHistoryItem(item);
           container.appendChild(historyItem);
         });
@@ -227,77 +435,571 @@
 
       function createHistoryItem(item) {
         const div = document.createElement("div");
-        div.className = "bg-panel-2 border border-white/10 rounded-xl p-4 hover:bg-white/5 transition-colors";
-        
-        const typeColor = item.type === 'hooks' ? 'text-accent' : 'text-success';
-        const typeIcon = item.type === 'hooks' ? '🎯' : '💬';
+        div.className =
+          "bg-panel-2 border border-white/10 rounded-xl p-4 hover:bg-white/5 transition-colors cursor-pointer";
+
+        const typeColor =
+          item.type === "hooks" ? "text-accent" : "text-success";
+        const typeIcon = item.type === "hooks" ? "🎯" : "💬";
 
         div.innerHTML = `
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-3">
               <span class="text-lg">${typeIcon}</span>
               <div>
-                <h3 class="font-semibold ${typeColor}">${item.type === 'hooks' ? 'Hooks' : 'CTAs'}</h3>
-                <p class="text-xs text-muted">${formatDate(item.createdAt)}</p>
+                <h3 class="font-semibold ${typeColor}">${
+          item.type === "hooks" ? "Hooks" : "CTAs"
+        }</h3>
+                <p class="text-xs text-muted">${formatDate(
+                  item.createdAt || item.created_at
+                )}</p>
               </div>
             </div>
-            <div class="flex gap-2">
-              <button onclick="copyItem('${item.id}')" class="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-all">
-                Copier
-              </button>
-              <button onclick="deleteItem('${item.id}')" class="px-3 py-1 text-xs bg-danger/20 hover:bg-danger/30 text-danger rounded transition-all">
-                Supprimer
-              </button>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted">${getResultsCount(
+                item
+              )} résultats</span>
+              <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
             </div>
           </div>
           
           <div class="text-sm text-slate-300 mb-2">
-            <strong>Thème:</strong> ${item.theme || 'Non spécifié'}
+            <strong>Thème:</strong> ${item.theme || "Non spécifié"}
           </div>
           
           <div class="text-xs text-muted space-y-1">
-            ${item.platform ? `<div><strong>Plateforme:</strong> ${item.platform}</div>` : ''}
-            ${item.tone ? `<div><strong>Ton:</strong> ${item.tone}</div>` : ''}
-            <div><strong>Résultats:</strong> ${item.results?.length || 0} éléments générés</div>
+            ${
+              item.platform
+                ? `<div><strong>Plateforme:</strong> ${item.platform}</div>`
+                : ""
+            }
+            ${item.tone ? `<div><strong>Ton:</strong> ${item.tone}</div>` : ""}
+            ${
+              item.niche
+                ? `<div><strong>Niche:</strong> ${item.niche}</div>`
+                : ""
+            }
           </div>
         `;
+
+        // Event listener pour ouvrir le modal
+        div.addEventListener("click", () => {
+          openModal(item);
+        });
 
         return div;
       }
 
       function setupEventListeners() {
         // Recherche
-        document.getElementById("searchInput").addEventListener("input", (e) => {
-          const query = e.target.value.toLowerCase();
-          const filtered = historyData.filter(item => 
-            (item.theme || '').toLowerCase().includes(query) ||
-            (item.platform || '').toLowerCase().includes(query) ||
-            (item.type || '').toLowerCase().includes(query)
-          );
-          renderHistory(filtered);
-        });
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = historyData.filter(
+              (item) =>
+                (item.theme || "").toLowerCase().includes(query) ||
+                (item.platform || "").toLowerCase().includes(query) ||
+                (item.type || "").toLowerCase().includes(query) ||
+                (item.niche || "").toLowerCase().includes(query)
+            );
+            renderHistory(filtered);
+          });
 
         // Filtre par type
-        document.getElementById("typeFilter").addEventListener("change", (e) => {
-          const type = e.target.value;
-          const filtered = type ? historyData.filter(item => item.type === type) : historyData;
-          renderHistory(filtered);
-        });
+        document
+          .getElementById("typeFilter")
+          .addEventListener("change", (e) => {
+            const type = e.target.value;
+            const filtered = type
+              ? historyData.filter((item) => item.type === type)
+              : historyData;
+            renderHistory(filtered);
+          });
 
         // Vider l'historique
-        document.getElementById("clearHistory").addEventListener("click", async () => {
-          if (confirm("Êtes-vous sûr de vouloir supprimer tout l'historique ? Cette action est irréversible.")) {
-            try {
-              await api("history", { method: "DELETE" });
-              historyData = [];
-              document.getElementById("emptyState").classList.remove("hidden");
-              document.getElementById("historyContainer").classList.add("hidden");
-              toast("Historique supprimé", "success");
-            } catch (error) {
-              toast("Erreur lors de la suppression", "error");
+        document
+          .getElementById("clearHistory")
+          .addEventListener("click", async () => {
+            if (
+              confirm(
+                "Êtes-vous sûr de vouloir supprimer tout l'historique ? Cette action est irréversible."
+              )
+            ) {
+              try {
+                await api("history", { method: "DELETE" });
+                historyData = [];
+                document
+                  .getElementById("emptyState")
+                  .classList.remove("hidden");
+                document
+                  .getElementById("historyContainer")
+                  .classList.add("hidden");
+                toast("Historique supprimé", "success");
+              } catch (error) {
+                toast("Erreur lors de la suppression", "error");
+              }
             }
+          });
+      }
+
+      function setupModalEvents() {
+        const modal = document.getElementById("modal");
+        const closeModalBtn = document.getElementById("closeModal");
+
+        // Fermer le modal
+        closeModalBtn.addEventListener("click", closeModal);
+
+        // Fermer en cliquant sur le backdrop
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) {
+            closeModal();
           }
         });
+
+        // Fermer avec Escape
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+            closeModal();
+          }
+        });
+
+        // Copier tous les résultats
+        document
+          .getElementById("copyAllResults")
+          .addEventListener("click", () => {
+            if (selectedItem) {
+              copyAllResults(selectedItem);
+            }
+          });
+
+        // NOUVEAU: Regénérer l'item
+        document
+          .getElementById("regenerateItem")
+          .addEventListener("click", () => {
+            if (selectedItem) {
+              regenerateItem(selectedItem);
+            }
+          });
+
+        // Supprimer l'item
+        document
+          .getElementById("deleteItem")
+          .addEventListener("click", async () => {
+            if (selectedItem && confirm("Supprimer cet élément ?")) {
+              try {
+                await api(`history/${selectedItem.id}`, { method: "DELETE" });
+                historyData = historyData.filter(
+                  (h) => h.id !== selectedItem.id
+                );
+                renderHistory(historyData);
+                updateStats();
+                closeModal();
+                toast("Élément supprimé", "success");
+              } catch (error) {
+                toast("Erreur lors de la suppression", "error");
+              }
+            }
+          });
+      }
+
+      function regenerateItem(item) {
+        const regenerateBtn = document.getElementById("regenerateItem");
+        const originalContent = regenerateBtn.innerHTML;
+
+        // Animation de chargement
+        regenerateBtn.disabled = true;
+        regenerateBtn.innerHTML = `
+    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    Redirection...
+  `;
+
+        // Attendre un peu pour l'effet visuel
+        setTimeout(() => {
+          // Fermer le modal
+          closeModal();
+
+          // Préparer et rediriger
+          const params = new URLSearchParams();
+          const results = item.results || {};
+
+          if (item.type === "hooks") {
+            if (item.platform) params.set("platform", item.platform);
+            if (item.niche) params.set("niche", item.niche);
+            if (item.theme) params.set("theme", item.theme);
+            if (item.brief) params.set("brief", item.brief);
+            if (item.tone) params.set("tone", item.tone);
+            if (results.originalityMode !== undefined)
+              params.set("originalityMode", results.originalityMode);
+            if (results.putaclic !== undefined)
+              params.set("putaclic", results.putaclic);
+            if (results.countText) params.set("countText", results.countText);
+            if (results.countVisual)
+              params.set("countVisual", results.countVisual);
+
+            window.location.href = `/hooks?${params.toString()}`;
+          } else if (item.type === "ctas") {
+            if (results.intent) params.set("intent", results.intent);
+            if (item.platform) params.set("platform", item.platform);
+            if (item.tone) params.set("tone", item.tone);
+            if (results.constraints)
+              params.set("constraints", results.constraints);
+            if (results.count) params.set("count", results.count);
+            if (results.putaclic !== undefined)
+              params.set("putaclic", results.putaclic);
+
+            window.location.href = `/ctas?${params.toString()}`;
+          }
+        }, 800);
+      }
+
+      function openModal(item) {
+        selectedItem = item;
+        const modal = document.getElementById("modal");
+
+        // Mise à jour du header
+        const typeColor =
+          item.type === "hooks" ? "text-accent" : "text-success";
+        const typeIcon = item.type === "hooks" ? "🎯" : "💬";
+
+        document.getElementById("modalIcon").textContent = typeIcon;
+        document.getElementById("modalTitle").textContent =
+          item.type === "hooks" ? "Hooks" : "CTAs";
+        document.getElementById(
+          "modalTitle"
+        ).className = `text-xl font-bold ${typeColor}`;
+        document.getElementById("modalDate").textContent = formatDate(
+          item.createdAt
+        );
+
+        // Mise à jour des infos
+        renderModalInfo(item);
+
+        // Mise à jour des résultats
+        renderModalResults(item);
+
+        // Afficher le modal
+        modal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModal() {
+        const modal = document.getElementById("modal");
+        modal.classList.add("hidden");
+        document.body.style.overflow = "";
+        selectedItem = null;
+      }
+
+      function renderModalInfo(item) {
+        const infoContainer = document.getElementById("modalInfo");
+        const results = item.results || {};
+
+        infoContainer.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 class="font-semibold text-accent-2 mb-3">📋 Informations générales</h3>
+              <div class="space-y-2 text-sm">
+                <div><strong class="text-muted">Thème:</strong> ${
+                  item.theme || "Non spécifié"
+                }</div>
+                <div><strong class="text-muted">Plateforme:</strong> ${
+                  item.platform || "Non spécifiée"
+                }</div>
+                <div><strong class="text-muted">Ton:</strong> ${
+                  item.tone || "Non spécifié"
+                }</div>
+                ${
+                  item.niche
+                    ? `<div><strong class="text-muted">Niche:</strong> ${item.niche}</div>`
+                    : ""
+                }
+                ${
+                  item.brief
+                    ? `<div><strong class="text-muted">Brief:</strong> ${item.brief}</div>`
+                    : ""
+                }
+              </div>
+            </div>
+            <div>
+              <h3 class="font-semibold text-accent-2 mb-3">⚙️ Paramètres</h3>
+              <div class="space-y-2 text-sm">
+                ${
+                  item.type === "hooks"
+                    ? `
+                  <div><strong class="text-muted">Mode originalité:</strong> ${
+                    results.originalityMode ? "Activé" : "Désactivé"
+                  }</div>
+                  <div><strong class="text-muted">Putaclic:</strong> ${
+                    results.putaclic ? "Activé" : "Désactivé"
+                  }</div>
+                  <div><strong class="text-muted">Hooks texte:</strong> ${
+                    results.countText || 0
+                  }</div>
+                  <div><strong class="text-muted">Hooks visuels:</strong> ${
+                    results.countVisual || 0
+                  }</div>
+                `
+                    : `
+                  <div><strong class="text-muted">Intention:</strong> ${
+                    results.intent || "Non spécifiée"
+                  }</div>
+                  <div><strong class="text-muted">Putaclic:</strong> ${
+                    results.putaclic ? "Activé" : "Désactivé"
+                  }</div>
+                  <div><strong class="text-muted">Nombre demandé:</strong> ${
+                    results.count || 0
+                  }</div>
+                  <div><strong class="text-muted">Contraintes:</strong> ${
+                    results.constraints || "Aucune"
+                  }</div>
+                `
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderModalResults(item) {
+        const resultsContainer = document.getElementById("modalResults");
+        const results = item.results || {};
+
+        if (item.type === "hooks") {
+          renderHooksResults(resultsContainer, results);
+        } else {
+          renderCtasResults(resultsContainer, results);
+        }
+      }
+
+      function renderHooksResults(container, results) {
+        const textHooks = results.textHooks || [];
+        const visualHooks = results.visualHooks || [];
+
+        container.innerHTML = `
+          <!-- Hooks Textuels -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-accent-2">📝 Hooks Textuels (${
+                textHooks.length
+              })</h3>
+              <button onclick="copyTextHooks()" class="px-3 py-1 text-xs bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-colors">
+                Copier tous
+              </button>
+            </div>
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              ${textHooks
+                .map(
+                  (hook) => `
+                <div class="result-item" onclick="copyToClipboard('${hook.replace(
+                  /'/g,
+                  "\\'"
+                )}')">
+                  ${hook}
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+
+          <!-- Hooks Visuels -->
+          ${
+            visualHooks.length > 0
+              ? `
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-accent-2">🎬 Hooks Visuels (${
+                  visualHooks.length
+                })</h3>
+                <button onclick="copyVisualHooks()" class="px-3 py-1 text-xs bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-colors">
+                  Copier tous
+                </button>
+              </div>
+              <div class="grid gap-4 max-h-60 overflow-y-auto">
+                ${visualHooks
+                  .map(
+                    (hook, index) => `
+                  <div class="visual-hook-card">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-accent-2">Hook Visuel #${
+                        index + 1
+                      }</span>
+                      <button onclick="copyVisualHook(${index})" class="text-xs text-muted hover:text-accent transition-colors">
+                        Copier
+                      </button>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                      <div><strong class="text-muted">Shot:</strong> ${
+                        hook.shot
+                      }</div>
+                      <div><strong class="text-muted">Overlay:</strong> ${
+                        hook.overlay
+                      }</div>
+                      <div><strong class="text-muted">Action:</strong> ${
+                        hook.action
+                      }</div>
+                    </div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `
+              : ""
+          }
+        `;
+      }
+
+      function renderCtasResults(container, results) {
+        const ctas = results.results || [];
+
+        container.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-accent-2">💬 CTAs générés (${
+                ctas.length
+              })</h3>
+              <button onclick="copyAllCtas()" class="px-3 py-1 text-xs bg-success/20 hover:bg-success/30 text-success rounded-lg transition-colors">
+                Copier tous
+              </button>
+            </div>
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+              ${ctas
+                .map(
+                  (cta) => `
+                <div class="result-item" onclick="copyToClipboard('${cta.replace(
+                  /'/g,
+                  "\\'"
+                )}')">
+                  ${cta}
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      // Fonctions de copie
+      function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => toast("Copié!", "success"))
+            .catch(() => toast("Erreur de copie", "error"));
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function copyAllResults(item) {
+        let content = "";
+        const results = item.results || {};
+
+        if (item.type === "hooks") {
+          const textHooks = results.textHooks || [];
+          const visualHooks = results.visualHooks || [];
+
+          if (textHooks.length > 0) {
+            content += "=== HOOKS TEXTUELS ===\n";
+            content += textHooks.join("\n");
+          }
+
+          if (visualHooks.length > 0) {
+            content += "\n\n=== HOOKS VISUELS ===\n";
+            visualHooks.forEach((hook, index) => {
+              content += `\n--- Hook Visuel #${index + 1} ---\n`;
+              content += `Shot: ${hook.shot}\n`;
+              content += `Overlay: ${hook.overlay}\n`;
+              content += `Action: ${hook.action}\n`;
+            });
+          }
+        } else {
+          const ctas = results.results || [];
+          content = ctas.join("\n");
+        }
+
+        copyToClipboard(content);
+      }
+
+      function copyTextHooks() {
+        if (
+          selectedItem &&
+          selectedItem.results &&
+          selectedItem.results.textHooks
+        ) {
+          copyToClipboard(selectedItem.results.textHooks.join("\n"));
+        }
+      }
+
+      function copyVisualHooks() {
+        if (
+          selectedItem &&
+          selectedItem.results &&
+          selectedItem.results.visualHooks
+        ) {
+          const visualHooks = selectedItem.results.visualHooks;
+          let content = "";
+          visualHooks.forEach((hook, index) => {
+            content += `--- Hook Visuel #${index + 1} ---\n`;
+            content += `Shot: ${hook.shot}\n`;
+            content += `Overlay: ${hook.overlay}\n`;
+            content += `Action: ${hook.action}\n\n`;
+          });
+          copyToClipboard(content);
+        }
+      }
+
+      function copyVisualHook(index) {
+        if (
+          selectedItem &&
+          selectedItem.results &&
+          selectedItem.results.visualHooks
+        ) {
+          const hook = selectedItem.results.visualHooks[index];
+          const content = `Shot: ${hook.shot}\nOverlay: ${hook.overlay}\nAction: ${hook.action}`;
+          copyToClipboard(content);
+        }
+      }
+
+      function copyAllCtas() {
+        if (
+          selectedItem &&
+          selectedItem.results &&
+          selectedItem.results.results
+        ) {
+          copyToClipboard(selectedItem.results.results.join("\n"));
+        }
+      }
+
+      function fallbackCopy(text) {
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = text;
+          textArea.style.position = "fixed";
+          textArea.style.opacity = "0";
+          document.body.appendChild(textArea);
+          textArea.select();
+
+          const successful = document.execCommand("copy");
+          document.body.removeChild(textArea);
+
+          if (successful) {
+            toast("Copié!", "success");
+          } else {
+            toast("Impossible de copier automatiquement", "warning");
+          }
+        } catch (error) {
+          console.error("Fallback copy failed:", error);
+          toast("Copie impossible", "error");
+        }
       }
 
       function updateStats() {
@@ -307,45 +1009,39 @@
         const thisWeek = document.getElementById("thisWeek");
 
         totalGen.textContent = historyData.length;
-        totalHooks.textContent = historyData.filter(item => item.type === 'hooks').length;
-        totalCtas.textContent = historyData.filter(item => item.type === 'ctas').length;
-        
+        totalHooks.textContent = historyData.filter(
+          (item) => item.type === "hooks"
+        ).length;
+        totalCtas.textContent = historyData.filter(
+          (item) => item.type === "ctas"
+        ).length;
+
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        thisWeek.textContent = historyData.filter(item => new Date(item.createdAt) > weekAgo).length;
+        thisWeek.textContent = historyData.filter(
+          (item) => new Date(item.createdAt) > weekAgo
+        ).length;
       }
 
       function formatDate(dateString) {
         const date = new Date(dateString);
-        return date.toLocaleDateString('fr-FR', { 
-          day: 'numeric', 
-          month: 'short', 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        return date.toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
         });
       }
 
-      function copyItem(id) {
-        const item = historyData.find(h => h.id === id);
-        if (item && item.results) {
-          const content = item.results.join('\n');
-          navigator.clipboard.writeText(content).then(() => {
-            toast("Contenu copié!", "success");
-          });
-        }
-      }
+      function getResultsCount(item) {
+        if (!item || !item.results) return 0;
 
-      async function deleteItem(id) {
-        if (confirm("Supprimer cet élément ?")) {
-          try {
-            await api(`history/${id}`, { method: "DELETE" });
-            historyData = historyData.filter(h => h.id !== id);
-            renderHistory(historyData);
-            updateStats();
-            toast("Élément supprimé", "success");
-          } catch (error) {
-            toast("Erreur lors de la suppression", "error");
-          }
+        if (item.type === "hooks") {
+          const textHooks = item.results.textHooks || [];
+          const visualHooks = item.results.visualHooks || [];
+          return textHooks.length + visualHooks.length;
+        } else {
+          return item.results.results ? item.results.results.length : 0;
         }
       }
     </script>
@@ -366,7 +1062,90 @@
         z-index: 1000;
         animation: slideIn 0.3s ease-out;
       }
-      
+
+      /* Firefox */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(123, 44, 255, 0.4) transparent;
+      }
+
+      /* Webkit browsers (Chrome, Safari, Edge) */
+      *::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+
+      *::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      *::-webkit-scrollbar-thumb {
+        background: rgba(123, 44, 255, 0.4);
+        border-radius: 2px;
+        transition: all 0.2s ease;
+      }
+
+      *::-webkit-scrollbar-thumb:hover {
+        background: rgba(123, 44, 255, 0.7);
+        box-shadow: 0 0 4px rgba(123, 44, 255, 0.5);
+      }
+
+      *::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+
+      /* Spécifiquement pour les sidebars et conteneurs principaux */
+      .sidebar,
+      .main-content,
+      .modal-content,
+      .overflow-y-auto,
+      .overflow-x-auto,
+      .overflow-auto {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(123, 44, 255, 0.5) rgba(22, 22, 39, 0.1);
+      }
+
+      .sidebar::-webkit-scrollbar,
+      .main-content::-webkit-scrollbar,
+      .modal-content::-webkit-scrollbar,
+      .overflow-y-auto::-webkit-scrollbar,
+      .overflow-x-auto::-webkit-scrollbar,
+      .overflow-auto::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+
+      .sidebar::-webkit-scrollbar-track,
+      .main-content::-webkit-scrollbar-track,
+      .modal-content::-webkit-scrollbar-track,
+      .overflow-y-auto::-webkit-scrollbar-track,
+      .overflow-x-auto::-webkit-scrollbar-track,
+      .overflow-auto::-webkit-scrollbar-track {
+        background: rgba(22, 22, 39, 0.1);
+        border-radius: 2px;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb,
+      .main-content::-webkit-scrollbar-thumb,
+      .modal-content::-webkit-scrollbar-thumb,
+      .overflow-y-auto::-webkit-scrollbar-thumb,
+      .overflow-x-auto::-webkit-scrollbar-thumb,
+      .overflow-auto::-webkit-scrollbar-thumb {
+        background: rgba(123, 44, 255, 0.5);
+        border-radius: 2px;
+        transition: all 0.2s ease;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb:hover,
+      .main-content::-webkit-scrollbar-thumb:hover,
+      .modal-content::-webkit-scrollbar-thumb:hover,
+      .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+      .overflow-x-auto::-webkit-scrollbar-thumb:hover,
+      .overflow-auto::-webkit-scrollbar-thumb:hover {
+        background: rgba(123, 44, 255, 0.8);
+        box-shadow: 0 0 6px rgba(123, 44, 255, 0.4);
+      }
+
       @keyframes slideIn {
         from {
           transform: translateX(100%);

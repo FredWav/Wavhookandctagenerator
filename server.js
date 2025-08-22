@@ -47,6 +47,7 @@ app.use('/api/auth', require('./api/auth'));
 app.use('/api/user', require('./api/auth/user'));
 app.use('/api/auth/change-password', require('./api/auth/change-password'));
 app.use('/api/stripe', require('./api/stripe/stripe'));
+app.use('/api/survey', require('./api/survey'));
 
 // Test route
 app.get('/api/hello', (req, res) => {

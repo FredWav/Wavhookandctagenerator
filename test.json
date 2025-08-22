@@ -1,0 +1,81 @@
+{
+  "platform": "tiktok",
+  "niche": "developpeur",
+  "theme": "meilleurs extention vscode",
+  "brief": null,
+  "tone": "humour",
+  "originalityMode": true,
+  "putaclic": false,
+  "countText": 20,
+  "countVisual": 10,
+  "textHooks": [
+    "VS Code secrets: sorcellerie ou pure magie?!",
+    "Extensions VS Code que même ton chat adore!",
+    "Hack ton code avec ces add-ons zinzins!",
+    "Le bug qui fait pleurer VS Code...",
+    "Quand ton IDE te file des super-pouvoirs!",
+    "Coders nocturnes: rituels VS Code révélés!",
+    "Ton clavier va se sentir inutile...",
+    "Crée des lignes de code comme Mozart.",
+    "De zéro à héros du code en 10 extensions!",
+    "Ninja codes: moves interdits sur VS Code.",
+    "Développe comme un hacker des 90's!",
+    "Ton PC va te supplier d'arrêter!",
+    "Bugs? Ces outils sont ta baguette magique.",
+    "Code épic: du binaire à l'art divin.",
+    "Extensions VS Code: le buffet à volonté!",
+    "Mécanique de jeu vidéo pour coder mieux!"
+  ],
+  "visualHooks": [
+    {
+      "shot": "Vue éclatée bureau VS Code",
+      "overlay": "Nouveaux pouvoirs!",
+      "action": "Explosion graphique"
+    },
+    {
+      "shot": "Écran divisé avant/après extension",
+      "overlay": "Avant/Après éblouissant",
+      "action": "Transition écran fondu"
+    },
+    {
+      "shot": "Plan serré mains sur clavier",
+      "overlay": "Quand tes doigts dansent!",
+      "action": "Doigts tapotant frénétiquement"
+    },
+    {
+      "shot": "Écran clignotant mode rétro",
+      "overlay": "Retour vers le futur?",
+      "action": "Effet glitch nostalgique"
+    },
+    {
+      "shot": "Focus sur une ligne de code magique",
+      "overlay": "Ligne enchantée!",
+      "action": "Zoom rapide"
+    },
+    {
+      "shot": "Vue plongée écran multicolore",
+      "overlay": "Arc-en-ciel de productivité!",
+      "action": "Effet arc-en-ciel tourbillonnant"
+    },
+    {
+      "shot": "Vue panoramique workspace zen",
+      "overlay": "Paix intérieure codée",
+      "action": "Slow pan apaisant"
+    },
+    {
+      "shot": "Système binaire apparaissant à l'écran",
+      "overlay": "Matrix dans ton IDE!",
+      "action": "Code s'affichant rapidement"
+    },
+    {
+      "shot": "Effet néon sur clavier rétroéclairé",
+      "overlay": "Tape en lumière!",
+      "action": "Changement couleur LED dramatique"
+    },
+    {
+      "shot": "Zoom extrême sur icône VS Code",
+      "overlay": "Icône du génie!",
+      "action": "Apparition soudaine par surprise"
+    }
+  ]
+}
