@@ -1,7 +1,7 @@
 {
   "name": "wav-generator",
   "version": "1.0.0",
-  "description": "Wav Generator - AI-powered Hooks and CTAs",
+  "description": "Wav Social Scan - AI-powered Hooks and CTAs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,7 +17,9 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.14.3",
-    "stripe": "^18.4.0"
+    "nodemailer": "^7.0.5",
+    "stripe": "^18.4.0",
+    "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

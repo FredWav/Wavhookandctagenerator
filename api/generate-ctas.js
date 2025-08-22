@@ -305,44 +305,80 @@ RETOURNE EXACTEMENT:
         try {
             const connection = await pool.getConnection();
             try {
+                // Préparer les données pour la sauvegarde admin
                 const historyData = {
-                    intent,
-                    platform,
-                    tone,
-                    constraints: constraints || null,
-                    putaclic: canUsePutaclic,
-                    count: safeCount,
-                    results: resultCtas
+                    originalRequest: {
+                        intent,
+                        platform,
+                        tone,
+                        constraints: constraints || null,
+                        putaclic: canUsePutaclic,
+                        count: safeCount
+                    },
+                    generatedResults: resultCtas,
+                    metadata: {
+                        userPlan: user.plan,
+                        generationTime: new Date().toISOString(),
+                        requestIP: req.ip || 'unknown'
+                    }
                 };
 
+                // Sauvegarde dans la base admin (table unifiée)
                 await connection.execute(`
-                    INSERT INTO user_history (user_id, type, theme, platform, tone, niche, brief, results)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `, [
+            INSERT INTO user_action_history 
+            (user_id, type, theme, platform, tone, niche, brief, count, results)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
                     user.id,
                     'ctas',
                     `CTAs ${intent}`,
                     platform,
                     tone,
-                    null, // niche (pour CTAs on n'a pas de niche)
+                    null, // niche (pas applicable pour CTAs)
                     constraints || null,
+                    safeCount,
                     JSON.stringify(historyData)
                 ]);
 
-                // Nettoyage automatique pour les comptes gratuits
+                console.log(`✅ CTAs sauvegardés dans l'admin - User: ${user.id}, Type: ctas, Count: ${safeCount}`);
+
+                // Sauvegarde dans l'historique utilisateur (table existante)
+                await connection.execute(`
+            INSERT INTO user_history (user_id, type, theme, platform, tone, niche, brief, results)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+                    user.id,
+                    'ctas',
+                    `CTAs ${intent}`,
+                    platform,
+                    tone,
+                    null,
+                    constraints || null,
+                    JSON.stringify({
+                        intent,
+                        platform,
+                        tone,
+                        constraints: constraints || null,
+                        putaclic: canUsePutaclic,
+                        count: safeCount,
+                        results: resultCtas
+                    })
+                ]);
+
+                // Nettoyage automatique pour les comptes gratuits (historique utilisateur)
                 if (user.plan !== 'pro') {
                     await connection.execute(`
-                        DELETE FROM user_history 
+                DELETE FROM user_history 
+                WHERE user_id = ? 
+                AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id FROM user_history 
                         WHERE user_id = ? 
-                        AND id NOT IN (
-                            SELECT id FROM (
-                                SELECT id FROM user_history 
-                                WHERE user_id = ? 
-                                ORDER BY created_at DESC 
-                                LIMIT 30
-                            ) AS recent
-                        )
-                    `, [user.id, user.id]);
+                        ORDER BY created_at DESC 
+                        LIMIT 30
+                    ) AS recent
+                )
+            `, [user.id, user.id]);
                 }
 
                 console.log('✅ CTAs sauvegardés dans l\'historique utilisateur');
@@ -353,6 +389,7 @@ RETOURNE EXACTEMENT:
             console.error('❌ Erreur sauvegarde historique:', historyError);
             // Ne pas faire échouer la génération si l'historique échoue
         }
+
 
         // RÉPONSE FINALE
         return json(res, {

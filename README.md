@@ -1,4 +1,4 @@
-# Wav Generator (Hooks + CTAs)
+# Wav Social Scan (Hooks + CTAs)
 
 - **Auth obligatoire** (email+mdp), **JWT cookie** HttpOnly.
 - **Freemium/Premium** : limites et Putaclic+ réservé à Premium (future bascule de plan via KV).

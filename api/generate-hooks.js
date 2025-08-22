@@ -436,7 +436,55 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
         try {
             const connection = await pool.getConnection();
             try {
-                const historyData = {
+                // Préparer les données pour la sauvegarde admin
+                const adminHistoryData = {
+                    originalRequest: {
+                        platform,
+                        niche: niche || null,
+                        theme: theme || null,
+                        brief: brief || null,
+                        tone,
+                        originalityMode,
+                        putaclic,
+                        countText: safeText,
+                        countVisual: safeVisual
+                    },
+                    generatedResults: {
+                        textHooks: finalHooks.slice(0, safeText),
+                        visualHooks: (Array.isArray(parsed.visualHooks) ? parsed.visualHooks : []).slice(0, safeVisual)
+                    },
+                    metadata: {
+                        userPlan: user.plan,
+                        generationTime: new Date().toISOString(),
+                        requestIP: req.ip || 'unknown',
+                        totalHooksGenerated: safeText + safeVisual
+                    }
+                };
+
+                // Calculer le total des hooks générés pour la colonne count
+                const totalHooksCount = safeText + safeVisual;
+
+                // Sauvegarde dans la base admin (table unifiée)
+                await connection.execute(`
+            INSERT INTO user_action_history 
+            (user_id, type, theme, platform, tone, niche, brief, count, results)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+                    user.id,
+                    'hooks',
+                    theme || 'Hooks généraux',
+                    platform,
+                    tone,
+                    niche || null,
+                    brief || null,
+                    totalHooksCount,
+                    JSON.stringify(adminHistoryData)
+                ]);
+
+                console.log(`✅ Hooks sauvegardés dans l'admin - User: ${user.id}, Type: hooks, Count: ${totalHooksCount} (${safeText} text + ${safeVisual} visual)`);
+
+                // Préparer les données pour l'historique utilisateur (format existant)
+                const userHistoryData = {
                     platform,
                     niche: niche || null,
                     theme: theme || null,
@@ -450,10 +498,11 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                     visualHooks: (Array.isArray(parsed.visualHooks) ? parsed.visualHooks : []).slice(0, safeVisual)
                 };
 
+                // Sauvegarde dans l'historique utilisateur (table existante)
                 await connection.execute(`
-      INSERT INTO user_history (user_id, type, theme, platform, tone, niche, brief, results)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
+            INSERT INTO user_history (user_id, type, theme, platform, tone, niche, brief, results)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
                     user.id,
                     'hooks',
                     theme || 'Hooks généraux',
@@ -461,23 +510,23 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
                     tone,
                     niche || null,
                     brief || null,
-                    JSON.stringify(historyData)
+                    JSON.stringify(userHistoryData)
                 ]);
 
-                // Nettoyage automatique pour les comptes gratuits
+                // Nettoyage automatique pour les comptes gratuits (historique utilisateur)
                 if (user.plan !== 'pro') {
                     await connection.execute(`
-        DELETE FROM user_history 
-        WHERE user_id = ? 
-        AND id NOT IN (
-          SELECT id FROM (
-            SELECT id FROM user_history 
-            WHERE user_id = ? 
-            ORDER BY created_at DESC 
-            LIMIT 30
-          ) AS recent
-        )
-      `, [user.id, user.id]);
+                DELETE FROM user_history 
+                WHERE user_id = ? 
+                AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id FROM user_history 
+                        WHERE user_id = ? 
+                        ORDER BY created_at DESC 
+                        LIMIT 30
+                    ) AS recent
+                )
+            `, [user.id, user.id]);
                 }
 
                 console.log('✅ Hooks sauvegardés dans l\'historique utilisateur');
@@ -486,7 +535,9 @@ Calibrés codes visuels ${platform} + mécaniques attention.`;
             }
         } catch (historyError) {
             console.error('❌ Erreur sauvegarde historique:', historyError);
+            // Ne pas faire échouer la génération si l'historique échoue
         }
+
 
         // RÉPONSE FINALE
         res.json({
