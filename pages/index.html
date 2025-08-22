@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wav Generator – Accueil</title>
+    <!-- Tailwind CDN et config palette custom -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: "#7b2cff",
+              "accent-2": "#00e7ff",
+              panel: "#12121b",
+              "panel-2": "#161627",
+              muted: "#8b90a1",
+              text: "#e6e8ef",
+              danger: "#ff3b3b",
+              success: "#1ad199",
+              warning: "#ffcc00",
+            },
+            borderRadius: {
+              xl: "20px",
+            },
+            boxShadow: {
+              neon: "0 20px 60px rgba(0,0,0,.4)",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: radial-gradient(
+            800px 400px at 10% -10%,
+            rgba(0, 231, 255, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 400px at 110% 10%,
+            rgba(123, 44, 255, 0.15),
+            transparent 60%
+          ),
+          #0b0b11;
+      }
+    </style>
+  </head>
+  <body class="font-sans text-text min-h-screen">
+    <div id="header"></div>
+
+    <main class="max-w-5xl mx-auto px-6">
+      <section
+        class="mt-7 p-7 rounded-2xl border border-white/10 bg-[radial-gradient(800px_400px_at_-10%_10%,rgba(0,231,255,0.12),transparent_60%),radial-gradient(800px_400px_at_110%_0%,rgba(123,44,255,0.12),transparent_60%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))] shadow-neon"
+      >
+        <div class="p-5">
+          <div class="uppercase tracking-widest text-xs text-muted mb-1">
+            Suite créative
+          </div>
+          <h1 class="text-3xl font-extrabold leading-tight my-2">
+            Des Hooks et CTAs qui performent, sans blabla
+          </h1>
+          <p class="text-base text-slate-200 leading-relaxed">
+            Génère des <b>hooks texte</b> + <b>idées visuelles</b> adaptés à
+            TikTok, Reels et Shorts, et des <b>CTAs</b> qui font vraiment agir.
+          </p>
+
+          <div class="grid gap-6 mt-8 grid-cols-1 md:grid-cols-2">
+            <!-- Hooks -->
+            <div
+              class="rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 p-6 shadow-lg backdrop-blur-sm"
+            >
+              <h3 class="text-lg font-bold text-text mb-3">
+                Générateur de Hooks
+              </h3>
+              <p class="text-sm text-muted mb-4 leading-relaxed">
+                <strong>Texte</strong> +
+                <strong>idées visuelles concrètes</strong> (plans caméra,
+                overlays, mises en scène).
+              </p>
+              <div
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-3"
+              >
+                <a
+                  href="/hooks"
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-900 bg-gradient-to-r from-accent to-accent-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+                >
+                  Ouvrir
+                </a>
+                <span
+                  class="inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs border border-white/15 bg-white/5"
+                >
+                  Adapté TikTok / Instagram / Shorts
+                </span>
+              </div>
+            </div>
+
+            <!-- CTAs -->
+            <div
+              class="rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 p-6 shadow-lg backdrop-blur-sm"
+            >
+              <h3 class="text-lg font-bold text-text mb-3">
+                Générateur de CTAs
+              </h3>
+              <p class="text-sm text-muted mb-4 leading-relaxed">
+                <strong>Phrases d'appel à l'action</strong> pour faire
+                <u>commenter</u>, <u>suivre</u>, <u>cliquer</u> ou
+                <u>s'inscrire</u> — sans formules génériques.
+              </p>
+              <div
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-3"
+              >
+                <a
+                  href="/ctas"
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-900 bg-gradient-to-r from-accent to-accent-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+                >
+                  Ouvrir
+                </a>
+                <span
+                  class="inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs border border-white/15 bg-white/5"
+                >
+                  Anti‑bateau
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Premium en pleine largeur -->
+          <div class="mt-6">
+            <div
+              id="premiumCard"
+              class="rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 p-6 shadow-lg backdrop-blur-sm"
+            >
+              <h3 class="text-lg font-bold text-text mb-3">
+                Putaclic+ (Premium)
+              </h3>
+              <p class="text-sm text-muted mb-4 leading-relaxed">
+                Version <strong>boostée</strong> des hooks & CTAs pour capter
+                l'attention plus vite : ruptures visuelles, contrastes forts,
+                formulations qui tranchent — sans déraper.
+              </p>
+              <div
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-3"
+              >
+                <a
+                  href="/hooks"
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-900 bg-gradient-to-r from-accent to-accent-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+                >
+                  Activer sur mes hooks
+                </a>
+                <button
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-text bg-transparent border border-white/20 rounded-xl hover:bg-white/10 hover:border-white/30 active:bg-white/5 transition-all duration-200"
+                >
+                  Activer sur mes CTAs
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-muted mt-4">
+            Besoin d’aide ? Contacte‑moi dans l’app.
+          </p>
+        </div>
+      </section>
+      <div id="footer"></div>
+    </main>
+
+    <script src="/app.js"></script>
+    <script src="/components/header-auth.js"></script>
+    <script src="/components/loader.js"></script>
+  </body>
+</html>

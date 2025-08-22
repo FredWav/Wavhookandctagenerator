@@ -98,6 +98,7 @@ class AuthHeader {
     container.innerHTML = `
       ${currentPath !== '/' ?
         '<a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/">Accueil</a>' : ''}
+        <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/upgrade">Prix</a>
       <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/history">Historique</a>
       
       <!-- Dropdown Profile -->
@@ -166,32 +167,50 @@ class AuthHeader {
 
     // Attacher les événements du dropdown
     this.setupDropdownEvents();
+    this.setupManageSubscriptionHeaderBtn();
   }
 
   getUpgradeOptions(userPlan) {
+    // Bouton visible seulement pour les plans payants
+    let manageBtn = '';
+    if (userPlan === 'plus' || userPlan === 'pro') {
+      manageBtn = `
+      <button 
+        id="headerManageSubscriptionBtn"
+        class="flex items-center gap-3 px-4 py-2 text-sm text-text hover:bg-white/5 transition-colors w-full"
+        type="button"
+      >
+<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet-icon lucide-wallet"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+        Gérer mon abonnement
+      </button>
+    `;
+    }
+
+    // Options d’upgrade éventuelles
     switch (userPlan) {
       case 'free':
         return `
-                    <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-warning hover:bg-warning/10 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Passer à PLUS
-                    </a>
-                    <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
-<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
-                        Passer à PRO
-                    </a>
-                `;
+        <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-warning hover:bg-warning/10 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          Passer à PLUS
+        </a>
+        <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+          Passer à PRO
+        </a>
+      `;
       case 'plus':
         return `
-                    <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
-<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
-                        Upgrader vers PRO
-                    </a>
-                `;
+        <a href="/upgrade" class="flex items-center gap-3 px-4 py-2 text-sm text-accent-2 hover:bg-accent-2/10 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+          Upgrader vers PRO
+        </a>
+        ${manageBtn}
+      `;
       case 'pro':
-        return ''; // Aucune option d'upgrade pour les utilisateurs PRO
+        return manageBtn;
       default:
         return '';
     }
@@ -200,7 +219,20 @@ class AuthHeader {
   renderGuestNav(container) {
     container.innerHTML = `
       <a class="px-4 py-3 rounded-xl font-semibold transition border border-white/15 text-text bg-transparent hover:bg-white/10" href="/login">Connexion</a>
-      <a class="px-4 py-3 rounded-xl font-semibold transition bg-gradient-to-r from-accent to-accent-2 text-slate-900 hover:scale-105 active:scale-95" href="/signup">S'inscrire</a>
+      <a
+  href="/signup"
+  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-accent to-accent-2 text-slate-900 shadow-neon transition-all duration-200 border border-accent-2/40
+    hover:scale-105 hover:shadow-lg hover:-translate-y-0.5 active:scale-97
+    focus:outline-none focus:ring-2 focus:ring-accent-2/60"
+  style="will-change: transform;"
+>
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round"
+      d="M12 4v16m8-8H4"/>
+  </svg>
+  S'inscrire
+</a>
+
     `;
   }
 
@@ -258,6 +290,31 @@ class AuthHeader {
   getInitials(username) {
     return username ? username.charAt(0).toUpperCase() : '?';
   }
+
+  setupManageSubscriptionHeaderBtn() {
+    setTimeout(() => {
+      const btn = document.getElementById('headerManageSubscriptionBtn');
+      if (btn) {
+        btn.onclick = async () => {
+          btn.disabled = true;
+          const original = btn.innerHTML;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> Redirection...';
+          try {
+            const response = await api("stripe/create-portal-session", {
+              method: "POST"
+            });
+            window.open(response.portal_url, '_blank');
+          } catch (err) {
+            toast("Erreur lors de l'accès au portail", "error");
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+          }
+        };
+      }
+    }, 50);
+  }
+
 
   async handleLogout() {
     try {
