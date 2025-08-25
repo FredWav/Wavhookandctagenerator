@@ -1,7 +1,7 @@
 // api/generate-ctas.js - Version avec Historique Intégré
 const express = require('express');
 const router = express.Router();
-const { requireUser, json } = require('./utils/auth-util');
+const { requireUser, requireVerifiedUser, json } = require('./utils/auth-util');
 const pool = require('./db/connection');
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";

@@ -49,6 +49,7 @@ app.use('/api/auth/change-password', require('./api/auth/change-password'));
 app.use('/api/stripe', require('./api/stripe/stripe'));
 app.use('/api/survey', require('./api/survey'));
 app.use('/api/contact', require('./api/contact'));
+app.use('/api/verify-email', require('./api/verify-email'));
 
 // Test route
 app.get('/api/hello', (req, res) => {

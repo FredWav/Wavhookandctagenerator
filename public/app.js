@@ -1,16 +1,26 @@
 const API_ORIGIN = ""; // même domaine
 
+// Côté client, pour vérifier les cookies
+console.log('Cookies actuels:', document.cookie);
+
+// Votre fonction API avec plus de debugging
 function api(path, { method="GET", body, headers={} } = {}) {
-  return fetch(`${API_ORIGIN}/api/${path}`, {
-    method,
-    headers: { "Content-Type": "application/json", ...headers },
-    credentials: "include",
-    body: body ? JSON.stringify(body) : undefined
-  }).then(async r => {
-    const data = await r.json().catch(()=> ({}));
-    if (!r.ok) throw Object.assign(new Error(data.error || r.statusText), { status: r.status, data });
-    return data;
-  });
+    console.log(`API call: ${method} ${path}`);
+    console.log('Cookies being sent:', document.cookie);
+    
+    return fetch(`${API_ORIGIN}/api/${path}`, {
+        method,
+        headers: { "Content-Type": "application/json", ...headers },
+        credentials: "include",
+        body: body ? JSON.stringify(body) : undefined
+    }).then(async r => {
+        console.log('Response status:', r.status);
+        console.log('Response headers:', [...r.headers.entries()]);
+        
+        const data = await r.json().catch(()=> ({}));
+        if (!r.ok) throw Object.assign(new Error(data.error || r.statusText), { status: r.status, data });
+        return data;
+    });
 }
 
 async function requireAuth(redirectIfMissing=true){

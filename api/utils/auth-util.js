@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const bcrypt = require('bcryptjs');
 const pool = require('../db/connection');
-const { sign, verify } = require("../_jwt");
+const { sign, verify } = require("./_jwt");
 
 const COOKIE_NAME = "wav_auth";
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-please-super-secret";

@@ -266,7 +266,7 @@
 
           toast("Inscription réussie ! Redirection...", "success");
           setTimeout(() => {
-            location.href = "/";
+            location.href = "/verify-email";
           }, 1500);
         } catch (err) {
           toast(err.message || "Erreur d'inscription", "error");
