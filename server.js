@@ -29,12 +29,20 @@ app.use(express.static(__dirname));
 const pagesDir = path.join(__dirname, 'pages');
 const htmlFiles = fs.readdirSync(pagesDir).filter(f => f.endsWith('.html'));
 
-htmlFiles.forEach(filename => {
+/*  htmlFiles.forEach(filename => {
   // Route : '/' si index.html, sinon '/nomfichier' sans .html
   const route = filename === 'index.html' ? '/' : `/${filename.replace('.html', '')}`;
   app.get(route, (req, res) => {
     res.sendFile(path.join(pagesDir, filename));
   });
+});*/
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/components/') || req.path.startsWith('/images/') || req.path.startsWith('/public/'))
+    return next(); // laisse passer vers les fichiers statiques/API
+  
+  // Sert toujours le layout principal
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Routes API

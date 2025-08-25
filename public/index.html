@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/images/WavSocialScan.svg" type="image/svg+xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: "#7b2cff",
+              "accent-2": "#00e7ff",
+              panel: "#12121b",
+              "panel-2": "#161627",
+              muted: "#8b90a1",
+              text: "#e6e8ef",
+              danger: "#ff3b3b",
+              success: "#1ad199",
+              warning: "#ffcc00",
+            },
+            borderRadius: {
+              xl: "20px",
+            },
+            boxShadow: {
+              neon: "0 20px 60px rgba(0,0,0,.4)",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: radial-gradient(
+            800px 400px at 10% -10%,
+            rgba(0, 231, 255, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 400px at 110% 10%,
+            rgba(123, 44, 255, 0.15),
+            transparent 60%
+          ),
+          #0b0b11;
+      }
+
+      #main-content {
+        color: #e6e8ef; /* blanc, correspond à text-text dans ta config Tailwind */
+      }
+
+      .toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #161627;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        max-width: 360px;
+        color: #e6e8ef;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .heart {
+        transition: all 0.2s ease;
+        filter: grayscale(100%);
+        opacity: 0.5;
+      }
+
+      .heart:hover,
+      .heart.active {
+        filter: grayscale(0%);
+        opacity: 1;
+        transform: scale(1.1);
+      }
+    </style>
+  </head>
+  <body class="text-text min-h-screen">
+    <div id="header"></div>
+    <main id="main-content"></main>
+    <div id="footer"></div>
+    <script src="/components/loader.js"></script>
+    <script src="/components/header-auth.js"></script>
+    <script src="/components/router.js"></script>
+  </body>
+</html>
