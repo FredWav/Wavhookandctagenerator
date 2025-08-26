@@ -60,6 +60,8 @@ app.use('/api/stripe', require('./api/stripe/stripe'));
 app.use('/api/survey', require('./api/survey'));
 app.use('/api/contact', require('./api/contact'));
 app.use('/api/verify-email', require('./api/verify-email'));
+app.use('/api/auth/forgot-password', require('./api/auth/forgot-password'));
+app.use('/api/auth/reset-password', require('./api/auth/reset-password'));
 
 // Test route
 app.get('/api/hello', (req, res) => {
