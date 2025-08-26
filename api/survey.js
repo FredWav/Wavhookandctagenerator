@@ -200,7 +200,7 @@ router.get('/', async (req, res) => {
 
             // Configuration comportement
             behavior: {
-                showProbability: 0.2, // 20% des chance
+                showProbability: 0.35, // 35% des chance
                 showDelay: 20, // secondes après chargement de la page
                 cooldownDays: 3, // 3 jours mini entre deux affichages
                 skipCooldownDays: 10.5, // 1 semaine et demie

@@ -2,9 +2,127 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="/images/WavSocialScan.svg" type="image/svg+xml">
+    <link rel="icon" href="/images/WavSocialScan.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Contact – Wav Social Scan</title>
+
+    <!-- SEO Principal -->
+    <title>Contact et Support - Wav Social Scan | Aide et Questions</title>
+    <meta
+      name="description"
+      content="Contactez l'équipe Wav Social Scan pour toute question, support technique ou suggestion. Réponse rapide par email, Discord ou formulaire de contact."
+    />
+    <meta
+      name="keywords"
+      content="contact wav social scan, support technique, aide générateur hooks, assistance CTA, support client, discord wav social, contact créateurs contenu"
+    />
+    <meta name="author" content="Gabizoc & Fred Wav" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://wavsocialscan.com/contact" />
+    <meta
+      property="og:title"
+      content="Contact et Support - Wav Social Scan | Aide et Questions"
+    />
+    <meta
+      property="og:description"
+      content="Contactez l'équipe Wav Social Scan pour toute question, support technique ou suggestion. Réponse rapide par email, Discord ou formulaire de contact."
+    />
+    <meta
+      property="og:image"
+      content="https://wavsocialscan.com/images/og-image.jpg"
+    />
+    <meta property="og:site_name" content="Wav Social Scan" />
+    <meta property="og:locale" content="fr_FR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://wavsocialscan.com/contact" />
+    <meta
+      name="twitter:title"
+      content="Contact et Support - Wav Social Scan | Aide et Questions"
+    />
+    <meta
+      name="twitter:description"
+      content="Contactez l'équipe Wav Social Scan pour toute question, support technique ou suggestion. Réponse rapide par email, Discord ou formulaire de contact."
+    />
+    <meta
+      name="twitter:image"
+      content="https://wavsocialscan.com/images/og-image.jpg"
+    />
+
+    <!-- Liens canoniques et robots -->
+    <link rel="canonical" href="https://wavsocialscan.com/contact" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+
+    <!-- Données structurées JSON-LD -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "Contact - Wav Social Scan",
+        "url": "https://wavsocialscan.com/contact",
+        "description": "Contactez l'équipe Wav Social Scan pour toute question, support technique ou suggestion",
+        "mainEntity": {
+          "@type": "Organization",
+          "name": "Wav Social Scan",
+          "url": "https://wavsocialscan.com",
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "contactType": "customer support",
+              "email": "contact@wavsocialscan.com",
+              "availableLanguage": "French",
+              "hoursAvailable": {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": [
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday"
+                ],
+                "opens": "09:00",
+                "closes": "18:00",
+                "timeZone": "Europe/Paris"
+              }
+            }
+          ],
+          "sameAs": ["https://discord.gg/GtuUvAGhns"]
+        },
+        "creator": [
+          {
+            "@type": "Person",
+            "name": "Gabizoc",
+            "url": "https://gabizoc.fr"
+          },
+          {
+            "@type": "Person",
+            "name": "Fred Wav",
+            "url": "https://linktr.ee/fredwav"
+          }
+        ],
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Accueil",
+              "item": "https://wavsocialscan.com"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Contact",
+              "item": "https://wavsocialscan.com/contact"
+            }
+          ]
+        }
+      }
+    </script>
+
     <!-- Tailwind CDN + config -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -131,11 +249,11 @@
                 <div>
                   <h3 class="font-semibold text-text">Discord</h3>
                   <a
-                    href="https://discord.gg/PKfWfteyQM"
+                    href="https://discord.gg/GtuUvAGhns"
                     target="_blank"
                     class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
                   >
-                    discord.gg/PKfWfteyQM
+                    discord.gg/GtuUvAGhns
                   </a>
                   <p class="text-xs text-muted mt-1">Support en temps réel</p>
                 </div>
@@ -168,7 +286,9 @@
               </div>
             </div>
 
-            <div class="lg:col-span-1 h-full w-px bg-white/10 mb-8"></div>
+            <div
+              class="hidden lg:inline lg:col-span-1 h-full w-px bg-white/10 mb-8"
+            ></div>
 
             <!-- Formulaire de contact (à droite) -->
             <div class="lg:col-span-3">

@@ -22,6 +22,17 @@ app.use(express.urlencoded({ extended: true }));
 // Assets publics (images, css, js)
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Routes SEO spécifiques
+app.get('/sitemap.xml', (req, res) => {
+  res.set('Content-Type', 'application/xml');
+  res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.set('Content-Type', 'text/plain');
+  res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
 // Sert aussi les assets (legacy - optionnel)
 app.use(express.static(__dirname));
 
@@ -30,7 +41,7 @@ const pagesDir = path.join(__dirname, 'pages');
 const htmlFiles = fs.readdirSync(pagesDir).filter(f => f.endsWith('.html'));
 
 htmlFiles.forEach(filename => {
-  // Route : '/' si index.html, sinon '/nomfichier' sans .html
+  // Route : '/' si index.html, sinon '/nomfichier' sans .html
   const route = filename === 'index.html' ? '/' : `/${filename.replace('.html', '')}`;
   app.get(route, (req, res) => {
     res.sendFile(path.join(pagesDir, filename));
@@ -40,7 +51,6 @@ htmlFiles.forEach(filename => {
 // Routes API
 app.use('/api/generate-ctas', require('./api/generate-ctas'));
 app.use('/api/generate-hooks', require('./api/generate-hooks'));
-// app.use('/api/analyze-video', require('./api/analyze-video'));
 app.use('/api/save-analysis', require('./api/save-analysis'));
 app.use('/api/history', require('./api/history'));
 app.use('/api/auth', require('./api/auth'));
@@ -79,8 +89,9 @@ app.listen(PORT, () => {
   console.log(`📄 Pages HTML auto-servies depuis /pages :`);
   htmlFiles.forEach(filename => {
     const route = filename === 'index.html' ? '/' : `/${filename.replace('.html', '')}`;
-    console.log(`   - ${route} → /pages/${filename}`);
+    console.log(`   - ${route} → /pages/${filename}`);
   });
   console.log(`🎨 Assets CSS/JS servis depuis /public/`);
+  console.log(`🗺️ SEO: /sitemap.xml et /robots.txt disponibles`);
   console.log(`🔌 APIs : /api/*`);
 });

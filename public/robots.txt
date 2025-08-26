@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /login
+Disallow: /signup  
+Disallow: /verify-email
+Disallow: /historique
+Disallow: /profil
+
+Sitemap: https://wavsocialscan.com/sitemap.xml
