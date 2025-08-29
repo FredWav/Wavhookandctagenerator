@@ -6,5 +6,7 @@ Disallow: /signup
 Disallow: /verify-email
 Disallow: /historique
 Disallow: /profil
+Disallow: /forgot-password
+Disallow: /reset-password
 
 Sitemap: https://wavsocialscan.com/sitemap.xml

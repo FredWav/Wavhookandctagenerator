@@ -45,4 +45,14 @@
         <lastmod>2025-08-26</lastmod>
         <priority>0.5</priority>
     </url>
+        <url>
+        <loc>https://wavsocialscan.com/forgot-password</loc>
+        <lastmod>2025-08-26</lastmod>
+        <priority>0.5</priority>
+    </url>
+        <url>
+        <loc>https://wavsocialscan.com/reset-password</loc>
+        <lastmod>2025-08-26</lastmod>
+        <priority>0.5</priority>
+    </url>
 </urlset>
